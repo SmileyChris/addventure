@@ -1,0 +1,25 @@
+[project]
+site_name = "Addventure"
+site_description = "A compiler for paper-based text adventures where addition is the parser"
+site_url = "https://addventure.dev"
+
+[project.theme]
+variant = "modern"
+
+[[project.nav]]
+"Home" = "index.md"
+
+[[project.nav]]
+"Getting Started" = "getting-started.md"
+
+[[project.nav]]
+"Writing Rooms" = "writing-rooms.md"
+
+[[project.nav]]
+"State & Transformation" = "state-and-transformation.md"
+
+[[project.nav]]
+"Advanced Mechanics" = "advanced.md"
+
+[[project.nav]]
+"Script Reference" = "reference.md"
