@@ -6,3 +6,6 @@ WORKBENCH
 
 FUSE_BOX
 + LOOK: A fuse box, door hanging open. Most fuses are missing.
+
+COMPARTMENT
++ LOOK: A small compartment behind the fuse box. Something glints inside.

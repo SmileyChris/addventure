@@ -76,6 +76,11 @@ class GameWriter:
             for a in ix.arrows:
                 if a.destination == "room" and ix.room == room_name:
                     discovered_names.add(a.subject)
+        for cue in self.game.cues:
+            if cue.target_room == room_name:
+                for a in cue.arrows:
+                    if a.destination == "room":
+                        discovered_names.add(a.subject)
 
         for n in initial:
             if n.name not in discovered_names:
@@ -85,6 +90,9 @@ class GameWriter:
         disc_count = sum(
             1 for ix in self.game.interactions if ix.room == room_name
             for a in ix.arrows if a.destination == "room"
+        ) + sum(
+            1 for cue in self.game.cues if cue.target_room == room_name
+            for a in cue.arrows if a.destination == "room"
         )
         if disc_count:
             lines.append(f"\nDiscoverable ({disc_count} slots):")
@@ -315,6 +323,11 @@ class GameWriter:
             for a in ix.arrows:
                 if a.destination == "room" and ix.room == room_name:
                     discovered_names.add(a.subject)
+        for cue in self.game.cues:
+            if cue.target_room == room_name:
+                for a in cue.arrows:
+                    if a.destination == "room":
+                        discovered_names.add(a.subject)
         return [
             n for n in self.game.nouns.values()
             if n.room == room_name and n.state is None and n.name not in discovered_names

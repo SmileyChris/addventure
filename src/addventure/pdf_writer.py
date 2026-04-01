@@ -32,12 +32,17 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         if rm.state is not None:
             continue
 
-        # Initial visible objects (not discovered via arrows)
+        # Initial visible objects (not discovered via arrows or cues)
         discovered_names = set()
         for ix in game.interactions:
             for a in ix.arrows:
                 if a.destination == "room" and ix.room == room_name:
                     discovered_names.add(a.subject)
+        for cue in game.cues:
+            if cue.target_room == room_name:
+                for a in cue.arrows:
+                    if a.destination == "room":
+                        discovered_names.add(a.subject)
 
         objects = [
             {"name": n.name, "id": n.id}
@@ -48,6 +53,9 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         disc_count = sum(
             1 for ix in game.interactions if ix.room == room_name
             for a in ix.arrows if a.destination == "room"
+        ) + sum(
+            1 for cue in game.cues if cue.target_room == room_name
+            for a in cue.arrows if a.destination == "room"
         )
 
         rooms.append({
