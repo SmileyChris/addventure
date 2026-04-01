@@ -1,168 +1,55 @@
-# .md Format — Markdown-Based Game Scripts
+# Addventure — .md Format Specification
 
-## Summary
+## Overview
 
-Redesign the game script format to use `.md` files with markdown conventions: `#` headers, `---` frontmatter fences, `+`/`-` semantic list markers, unquoted narrative text, and `//` comments. Files render readably in any markdown viewer. The entry point is `index.md` (replaces `global.adv`), containing both metadata and global definitions.
+Game scripts use `.md` files with markdown conventions. Files render readably in any markdown viewer while serving as the source format for the Addventure compiler.
 
-## Format Changes
-
-### Headers: `#` instead of `--- name ---`
-
-Old:
-```
---- verbs ---
---- "Control Room" ---
---- interactions ---
-```
-
-New:
-```
-# Verbs
-# Control Room
-# Interactions
-```
-
-Room names no longer need quotes — everything after `# ` is the header name. Section types (`Verbs`, `Items`, `Interactions`) are case-insensitive. Anything else is a room name.
-
-### Frontmatter: `---` fences for metadata
+## CLI
 
 ```
----
-title: The Facility
-author: Chris
----
-
-# Verbs
-USE
+adv build [dir] [--text] [-o FILE]   # Compile game to PDF (default) or text
+adv build                            # Build cwd if game dir, else games/example from project root
+adv new [name]                       # Scaffold new game (interactive if no name)
+adv new "Chapter Name"               # From inside a game dir: creates chapter subdirectory
 ```
 
-Key-value pairs between `---` fences at the top of `index.md`. Parsed into a `metadata` dict on `GameData`. Optional — files without frontmatter work fine.
-
-Supported keys (all optional): `title`, `author`, `version`, `description`, `parts` (comma-separated list of subdirectory names for multi-part games).
-
-### List markers: `+` for additions, `-` for state changes
-
-- `+` prefixes interactions and behaviors added to an entity (verbs, nested entity definitions)
-- `-` prefixes arrows (state changes, movement, destruction)
-- Narrative text has no prefix — just indented plain text under an interaction
-
-Old:
-```
-TERMINAL
-  LOOK: "A dusty CRT."
-  USE + KEYCARD:
-    "You slide the keycard."
-    TERMINAL -> TERMINAL__UNLOCKED
-    KEYCARD -> trash
-```
-
-New:
-```
-TERMINAL
-+ LOOK: A dusty CRT.
-+ USE + KEYCARD:
-  You slide the keycard.
-  - TERMINAL -> TERMINAL__UNLOCKED
-  - KEYCARD -> trash
-```
-
-The `+`/`-` markers are **required** for structural lines nested under an entity. The parser uses them to distinguish structure from narrative. Top-level entity names (like `TERMINAL` itself) remain bare — they're at root indent of a room section.
-
-### Unquoted narrative text
-
-Narrative text no longer needs surrounding double quotes. Quotes are removed everywhere except room references in arrows, which still need them to distinguish multi-word room names from entity names:
-
-```
-- player -> "Basement"
-```
-
-Inline narratives after `:` are also unquoted:
-```
-+ LOOK: A dusty CRT. A keycard slot sits beside it.
-```
-
-### Comments: `//`
-
-```
-// This interaction requires the crowbar from Part 1
-+ USE + CROWBAR:
-```
-
-`//` replaces `#` as the comment marker (since `#` is now headers).
-
-## Indentation Rules
-
-Indentation still uses 2-space increments and defines hierarchy. The `+`/`-` markers sit at the indentation level of their parent's children:
-
-```
-TERMINAL                    // indent 0: entity declaration
-+ LOOK: A dusty CRT.       // indent 0: behavior of TERMINAL
-+ USE + KEYCARD:            // indent 0: interaction on TERMINAL
-  You slide the keycard.    // indent 1: narrative (no marker)
-  - TERMINAL -> TERMINAL__UNLOCKED  // indent 1: arrow
-    + LOOK: Scrolling text.         // indent 2: behavior of new state
-  - KEYCARD -> trash        // indent 1: arrow
-```
-
-## Model Changes
-
-Add `metadata: dict[str, str]` field to `GameData` (default empty dict).
-
-## Parser Changes
-
-1. **Frontmatter parsing**: Detect opening `---`, collect key-value lines until closing `---`
-2. **Header detection**: `_is_header` matches lines starting with `# ` instead of `--- ... ---`
-3. **Header parsing**: `_parse_header` strips `# ` prefix, checks for known sections (verbs/items/interactions case-insensitive), everything else is a room name
-4. **Comment detection**: Skip lines starting with `//` (stripped) instead of `#`
-5. **List marker parsing**: Strip leading `+`/`-` from structural lines, use the marker to validate line type (arrows must use `-`)
-6. **Narrative parsing**: Accept unquoted text (lines without `+`, `-`, `->`, or `:` interaction headers) as narrative
-7. **Arrow detection**: `_is_arrow` no longer needs the quote check since narratives are unquoted
+`adv new` is context-aware:
+- From project root (has `games/` dir): creates `games/<slugified-name>/`
+- From inside a game dir (has `index.md` with `# Verbs`): creates a chapter subdirectory
+- Elsewhere: creates `<slugified-name>/` in cwd
+- Name is slugified for directories (e.g. "The Underground" → `the-underground/`), preserved as title
 
 ## File Structure
 
-Entry point is `index.md` (replaces `global.adv`). All other `.md` files in the directory are room scripts, loaded alphabetically.
-
 ```
-games/facility/
-  index.md           # meta + verbs + items
-  control_room.md
-  basement.md
-  the-underground/   # chapter B
-    index.md         # new verbs/items for chapter B
-    tunnels.md
+games/my-game/
+  index.md              # Frontmatter + description + verbs + items
+  control_room.md       # Room script
+  basement.md           # Room script
+  the-underground/      # Chapter B
+    index.md            # New verbs/items for this chapter
+    tunnels.md          # Room script
 ```
 
-The CLI looks for `index.md` instead of `global.adv`.
+- Entry point: `index.md` (frontmatter, description, `# Verbs`, `# Items`)
+- Room scripts: all other `.md` files, loaded alphabetically
+- `games/.gitignore` tracks only `example/`, ignores user-created games
 
-## Multi-Chapter Stories (Future)
-
-The frontmatter `chapters` key and directory-based structure are designed but not implemented in this change.
-
-Entry prefixes: root = A, first listed chapter = B, etc. (`entry_prefix` metadata key, default "A").
-
-### Planned structure
-- `chapters:` key in root `index.md` frontmatter defines order explicitly
-- Subdirectories as chapters, each with its own `index.md` for new verbs/items
-- Root-level files = Chapter A, directory name is the chapter title
-- Each chapter compiles semi-independently, inheriting items from prior chapters
-- `adv build` defaults to chapter A only; `adv build --chapter B` or `adv build --all` for more
-
-### Validation (must implement)
-- Verify every directory listed in `chapters:` exists and contains an `index.md`
-- Warn if subdirectories with an `index.md` exist but are not listed in `chapters:`
-- Error if `chapters:` references a non-existent directory
-
-## Migration
-
-The example game files are rewritten from `.adv` to `.md`. The old format is no longer supported — this is a clean break (the project has no external users yet).
-
-## Complete Example
+## index.md Structure
 
 ```markdown
 ---
 title: The Facility
 author: Chris
+start: Control Room
+entry_prefix: A
+chapters: The Underground, The Surface
 ---
+
+You wake up bound to a chair. Your wrists burn against coarse rope.
+The air tastes of rust and stale electricity.
+
+You need to get out. Use what you can find. Trust nothing.
 
 # Verbs
 USE
@@ -173,7 +60,79 @@ LOOK
 CROWBAR
 KEYCARD
 KNIFE
+```
 
+### Frontmatter (between `---` fences)
+
+All keys optional:
+- `title` — game/chapter title, used in PDF header and output filename
+- `author` — shown in PDF footer
+- `start` — starting room name (falls back to first base room)
+- `entry_prefix` — ledger entry prefix, default `A` (chapter B uses `B`, etc.)
+- `chapters` — comma-separated list of chapter subdirectory names, defines order
+
+### Description (body text before first `#` header)
+
+Plain text between frontmatter and the first `# Header`. Rendered at 11pt in PDF with an HR separator before the how-to-play instructions. Supports Typst markup (`*italic*`, `**bold**`) via `eval()`.
+
+## Syntax Reference
+
+### Headers
+
+```markdown
+# Verbs          // Known section (case-insensitive)
+# Items          // Known section
+# Interactions   // Known section (freeform, room-level)
+# Control Room   // Anything else = room name
+```
+
+### List Markers
+
+- `+` — additions: interactions and behaviors on an entity
+- `-` — state changes: arrows (movement, destruction, transformation)
+- No marker — narrative text (indented under an interaction)
+
+### Comments
+
+```markdown
+// This is a comment
+```
+
+### Arrows
+
+```markdown
+- THING -> trash           // Destroy
+- THING -> player          // To inventory
+- THING -> room            // Reveal in current room
+- THING -> "Other Room"    // Move to another room (quotes required for room names)
+- THING -> THING__STATE    // Transform to new state
+- player -> "Room Name"    // Player movement
+```
+
+### Entity Names
+
+- `ALL_CAPS` with underscores — entity names
+- `ENTITY__STATE` — double underscore separates base from state
+- `@room` — reference to current room entity
+- `*` wildcard — matches all entities in room
+
+### Indentation
+
+2-space increments define hierarchy:
+
+```markdown
+TERMINAL                           // Entity declaration (indent 0)
++ LOOK: A dusty CRT.              // Behavior of TERMINAL
++ USE + KEYCARD:                   // Interaction on TERMINAL
+  You slide the keycard.           // Narrative (no marker)
+  - TERMINAL -> TERMINAL__UNLOCKED // Arrow (state change)
+    + LOOK: Scrolling text.        // Behavior of new state
+  - KEYCARD -> trash               // Arrow
+```
+
+## Room Script Example
+
+```markdown
 # Control Room
 LOOK: Fluorescent lights buzz. Banks of dead equipment line the walls.
 
@@ -193,25 +152,6 @@ TERMINAL
         You lower yourself into the darkness.
         - player -> "Basement"
 
-CRATE
-+ LOOK: A heavy wooden crate, nailed shut.
-+ USE + CROWBAR:
-  You pry it open. A keycard glints inside.
-  - CRATE -> CRATE__OPEN
-    + LOOK: A splintered crate, lid hanging off.
-  - KEYCARD -> room
-    + LOOK: A small keycard among the splinters.
-    + TAKE:
-      You pocket the keycard.
-      - KEYCARD -> player
-  - CROWBAR -> trash
-
-WALL_PANEL
-+ LOOK: Featureless steel bolted to the wall.
-
-BINDINGS
-+ LOOK: Thick rope bindings around your wrists.
-
 # Interactions
 
 USE + KNIFE + BINDINGS:
@@ -222,3 +162,51 @@ USE + KNIFE + BINDINGS:
 USE__RESTRAINED + *:
   You strain against the bindings. No use.
 ```
+
+## PDF Output
+
+Page order:
+1. **Title page** — game title, description, how-to-play, start room, verbs
+2. **Start room sheet** — marked with ★ START
+3. **Inventory & Potentials** — inventory slots (scaled to item count), 3-column potentials list
+4. **Other room sheets** — one per room
+5. **Story Ledger** — two-column layout, bordered entries, `A-1` format
+
+Entry format: `{prefix}-{number}` (e.g. `A-1`, `A-29`). Prefix from `entry_prefix` metadata.
+
+Narratives and descriptions support Typst markup via `eval(text, mode: "markup")`.
+
+## Multi-Chapter Stories (Future)
+
+Not yet implemented. Design:
+
+### Structure
+- `chapters:` frontmatter key defines order explicitly
+- Root-level files = Chapter A
+- Each subdirectory = subsequent chapter (B, C, ...)
+- Each chapter has its own `index.md` for new verbs/items, inherits from prior chapters
+- `adv build` defaults to Chapter A; `adv build --chapter B` or `adv build --all` for more
+
+### Validation (must implement)
+- Verify every directory listed in `chapters:` exists and contains an `index.md`
+- Warn if subdirectories with an `index.md` exist but are not listed in `chapters:`
+- Error if `chapters:` references a non-existent directory
+
+## Model
+
+`GameData` dataclass fields:
+- `metadata: dict[str, str]` — frontmatter + description
+- `verbs`, `nouns`, `items`, `rooms` — entity registries
+- `interactions` → `resolved` — compiled interactions with sum IDs
+- `alerts` — cross-room alerts
+
+## Compiler Pipeline
+
+1. `parse_global` — frontmatter, description, verbs, items
+2. `parse_room_file` — rooms, nouns, interactions
+3. `_try_allocate` — random ID assignment (verbs 11–99, entities 100–999, no multiples of 5/10)
+4. `register_verb_states` — temporary verb states (e.g. `USE__RESTRAINED`)
+5. `apply_inheritance` — auto-generate child interactions for entity states
+6. `resolve_interactions` — expand verb+entity combos into sums
+7. `generate_room_alerts` — cross-room alerts
+8. Validate — collision detection (up to 200 retries on ID allocation)
