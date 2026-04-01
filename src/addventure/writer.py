@@ -86,16 +86,12 @@ class GameWriter:
             if n.name not in discovered_names:
                 lines.append(f"  {n.name:<24} {n.id}")
 
-        # Discovery slots
-        disc_count = sum(
-            1 for ix in self.game.interactions if ix.room == room_name
-            for a in ix.arrows if a.destination == "room"
-        ) + sum(
-            1 for cue in self.game.cues if cue.target_room == room_name
-            for a in cue.arrows if a.destination == "room"
-        )
+        # Discovery slots — use max across all rooms to avoid leaking info
+        disc_count = self._max_discovery_slots()
         if disc_count:
-            lines.append(f"\nDiscoverable ({disc_count} slots):")
+            slots_word = "slot" if disc_count == 1 else "slots"
+            lines.append(f"\nDiscoveries ({disc_count} {slots_word}):")
+            lines.append(f"  If objects are discovered here, record them.")
             for _ in range(disc_count):
                 lines.append(f"  {'_' * 24} ____")
 
@@ -346,6 +342,23 @@ class GameWriter:
             if rm.state is None:
                 return name
         return None
+
+    def _max_discovery_slots(self) -> int:
+        """Max discovery slot count across all base rooms."""
+        max_count = 0
+        for room_name, rm in self.game.rooms.items():
+            if rm.state is not None:
+                continue
+            count = sum(
+                1 for ix in self.game.interactions if ix.room == room_name
+                for a in ix.arrows if a.destination == "room"
+            ) + sum(
+                1 for cue in self.game.cues if cue.target_room == room_name
+                for a in cue.arrows if a.destination == "room"
+            )
+            if count > max_count:
+                max_count = count
+        return max_count
 
     def _find_entry(self, verb: str, target: str, room: str) -> ResolvedInteraction | None:
         """Find a resolved interaction by verb + single target + room."""

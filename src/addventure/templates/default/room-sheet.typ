@@ -118,7 +118,7 @@
   if room.discovery_slots > 0 {
     v(1em)
     section-title("Discoveries")
-    text(size: 9pt, style: "italic")[Objects may be discovered in this room. Record them here when found.]
+    text(size: 9pt, style: "italic")[If objects are discovered in this room, record them here.]
     v(0.4em)
 
     for _ in range(room.discovery_slots) {

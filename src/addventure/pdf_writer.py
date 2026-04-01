@@ -86,8 +86,10 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
     start_room = writer._start_room()
     entry_prefix = game.metadata.get("entry_prefix", "A")
 
-    # Mark start room for template rendering
+    # Normalize discovery slots: all rooms get the max to avoid leaking info
+    max_disc = max((r["discovery_slots"] for r in rooms), default=0)
     for room in rooms:
+        room["discovery_slots"] = max_disc
         room["is_start"] = room["name"] == start_room
 
     return {

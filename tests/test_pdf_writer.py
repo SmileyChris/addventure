@@ -104,7 +104,7 @@ def test_end_to_end_example_game(tmp_path):
     game = compile_game(gs, rs)
 
     output = tmp_path / "example.pdf"
-    assert generate_pdf(game, output) is True
+    assert generate_pdf(game, output, game_dir=gd) is True
     assert output.exists()
     # PDF should have reasonable size (at least a few KB for multiple pages)
     assert output.stat().st_size > 1000
