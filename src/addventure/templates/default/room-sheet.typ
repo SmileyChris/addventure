@@ -5,50 +5,37 @@
   let hide-name = blind and not is-start
   let hide-objects = blind
 
-  // Title: blank write-in for blind non-start, normal otherwise
+  // Title
   if hide-name {
-    // Show only the room ID with a blank title slot
-    block(below: 0.2em)[
-      #align(center)[
-        #block(width: 100%, below: 0.15em)[
-          #grid(
-            columns: (1fr, auto, 1fr),
-            gutter: 0.5em,
-            [],
-            align(center + horizon)[
-              #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM] #h(0.5em) #id-box(str(room.id))
-            ],
-            [],
-          )
-        ]
-        #line(length: 100%, stroke: 1.5pt)
+    // Blind non-start: small label with heavy rule as write line
+    align(center)[
+      #block(
+        width: 100%,
+        below: 0.15em,
+      )[
+        #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM TITLE]
       ]
+      #line(length: 100%, stroke: 1.5pt)
     ]
-    // Blank line for room name
-    v(0.3em)
-    text(size: 9pt, style: "italic")[Room name:]
-    h(0.5em)
-    write-slot(width: 60%)
-    v(0.8em)
   } else {
     let title = "ROOM: " + upper(room.name)
     if is-start { title = title + "  ★ START" }
     sheet-title(title)
-
-    // Room ID
-    block(below: 1em)[
-      #grid(
-        columns: (auto, 1fr),
-        gutter: 0.5em,
-        align(left + horizon)[
-          #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]
-        ],
-        align(left + horizon)[
-          #id-box(str(room.id))
-        ],
-      )
-    ]
   }
+
+  // Room ID
+  block(below: 1em)[
+    #grid(
+      columns: (auto, 1fr),
+      gutter: 0.5em,
+      align(left + horizon)[
+        #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]
+      ],
+      align(left + horizon)[
+        #id-box(str(room.id))
+      ],
+    )
+  ]
 
   // Objects section
   let obj-count = room.objects.len()
@@ -65,12 +52,12 @@
             below: 0.4em,
           )[
             #grid(
-              columns: (1fr, 4em),
+              columns: (1fr, auto),
               gutter: 0.5em,
               align(left + horizon)[
                 #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
               ],
-              align(right + bottom)[#write-slot(width: 100%)],
+              align(right + horizon)[#id-box(hide[000])],
             )
           ]
           line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
@@ -83,27 +70,28 @@
             below: 0.6em,
           )[
             #grid(
-              columns: (1fr, 4em),
+              columns: (1fr, auto),
               gutter: 0.5em,
               align(left + bottom)[#write-slot()],
-              align(right + bottom)[#write-slot(width: 100%)],
+              align(right + horizon)[#id-box(hide[000])],
             )
           ]
         }
       }
     } else {
-      // Normal mode: show names and IDs
+      // Normal mode: show names and IDs, with empty box for state changes
       for obj in room.objects {
         block(
           width: 100%,
           below: 0.4em,
         )[
           #grid(
-            columns: (1fr, auto),
+            columns: (1fr, auto, auto),
             gutter: 0.5em,
             align(left + horizon)[
               #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
             ],
+            align(right + horizon)[#id-box(hide[000])],
             align(right + horizon)[
               #id-box(str(obj.id))
             ],
@@ -127,10 +115,10 @@
         below: 0.6em,
       )[
         #grid(
-          columns: (1fr, 4em),
+          columns: (1fr, auto),
           gutter: 0.5em,
           align(left + bottom)[#write-slot()],
-          align(right + bottom)[#write-slot(width: 100%)],
+          align(right + horizon)[#id-box(hide[000])],
         )
       ]
     }
