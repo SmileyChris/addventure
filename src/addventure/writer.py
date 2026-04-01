@@ -14,6 +14,7 @@ class GameWriter:
 
     def __init__(self, game: GameData):
         self.game = game
+        self.entry_prefix = game.metadata.get("entry_prefix", "A")
 
     # ── Verb Sheet (BIOS) ──────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ class GameWriter:
             lines.append(f"\nYou begin in: {start_room}")
             look_entry = self._find_entry("LOOK", f"@{start_room}", start_room)
             if look_entry:
-                lines.append(f"Open the {start_room} room sheet and read Ledger #{look_entry.entry_number}.")
+                lines.append(f"Open the {start_room} room sheet and read Ledger {self.entry_prefix}-{look_entry.entry_number}.")
 
         return "\n".join(lines)
 
@@ -105,7 +106,7 @@ class GameWriter:
 
         potentials = sorted(self.game.resolved, key=lambda r: r.sum_id)
         for ri in potentials:
-            lines.append(f"  {ri.sum_id:>6}  →  Ledger #{ri.entry_number}")
+            lines.append(f"  {ri.sum_id:>6}  →  Ledger {self.entry_prefix}-{ri.entry_number}")
 
         return "\n".join(lines)
 
@@ -116,7 +117,7 @@ class GameWriter:
         lines.append("Only read an entry when directed to by the Potentials List.\n")
 
         for ri in self.game.resolved:
-            lines.append(f"── Entry #{ri.entry_number} ──")
+            lines.append(f"── {self.entry_prefix}-{ri.entry_number} ──")
             lines.append(f'"{ri.narrative}"')
 
             instructions = self._generate_instructions(ri)
@@ -147,7 +148,7 @@ class GameWriter:
                     if look_entry:
                         instructions.append(
                             f"Switch to the {room_name} room sheet. "
-                            f"Read Ledger #{look_entry.entry_number}."
+                            f"Read Ledger {self.entry_prefix}-{look_entry.entry_number}."
                         )
                     else:
                         instructions.append(f"Switch to the {room_name} room sheet.")

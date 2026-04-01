@@ -1,7 +1,7 @@
 // ledger.typ — Story Ledger entries (two-column layout)
 #import "style.typ": sheet-title, section-title, separator
 
-#let ledger-entry(entry) = {
+#let ledger-entry(entry, prefix) = {
   block(
     width: 100%,
     below: 0.5em,
@@ -10,7 +10,7 @@
     inset: 6pt,
   )[
     #text(font: "Liberation Sans", size: 9pt, weight: "bold")[
-      ENTRY #str(entry.entry)
+      #prefix\-#str(entry.entry)
     ]
     #v(0.15em)
     #text(size: 9pt, style: "italic")[#eval(entry.narrative, mode: "markup")]
@@ -34,9 +34,11 @@
     ]
   ]
 
+  let prefix = data.at("entry_prefix", default: "A")
+
   columns(2, gutter: 1.5em)[
     #for entry in data.ledger {
-      ledger-entry(entry)
+      ledger-entry(entry, prefix)
     }
   ]
 }

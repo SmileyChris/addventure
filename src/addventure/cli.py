@@ -109,11 +109,11 @@ def _in_game_dir() -> bool:
 
 
 def cmd_new(args: list[str]):
-    """Scaffold a new game or part directory with index.md."""
+    """Scaffold a new game or chapter directory with index.md."""
     name = " ".join(args) if args else None
 
     if _in_game_dir():
-        _cmd_new_part(name)
+        _cmd_new_chapter(name)
     else:
         _cmd_new_game(name)
 
@@ -156,21 +156,21 @@ def _cmd_new_game(name: str | None):
     print(f"\nCreated game: {game_dir / 'index.md'}")
 
 
-def _cmd_new_part(name: str | None):
-    """Scaffold a new part subdirectory within an existing game."""
+def _cmd_new_chapter(name: str | None):
+    """Scaffold a new chapter subdirectory within an existing game."""
     if not name:
-        name = input("Part name: ").strip()
+        name = input("Chapter name: ").strip()
         if not name:
-            print("ERROR: Part name is required")
+            print("ERROR: Chapter name is required")
             sys.exit(1)
     slug = _slugify(name)
-    part_dir = Path(slug)
+    chapter_dir = Path(slug)
 
-    if (part_dir / "index.md").exists():
-        print(f"ERROR: {part_dir / 'index.md'} already exists")
+    if (chapter_dir / "index.md").exists():
+        print(f"ERROR: {chapter_dir / 'index.md'} already exists")
         sys.exit(1)
 
-    part_dir.mkdir(parents=True, exist_ok=True)
+    chapter_dir.mkdir(parents=True, exist_ok=True)
 
     lines = [
         f"# Verbs",
@@ -179,8 +179,8 @@ def _cmd_new_part(name: str | None):
         "",
     ]
 
-    (part_dir / "index.md").write_text("\n".join(lines) + "\n")
-    print(f"\nCreated part \"{name}\": {part_dir / 'index.md'}")
+    (chapter_dir / "index.md").write_text("\n".join(lines) + "\n")
+    print(f"\nCreated chapter \"{name}\": {chapter_dir / 'index.md'}")
 
 
 COMMANDS = {
@@ -194,7 +194,7 @@ Usage: adv <command> [args]
 Commands:
   build [dir] [--text] [-o FILE] [--theme NAME]
                      Compile game to PDF (default) or text
-  new [name]         Scaffold a new game or part (interactive if no name given)\
+  new [name]         Scaffold a new game or chapter (interactive if no name given)\
 """
 
 

@@ -65,10 +65,12 @@ def serialize_game_data(game: GameData, writer: GameWriter) -> dict:
         })
 
     start_room = writer._start_room()
+    entry_prefix = game.metadata.get("entry_prefix", "A")
 
     return {
         "metadata": game.metadata,
         "start_room": start_room,
+        "entry_prefix": entry_prefix,
         "verbs": verbs,
         "rooms": rooms,
         "inventory_slots": max(len(game.items) + 2, 6),

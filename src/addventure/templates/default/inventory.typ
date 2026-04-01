@@ -46,6 +46,7 @@
   // 3-column potentials grid
   let pot-cols = 3
   let pots = data.potentials
+  let prefix = data.at("entry_prefix", default: "A")
   let rows = calc.ceil(pots.len() / pot-cols)
 
   // Header row
@@ -94,7 +95,7 @@
                   #text(font: "Liberation Mono", size: 9pt, weight: "bold")[#str(pots.at(idx).sum)]
                 ],
                 align(left + horizon)[
-                  #text(font: "Liberation Mono", size: 9pt)[#str(pots.at(idx).entry)]
+                  #text(font: "Liberation Mono", size: 9pt)[#prefix\-#str(pots.at(idx).entry)]
                 ],
               ),
             )
