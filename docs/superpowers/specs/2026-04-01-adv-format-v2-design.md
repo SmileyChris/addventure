@@ -107,6 +107,9 @@ Plain text between frontmatter and the first `# Header`. Rendered at 11pt in PDF
 - THING -> "Other Room"    // Move to another room (quotes required for room names)
 - THING -> THING__STATE    // Transform to new state
 - player -> "Room Name"    // Player movement
+- ? -> "Room Name"         // Cue: deferred cross-room effect
+    Narrative text here.   //   resolved when player enters target room
+    - THING -> room        //   arrows execute in target room
 ```
 
 ### Entity Names
@@ -198,7 +201,7 @@ Not yet implemented. Design:
 - `metadata: dict[str, str]` — frontmatter + description
 - `verbs`, `nouns`, `items`, `rooms` — entity registries
 - `interactions` → `resolved` — compiled interactions with sum IDs
-- `alerts` — cross-room alerts
+- `cues` — cross-room cue checks
 
 ## Compiler Pipeline
 
@@ -208,5 +211,5 @@ Not yet implemented. Design:
 4. `register_verb_states` — temporary verb states (e.g. `USE__RESTRAINED`)
 5. `apply_inheritance` — auto-generate child interactions for entity states
 6. `resolve_interactions` — expand verb+entity combos into sums
-7. `generate_room_alerts` — cross-room alerts
+7. `resolve_cues` — cross-room cue interactions
 8. Validate — collision detection (up to 200 retries on ID allocation)
