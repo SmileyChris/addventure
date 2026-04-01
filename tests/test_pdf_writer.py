@@ -8,8 +8,8 @@ from addventure.pdf_writer import serialize_game_data
 
 
 def _make_game():
-    global_src = "--- verbs ---\nUSE\nLOOK\n\n--- items ---\nKEY\n"
-    room_src = '--- "Room" ---\nLOOK: "A room."\n\nBOX\n  LOOK: "A box."\n  USE + KEY:\n    "You open it."\n    BOX -> BOX__OPEN\n      LOOK: "An open box."\n    KEY -> trash\n'
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    room_src = "# Room\nLOOK: A room.\n\nBOX\n+ LOOK: A box.\n+ USE + KEY:\n  You open it.\n  - BOX -> BOX__OPEN\n    + LOOK: An open box.\n  - KEY -> trash\n"
     return compile_game(global_src, [room_src])
 
 
