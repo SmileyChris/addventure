@@ -89,3 +89,20 @@ def test_generate_pdf_custom_theme_missing(tmp_path):
         assert False, "Should have raised"
     except FileNotFoundError:
         pass
+
+
+def test_end_to_end_example_game(tmp_path):
+    """Compile the example game and generate a PDF."""
+    if find_typst() is None:
+        return  # skip if typst not installed
+
+    gd = Path(__file__).resolve().parent.parent / "games" / "example"
+    gs = (gd / "index.md").read_text()
+    rs = [f.read_text() for f in sorted(gd.glob("*.md")) if f.name != "index.md"]
+    game = compile_game(gs, rs)
+
+    output = tmp_path / "example.pdf"
+    assert generate_pdf(game, output) is True
+    assert output.exists()
+    # PDF should have reasonable size (at least a few KB for multiple pages)
+    assert output.stat().st_size > 1000
