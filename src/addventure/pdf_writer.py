@@ -58,11 +58,16 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             for a in cue.arrows if a.destination == "room"
         )
 
+        # Get room description from LOOK + @room interaction
+        look_entry = writer._find_entry("LOOK", f"@{room_name}", room_name)
+        description = look_entry.narrative if look_entry else ""
+
         rooms.append({
             "name": room_name,
             "id": rm.id,
             "objects": objects,
             "discovery_slots": disc_count,
+            "description": description,
         })
 
     potentials = sorted(

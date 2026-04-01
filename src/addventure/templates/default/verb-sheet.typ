@@ -76,7 +76,7 @@
           #text(font: "Liberation Sans", size: 11pt, weight: "bold")[#verb.name]
         ],
         align(right + horizon)[
-          #id-box(str(verb.id))
+          #id-box(str(verb.id)) #id-box(hide[00])
         ],
       )
     ]

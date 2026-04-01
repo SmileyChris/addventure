@@ -32,14 +32,28 @@
         #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]
       ],
       align(left + horizon)[
-        #id-box(str(room.id))
+        #id-box(str(room.id)) #id-box(hide[000])
       ],
     )
+  ]
+
+  // Description
+  block(below: 1.5em)[
+    #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[DESCRIPTION]
+    #v(0.2em)
+    #if is-start and room.description != "" {
+      text(size: 11pt, style: "italic")[#room.description]
+    } else {
+      write-slot()
+      v(0.3em)
+      write-slot()
+    }
   ]
 
   // Objects section
   let obj-count = room.objects.len()
   if obj-count > 0 {
+    v(1em)
     section-title("Objects in this Room")
 
     if hide-objects {
@@ -91,10 +105,10 @@
             align(left + horizon)[
               #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
             ],
-            align(right + horizon)[#id-box(hide[000])],
             align(right + horizon)[
               #id-box(str(obj.id))
             ],
+            align(right + horizon)[#id-box(hide[000])],
           )
         ]
         line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
