@@ -531,11 +531,19 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                     if a.subject == "room":
                         a.subject = f"@{room_name}"
                     arrows.append(a)
+                    arr_indent = _indent(bline)
+                    i += 1
+                    i = _parse_arrow_children(lines, i, game, room_name, a, arr_indent + 1)
+                elif bmarker == "+":
+                    break
                 elif _is_narrative(bs) and not narrative:
                     narrative = bs
+                    i += 1
                 elif _is_narrative(bs):
                     narrative += " " + bs
-                i += 1
+                    i += 1
+                else:
+                    i += 1
             _register_interaction(game, Interaction(
                 verb=verb, target_groups=target_groups,
                 narrative=narrative, arrows=arrows,

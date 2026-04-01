@@ -69,17 +69,17 @@ class GameWriter:
                     # Auto-item picked up via TAKE: player already computed the sum
                     if ri.verb == "TAKE" and subj in self.game.auto_items:
                         instructions.append(
-                            f"Cross out {dn(subj)} on your room sheet. "
+                            f"Cross out {dn(subj)} on this room sheet. "
                             f"Write {dn(subj)} and your sum ({item.id}) on your Inventory."
                         )
                     else:
                         instructions.append(
-                            f"Cross out {dn(subj)} on your room sheet. "
+                            f"Cross out {dn(subj)} on this room sheet. "
                             f"Write {dn(subj)} and {item.id} on your Inventory."
                         )
                 else:
                     instructions.append(
-                        f"Cross out {dn(subj)} on your room sheet. "
+                        f"Cross out {dn(subj)} on this room sheet. "
                         f"Write {dn(subj)} ({entity_id}) on your Inventory."
                     )
 
@@ -88,7 +88,7 @@ class GameWriter:
                 entity_id = self._get_id(subj, ri.room)
                 instructions.append(
                     f"Write {dn(subj)} ({entity_id}) in a discovery slot "
-                    f"on your room sheet."
+                    f"on this room sheet."
                 )
 
             # ? -> "Room" (cue trigger — deferred cross-room effect)
@@ -120,7 +120,7 @@ class GameWriter:
                         )
                     else:
                         instructions.append(
-                            f"Change {subj_display} to {new_id} on your room sheet."
+                            f"Change {subj_display} to {new_id} on this room sheet."
                         )
 
             # Verb state restore: USE__RESTRAINED -> USE
@@ -169,7 +169,7 @@ class GameWriter:
             if objects:
                 for obj in objects:
                     instructions.append(
-                        f"Write {obj.id} next to {dn(obj.name)} on your room sheet."
+                        f"Write {obj.id} next to {dn(obj.name)} on this room sheet."
                     )
         else:
             # Non-start: reveal room name and all objects

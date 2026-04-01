@@ -22,15 +22,8 @@ TERMINAL
 
 CRATE
 + LOOK: A heavy wooden crate, nailed shut. Something metallic catches the light underneath.
-+ USE:
-  You kick the crate hard. It scrapes across the floor, revealing a knife underneath.
-  - KNIFE -> room
-    + LOOK: A rusty utility knife. Still sharp enough.
-    + TAKE:
-      You grab the knife.
-      - KNIFE -> player
 + USE + CROWBAR:
-  You pry it open. A keycard glints inside. A knife clatters out from underneath.
+  You pry the lid off. A keycard glints inside.
   - CRATE -> CRATE__OPEN
     + LOOK: A splintered crate, lid hanging off.
   - KEYCARD -> room
@@ -38,11 +31,19 @@ CRATE
     + TAKE:
       You pocket the keycard.
       - KEYCARD -> player
-  - KNIFE -> room
   - CROWBAR -> trash
 
 WALL_PANEL
-+ LOOK: Featureless steel bolted to the wall.
++ LOOK: A steel panel bolted to the wall. One corner is bent outward slightly.
++ USE:
+  You work the bent corner back and forth until it snaps free, revealing a crawlspace behind it.
+  - WALL_PANEL -> WALL_PANEL__OPEN
+    + LOOK: A gap in the wall. A crowbar lies wedged behind the panel.
+  - CROWBAR -> room
+    + LOOK: A heavy iron crowbar. Could pry just about anything open.
+    + TAKE:
+      You grab the crowbar.
+      - CROWBAR -> player
 
 BINDINGS
 + LOOK: Thick rope bindings around your wrists.
@@ -57,6 +58,10 @@ USE + KNIFE + BINDINGS:
 USE__RESTRAINED + CRATE:
   You lash out with your foot and kick the crate. It scrapes across the floor, revealing a knife underneath.
   - KNIFE -> room
+    + LOOK: A rusty utility knife. Still sharp enough.
+    + TAKE:
+      You grab the knife.
+      - KNIFE -> player
 
 USE__RESTRAINED + *:
   You strain against the bindings. No use.

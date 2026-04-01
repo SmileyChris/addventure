@@ -96,7 +96,8 @@ def apply_inheritance(game: GameData):
             base, state = _split_name(target.lstrip("@"))
             if state is not None:
                 child_exists.add((ix.verb, target, ix.room))
-            else:
+            elif not ix.arrows:
+                # Only inherit arrow-free interactions (observations, not actions)
                 parent_map[(ix.verb, target.lstrip("@"), ix.room)] = ix
 
     new_ixs = []

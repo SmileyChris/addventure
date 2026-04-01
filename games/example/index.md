@@ -17,4 +17,3 @@ TAKE
 LOOK
 
 # Items
-CROWBAR
