@@ -1,5 +1,5 @@
 # Control Room
-LOOK: Fluorescent lights buzz. Banks of dead equipment line the walls.
+LOOK: Fluorescent lights buzz. Banks of dead equipment line the walls. Something glints under the crate near your feet.
 
 TERMINAL
 + LOOK: A dusty CRT. A keycard slot sits beside it.
@@ -21,9 +21,16 @@ TERMINAL
         - player -> "Basement"
 
 CRATE
-+ LOOK: A heavy wooden crate, nailed shut.
++ LOOK: A heavy wooden crate, nailed shut. Something metallic catches the light underneath.
++ USE:
+  You kick the crate hard. It scrapes across the floor, revealing a knife underneath.
+  - KNIFE -> room
+    + LOOK: A rusty utility knife. Still sharp enough.
+    + TAKE:
+      You grab the knife.
+      - KNIFE -> player
 + USE + CROWBAR:
-  You pry it open. A keycard glints inside.
+  You pry it open. A keycard glints inside. A knife clatters out from underneath.
   - CRATE -> CRATE__OPEN
     + LOOK: A splintered crate, lid hanging off.
   - KEYCARD -> room
@@ -31,6 +38,7 @@ CRATE
     + TAKE:
       You pocket the keycard.
       - KEYCARD -> player
+  - KNIFE -> room
   - CROWBAR -> trash
 
 WALL_PANEL
@@ -45,6 +53,10 @@ USE + KNIFE + BINDINGS:
   You saw through the rope. Your hands are free.
   - BINDINGS -> trash
   - USE__RESTRAINED -> USE
+
+USE__RESTRAINED + CRATE:
+  You lash out with your foot and kick the crate. It scrapes across the floor, revealing a knife underneath.
+  - KNIFE -> room
 
 USE__RESTRAINED + *:
   You strain against the bindings. No use.

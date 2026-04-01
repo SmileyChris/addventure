@@ -201,6 +201,32 @@ To target *only* the base state (before any transformation), add a trailing `__`
 | `? -> "Room__STATE"` | Only that specific state |
 | `? -> "Room__"` | Only the base state |
 
+## Game sizing and ID allocation
+
+The compiler randomly assigns IDs to verbs and entities, then checks that no two interactions produce the same sum. If they do, it retries with a different random seed.
+
+**How IDs work:**
+- Verb IDs: 2-digit (11–99, excluding multiples of 5) — 72 possible values
+- Entity IDs: 3-digit (100–999, excluding multiples of 5) — 720 possible values
+- Sums range from ~111 to ~1100 for single-target, higher for multi-target
+
+**When do collisions happen?** Two interactions collide when `verb1 + entity1 = verb2 + entity2`. This only occurs across *different* verbs (same verb + different entity always gives different sums). The number of verbs barely matters — what drives collisions is **total noun count** across all rooms.
+
+**Rough sizing guide:**
+
+| Total nouns | Entity IDs | Success rate per attempt | Notes |
+|---|---|---|---|
+| Up to ~80 | 3-digit | >50% (finds in 1–2 tries) | Comfortable |
+| ~80–100 | 3-digit | ~1–10% (finds in 20–100 tries) | Pushes the limit |
+| 100+ | 4-digit (auto) | >50% again | Compiler falls back automatically |
+| 300+ | 4-digit | Starts getting tight | Consider splitting into chapters |
+
+The compiler tries 3-digit IDs first (200 attempts). If no collision-free allocation is found, it automatically retries with 4-digit entity IDs (1000–9999, 7200 possible values) and 3-digit verb IDs (101–999). The wider verb range spreads sums out more, making it harder for players to reverse-engineer which verb was used. This is seamless — larger games just get slightly bigger numbers on the sheets.
+
+**For very large games**, split into chapters. Each chapter is an independent game with its own ID space. Use narrative handoffs at chapter boundaries: the ending ledger entry tells the player what they're carrying, and the next chapter's first entry sets up the new inventory with fresh IDs.
+
+**The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ nouns per room stays well under 80 total.
+
 ## Design tips
 
 **Start small.** A good first game has 2-3 rooms with a few puzzles. The example game (`games/example/`) is a good template.

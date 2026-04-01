@@ -69,17 +69,17 @@ class GameWriter:
                     # Auto-item picked up via TAKE: player already computed the sum
                     if ri.verb == "TAKE" and subj in self.game.auto_items:
                         instructions.append(
-                            f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
-                            f"Write your sum on your Inventory."
+                            f"Cross out {dn(subj)} on your room sheet. "
+                            f"Write {dn(subj)} and your sum ({item.id}) on your Inventory."
                         )
                     else:
                         instructions.append(
-                            f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
-                            f"Write {item.id} on your Inventory."
+                            f"Cross out {dn(subj)} on your room sheet. "
+                            f"Write {dn(subj)} and {item.id} on your Inventory."
                         )
                 else:
                     instructions.append(
-                        f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
+                        f"Cross out {dn(subj)} on your room sheet. "
                         f"Write {dn(subj)} ({entity_id}) on your Inventory."
                     )
 

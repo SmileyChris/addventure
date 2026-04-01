@@ -53,7 +53,10 @@
   v(0.3em)
   block(below: 1.5em)[
     #if is-start and room.description != "" {
-      text(size: 11pt)[#eval(room.description, mode: "markup")]
+      box(width: 100%, height: 1.2em, stroke: (bottom: 0.5pt + luma(200)))[
+        #text(size: 11pt)[#eval(room.description, mode: "markup")]
+      ]
+      write-slot(uppercase: false)
     } else {
       write-slot(uppercase: false)
       write-slot(uppercase: false)

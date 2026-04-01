@@ -18,4 +18,3 @@ LOOK
 
 # Items
 CROWBAR
-KNIFE

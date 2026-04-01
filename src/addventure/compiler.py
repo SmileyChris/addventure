@@ -12,17 +12,23 @@ from .parser import parse_global, parse_room_file, _split_name, ParseError
 def _valid_verb_id(n):
     return 11 <= n <= 99 and n % 10 != 0 and n % 5 != 0
 
-def _valid_entity_id(n):
-    return 100 <= n <= 999 and n % 10 != 0 and n % 5 != 0
+def _valid_entity_id(n, four_digit=False):
+    hi = 9999 if four_digit else 999
+    lo = 1000 if four_digit else 100
+    return lo <= n <= hi and n % 10 != 0 and n % 5 != 0
 
 
-def _try_allocate(game: GameData):
-    verb_pool = [n for n in range(11, 100) if _valid_verb_id(n)]
+def _try_allocate(game: GameData, four_digit=False):
+    if four_digit:
+        verb_pool = [n for n in range(101, 1000) if _valid_entity_id(n)]
+    else:
+        verb_pool = [n for n in range(11, 100) if _valid_verb_id(n)]
     random.shuffle(verb_pool)
     for v in game.verbs.values():
         v.id = verb_pool.pop()
 
-    entity_pool = [n for n in range(100, 1000) if _valid_entity_id(n)]
+    lo, hi = (1000, 10000) if four_digit else (100, 1000)
+    entity_pool = [n for n in range(lo, hi) if _valid_entity_id(n, four_digit)]
     random.shuffle(entity_pool)
     for r in game.rooms.values():
         r.id = entity_pool.pop()
@@ -283,14 +289,18 @@ def resolve_interactions(game: GameData):
             raise ParseError(ix.source_line, f"Unknown verb: {ix.verb}")
 
         if ix.target_groups == [["*"]]:
+            # Collect entities that have explicit interactions with this verb
+            explicit = set()
+            for other in game.interactions:
+                if other is ix:
+                    continue
+                if other.verb == ix.verb and other.room == ix.room:
+                    if len(other.target_groups) == 1 and len(other.target_groups[0]) == 1:
+                        explicit.add(other.target_groups[0][0])
             targets = {}
             for key, n in game.nouns.items():
-                if n.room == ix.room:
+                if n.room == ix.room and n.name not in explicit:
                     targets[n.name] = n.id
-            for n, it in game.items.items():
-                targets[n] = it.id
-            if ix.room in game.rooms:
-                targets[f"@{ix.room}"] = game.rooms[ix.room].id
             for ename, eid in targets.items():
                 game.resolved.append(ResolvedInteraction(
                     verb=ix.verb, targets=[ename], sum_id=vid.id + eid,
@@ -394,10 +404,36 @@ def ensure_room_looks(game: GameData):
 
 # ── Compile Pipeline ───────────────────────────────────────────────────────
 
+def _reset_mutable(game: GameData):
+    """Reset state that changes between allocation attempts."""
+    game.resolved = []
+    for cue in game.cues:
+        cue.id = 0
+        cue.sum_id = 0
+        cue.entry_number = 0
+
+
+def _try_compile_pass(game: GameData, max_retries: int, four_digit: bool = False) -> bool:
+    """Try random allocations. Returns True if collision-free."""
+    for attempt in range(max_retries):
+        random.seed(attempt)
+        _try_allocate(game, four_digit=four_digit)
+        register_verb_states(game)
+        apply_inheritance(game)
+        resolve_interactions(game)
+        if not check_authored_collisions(game):
+            duplicate_item_interactions(game)
+            if not check_authored_collisions(game):
+                return True
+        _reset_mutable(game)
+    return False
+
+
 def compile_game(global_source: str, room_sources: list[str],
                  max_retries=200) -> GameData:
     """
     Full compilation: parse → allocate IDs (with retry) → resolve → cues.
+    Tries 3-digit entity IDs first, falls back to 4-digit for large games.
     Returns a validated GameData ready for the writer.
     """
     game = parse_global(global_source)
@@ -407,25 +443,15 @@ def compile_game(global_source: str, room_sources: list[str],
     ensure_room_looks(game)
     auto_register_items(game)
 
-    # Try allocations until collision-free
-    for attempt in range(max_retries):
-        random.seed(attempt)
-        _try_allocate(game)
-        register_verb_states(game)
-        apply_inheritance(game)
-        resolve_interactions(game)
-        if not check_authored_collisions(game):
-            duplicate_item_interactions(game)
-            if not check_authored_collisions(game):
-                break
-        # Reset mutable state for retry
-        game.resolved = []
-        for cue in game.cues:
-            cue.id = 0
-            cue.sum_id = 0
-            cue.entry_number = 0
-    else:
-        print(f"WARNING: No collision-free allocation in {max_retries} attempts.")
+    if not _try_compile_pass(game, max_retries):
+        # Fall back to 4-digit entity IDs for larger games
+        _reset_mutable(game)
+        if not _try_compile_pass(game, max_retries, four_digit=True):
+            print(
+                f"WARNING: No collision-free allocation in "
+                f"{max_retries * 2} attempts.",
+                file=__import__('sys').stderr,
+            )
 
     resolve_cues(game)
 

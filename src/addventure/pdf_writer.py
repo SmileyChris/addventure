@@ -21,11 +21,18 @@ PAPER_ALIASES = {
 
 def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False) -> dict:
     """Transform GameData into a JSON-serializable dict for Typst templates."""
-    verbs = [
-        {"name": v.name, "id": v.id}
-        for v in game.verbs.values()
-        if "__" not in v.name
-    ]
+    verbs = []
+    for v in game.verbs.values():
+        if "__" in v.name:
+            continue
+        # If a state variant exists (e.g. USE__RESTRAINED), show its ID
+        # as the starting ID since the player begins in that state
+        start_id = v.id
+        for sv in game.verbs.values():
+            if sv.name.startswith(v.name + "__"):
+                start_id = sv.id
+                break
+        verbs.append({"name": v.name, "id": start_id})
 
     rooms = []
     for room_name, rm in game.rooms.items():
@@ -61,13 +68,15 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         # Get room description from LOOK + @room interaction
         look_entry = writer._find_entry("LOOK", f"@{room_name}", room_name)
         description = look_entry.narrative if look_entry else ""
+        # First line only for the start room sheet
+        first_line = description.split("\n")[0].strip() if description else ""
 
         rooms.append({
             "name": room_name,
             "id": rm.id,
             "objects": objects,
             "discovery_slots": disc_count,
-            "description": description,
+            "description": first_line,
         })
 
     potentials = sorted(
