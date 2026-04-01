@@ -58,6 +58,42 @@ Here's what's happening:
 
 To start the game with a modified verb, you'd set it up in your starting room's state or an initial interaction.
 
+## Adding and removing verbs
+
+Beyond changing verb *state*, you can add entirely new verbs or remove existing ones mid-game.
+
+### Revealing a new verb
+
+Use `-> VERBNAME` (an arrow with no subject) to grant the player a new ability:
+
+```markdown
++ USE + ANCIENT_TOME:
+  The symbols rearrange before your eyes. You understand how to combine things.
+  - -> COMBINE
+```
+
+The verb doesn't need to be listed in `# Verbs` — the compiler auto-registers it (like `-> player` auto-registers items). It won't appear on the verb sheet at game start. When the arrow fires, the ledger tells the player to record the verb name and ID.
+
+Define interactions for the new verb normally — they work as soon as the player has it:
+
+```markdown
+WIDGET
++ COMBINE + WIDGET:
+  You reshape the widget into something useful.
+```
+
+### Removing a verb
+
+Use `VERB -> trash` to permanently remove a verb:
+
+```markdown
++ USE + CURSED_IDOL:
+  The idol crumbles. The knowledge drains from your mind.
+  - EXAMINE -> trash
+```
+
+The ledger tells the player to cross out the verb on their verb sheet. Any interactions using that verb become inaccessible.
+
 ## The `# Interactions` section
 
 Some interactions don't belong to a specific noun — they apply to the room as a whole or involve standalone logic. Put these in a `# Interactions` section at the bottom of a room file:

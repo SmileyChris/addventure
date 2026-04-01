@@ -116,6 +116,8 @@ Nested under the arrow that creates the state.
 | `"Room Name"` | Move the player to another room |
 | `ENTITY__STATE` | Transform entity to a new state |
 | `VERB__STATE` | Transform a verb to a new state |
+| `-> VERB` | Reveal a new verb on the player's verb sheet (no subject) |
+| `VERB -> trash` | Remove a verb from the player's verb sheet |
 | `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
 
 ## Special syntax

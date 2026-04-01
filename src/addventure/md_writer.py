@@ -48,7 +48,7 @@ def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
     lines.append("| Verb | ID |")
     lines.append("|------|---:|")
     for v in game.verbs.values():
-        if "__" not in v.name:
+        if "__" not in v.name and v.name not in game.auto_verbs:
             lines.append(f"| {v.name} | {v.id} |")
 
     lines.append("\n*If instructed, record new verbs here.*\n")

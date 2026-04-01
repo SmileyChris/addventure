@@ -43,7 +43,7 @@ def _is_arrow(s: str) -> bool:
 
 def _parse_arrow(text: str, ln: int) -> Arrow:
     parts = [p.strip() for p in text.split("->", 1)]
-    if len(parts) != 2 or not parts[0] or not parts[1]:
+    if len(parts) != 2 or not parts[1]:
         raise ParseError(ln, f"Bad arrow: {text}")
     return Arrow(parts[0], parts[1], ln)
 
@@ -329,8 +329,8 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             narrative = bstripped
             i += 1
         elif _is_narrative(bstripped) and narrative:
-            # Additional narrative lines — append
-            narrative += " " + bstripped
+            # Additional narrative lines — new paragraph
+            narrative += "\n\n" + bstripped
             i += 1
         else:
             i += 1
@@ -369,7 +369,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
                 i += 1
             elif _is_narrative(stripped):
                 if narrative:
-                    narrative += " " + stripped
+                    narrative += "\n\n" + stripped
                 else:
                     narrative = stripped
                 i += 1
@@ -424,6 +424,10 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
         if key not in game.nouns:
             game.nouns[key] = Noun(subject, base, state, room_name)
         return _parse_entity_block(lines, i, game, room_name, subject, child_indent - 1)
+
+    # -> VERBNAME (verb reveal): skip, no children
+    if arrow.subject == "":
+        return i
 
     # Verb state transform (e.g. USE__RESTRAINED -> USE): skip, no children
     if arrow.subject in game.verbs or dest in game.verbs:
@@ -551,7 +555,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                     narrative = bs
                     i += 1
                 elif _is_narrative(bs):
-                    narrative += " " + bs
+                    narrative += "\n\n" + bs
                     i += 1
                 else:
                     i += 1

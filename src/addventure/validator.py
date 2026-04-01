@@ -31,8 +31,9 @@ def validate_reachability(game: GameData) -> list[str]:
         return []
 
     # Initial verb set: for each base verb, use state variant if one exists
+    # Exclude auto-verbs (revealed during play via -> VERB arrows)
     initial_verbs = set()
-    base_verbs = {v.name for v in game.verbs.values() if "__" not in v.name}
+    base_verbs = {v.name for v in game.verbs.values() if "__" not in v.name and v.name not in game.auto_verbs}
     for bv in base_verbs:
         state_variant = None
         for v in game.verbs.values():
@@ -180,10 +181,19 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
         subj = a.subject
         dest = a.destination
 
+        if subj == "" and dest in game.verbs:
+            # Verb reveal: -> VERBNAME
+            verbs.add(dest)
+            continue
+
         if dest == "trash":
-            # Remove from wherever it is
-            inventory.discard(subj)
-            objects.discard((room, subj))
+            if subj in game.verbs:
+                # Verb removal
+                verbs.discard(subj)
+            else:
+                # Remove from wherever it is
+                inventory.discard(subj)
+                objects.discard((room, subj))
 
         elif dest == "player":
             # Move to inventory

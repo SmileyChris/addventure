@@ -35,6 +35,14 @@ class GameWriter:
             subj = arrow.subject
             dest = arrow.destination
 
+            # -> VERB (verb reveal)
+            if subj == "" and dest in self.game.verbs:
+                verb = self.game.verbs[dest]
+                instructions.append(
+                    f"Record {dn(dest)} ({verb.id}) on your Verb Sheet."
+                )
+                continue
+
             # player -> "Room"
             if subj == "player" and dest.startswith('"'):
                 room_name = dest[1:-1]
@@ -56,10 +64,16 @@ class GameWriter:
 
             # THING -> trash
             elif dest == "trash":
-                sheet, entity_id = self._locate_entity(subj, ri.room)
-                instructions.append(
-                    f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
-                )
+                if subj in self.game.verbs:
+                    verb = self.game.verbs[subj]
+                    instructions.append(
+                        f"Cross out {dn(subj)} ({verb.id}) on your Verb Sheet."
+                    )
+                else:
+                    sheet, entity_id = self._locate_entity(subj, ri.room)
+                    instructions.append(
+                        f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
+                    )
 
             # THING -> player
             elif dest == "player":

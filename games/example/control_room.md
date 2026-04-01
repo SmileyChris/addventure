@@ -1,14 +1,16 @@
 # Control Room
-LOOK: Fluorescent lights buzz. Banks of dead equipment line the walls. Something glints under the crate near your feet.
+LOOK: Fluorescent lights buzz. Banks of dead equipment line the walls.
+  A crate sits near your feet. Something glints underneath it.
 
 TERMINAL
 + LOOK: A dusty CRT. A keycard slot sits beside it.
 + USE: ACCESS DENIED flashes on the screen.
 + USE + KEYCARD:
-  You slide the keycard. The screen floods with data. The room shudders as something powers up.
+  You slide the keycard. The screen floods with data — including an emergency override code. The room shudders as something powers up.
   - TERMINAL -> TERMINAL__UNLOCKED
     + LOOK: Scrolling text. A map shows the facility layout — Control Room, Basement, Hallway. An exit is marked at the far end of the hallway.
   - KEYCARD -> trash
+  - -> OVERRIDE
   - ? -> "Basement"
     The power surge triggers the fuse box. A hidden compartment clicks open behind it.
     - COMPARTMENT -> room

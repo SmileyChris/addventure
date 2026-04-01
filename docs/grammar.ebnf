@@ -106,14 +106,15 @@ arrow-line      = "-" , " " , arrow , newline , [ arrow-children ] ;
 (*  Arrows                                                   *)
 (* ══════════════════════════════════════════════════════════ *)
 
-arrow           = subject , " -> " , destination ;
+arrow           = subject , " -> " , destination
+                | " -> " , VERB-NAME ;        (* verb reveal: no subject *)
 
 subject         = entity-ref                  (* ENTITY, @room *)
                 | "player"
                 | "room"
                 | "?" ;                       (* cue trigger *)
 
-destination     = "trash"                     (* destroy entity *)
+destination     = "trash"                     (* destroy entity or verb *)
                 | "player"                    (* move to inventory *)
                 | "room"                      (* reveal in current room *)
                 | quoted-room                 (* move to / reveal in named room *)
@@ -136,7 +137,12 @@ arrow-children  = arrow-children-trash        (* -> trash: skip deeper lines *)
                 | arrow-children-remote       (* -> "Room": entity-block in target room *)
                 | arrow-children-transform    (* -> STATE: entity-block for new state *)
                 | arrow-children-room-state   (* -> room__STATE: room-state-block *)
-                | arrow-children-cue ;        (* ? -> "Room": cue block *)
+                | arrow-children-cue          (* ? -> "Room": cue block *)
+                | arrow-children-verb-reveal  (* -> VERB: nothing *)
+                | arrow-children-verb-trash ; (* VERB -> trash: nothing *)
+
+arrow-children-verb-reveal = (* empty — -> VERB has no children *) ;
+arrow-children-verb-trash  = (* empty — VERB -> trash has no children *) ;
 
 arrow-children-trash    = { INDENT(>arrow) , any-line } ;   (* consumed and ignored *)
 arrow-children-player   = { INDENT(>arrow) , any-line } ;   (* consumed and ignored *)

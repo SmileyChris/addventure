@@ -23,7 +23,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
     """Transform GameData into a JSON-serializable dict for Typst templates."""
     verbs = []
     for v in game.verbs.values():
-        if "__" in v.name:
+        if "__" in v.name or v.name in game.auto_verbs:
             continue
         # If a state variant exists (e.g. USE__RESTRAINED), show its ID
         # as the starting ID since the player begins in that state

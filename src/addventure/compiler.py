@@ -127,6 +127,22 @@ def apply_inheritance(game: GameData):
     game.interactions.extend(new_ixs)
 
 
+# ── Auto Verb Registration ────────────────────────────────────────────────
+
+def auto_register_verbs(game: GameData):
+    """Auto-create Verbs from -> VERBNAME arrows (empty subject = verb reveal)."""
+    for ix in game.interactions:
+        for a in ix.arrows:
+            if a.subject == "" and a.destination not in game.verbs:
+                game.verbs[a.destination] = Verb(a.destination)
+                game.auto_verbs.add(a.destination)
+    for cue in game.cues:
+        for a in cue.arrows:
+            if a.subject == "" and a.destination not in game.verbs:
+                game.verbs[a.destination] = Verb(a.destination)
+                game.auto_verbs.add(a.destination)
+
+
 # ── Auto Item Registration ────────────────────────────────────────────────
 
 def auto_register_items(game: GameData):
@@ -447,6 +463,7 @@ def compile_game(global_source: str, room_sources: list[str],
         parse_room_file(src, game)
 
     ensure_room_looks(game)
+    auto_register_verbs(game)
     auto_register_items(game)
 
     if not _try_compile_pass(game, max_retries):

@@ -75,6 +75,34 @@ The entity changes state. On paper, the player crosses out the old ID and writes
 
 Changes a verb's ID. On the verb sheet, the player crosses out the old ID and writes the new one. This makes the verb behave differently — any interactions defined for `USE__RESTRAINED` now activate instead of the normal `USE` interactions.
 
+### `-> VERB` — reveal a new verb
+
+```markdown
+- -> COMBINE
+```
+
+Grants the player a new verb. The story entry tells the player to record the verb name and ID on their verb sheet. The verb does not need to be listed in `# Verbs` — the compiler auto-registers it when it sees this arrow, just like `-> player` auto-registers items.
+
+Define interactions for the new verb as normal — they'll resolve once the player has the verb:
+
+```markdown
++ USE + STRANGE_DEVICE:
+  The device hums. New possibilities flood your mind.
+  - -> COMBINE
+
+WIDGET
++ COMBINE + WIDGET:
+  You reshape the widget into something new.
+```
+
+### `VERB -> trash` — remove a verb
+
+```markdown
+- EXAMINE -> trash
+```
+
+Removes a verb from play. The story entry tells the player to cross it out on their verb sheet. Any interactions using that verb become inaccessible.
+
 ## Entity states
 
 States let an entity change its behavior after something happens. The double-underscore separates the base name from the state: `CRATE__OPEN`, `TERMINAL__UNLOCKED`, `DOOR__BROKEN`.
