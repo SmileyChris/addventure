@@ -17,7 +17,7 @@ def test_serialize_top_level_keys():
     game = _make_game()
     writer = GameWriter(game)
     data = serialize_game_data(game, writer)
-    assert set(data.keys()) == {"metadata", "verbs", "rooms", "inventory_slots", "potentials", "ledger"}
+    assert set(data.keys()) == {"metadata", "verbs", "rooms", "inventory_slots", "cue_slots", "potentials", "ledger", "start_room", "entry_prefix", "blind"}
 
 
 def test_serialize_verbs():
@@ -82,6 +82,8 @@ def test_generate_pdf(tmp_path):
 
 
 def test_generate_pdf_custom_theme_missing(tmp_path):
+    if find_typst() is None:
+        return  # skip if typst not installed
     game = _make_game()
     output = tmp_path / "test-output.pdf"
     try:

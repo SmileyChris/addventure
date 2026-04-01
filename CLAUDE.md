@@ -51,7 +51,7 @@ Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 4. `register_verb_states` — create temporary verb states (e.g., `USE__RESTRAINED`)
 5. `apply_inheritance` — auto-generate child interactions for entity states
 6. `resolve_interactions` — expand verb+entity combinations into sums (Cartesian product for multi-target)
-7. `generate_room_alerts` — create cross-room alerts
+7. `resolve_cues` — resolve cross-room cue interactions
 8. Validate — check for authored and potential ID collisions
 
 `compile_game()` orchestrates this with up to 200 retries if ID collisions occur.
@@ -61,7 +61,7 @@ Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 `GameWriter` transforms `GameData` into four printable components:
 - **Verb Sheet** — verb reference with IDs
 - **Room Sheets** — per-location state and discovery slots
-- **Inventory Sheet** — item tracking + Master Potentials List (sum lookups)
+- **Inventory Sheet** — item tracking + Cue Checks (cross-room triggers) + Master Potentials List (sum lookups)
 - **Story Ledger** — narratives + human-readable instructions from arrows
 
 ### Script Syntax (`.md` files)
@@ -77,6 +77,7 @@ Game scripts use markdown-based syntax:
 - `ENTITY__STATE` — double-underscore separates base name from state
 - `VERB + TARGET:` — multi-entity interactions
 - Arrow destinations: `player`, `trash`, `"RoomName"`, `room` (current room), `ENTITY__STATE`
+- `? -> "RoomName"` — cue (deferred cross-room effect, resolved when player enters target room)
 - `@room` — reference to current room entity
 - `*` wildcard — matches all entities in room
 - Indentation (2-space) defines hierarchy within `+`/`-` blocks
