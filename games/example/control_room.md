@@ -14,7 +14,7 @@ TERMINAL
     - COMPARTMENT -> room
   - room -> room__POWERED
     + LOOK: The room hums with energy. A hatch has opened in the floor.
-    + HATCH -> room
+    - HATCH -> room
       + LOOK: A dark opening, just wide enough to squeeze through.
       + USE:
         You lower yourself into the darkness.
@@ -50,7 +50,7 @@ BINDINGS
 
 # Interactions
 
-USE + KNIFE + BINDINGS:
+USE__RESTRAINED + KNIFE + BINDINGS:
   You saw through the rope. Your hands are free.
   - BINDINGS -> trash
   - USE__RESTRAINED -> USE

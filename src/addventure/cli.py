@@ -58,6 +58,11 @@ def cmd_build(args: list[str]):
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
 
+    # Reachability check
+    from .validator import validate_reachability
+    for warning in validate_reachability(game):
+        print(f"WARNING: {warning}", file=sys.stderr)
+
     if parsed.markdown:
         md = generate_markdown(game, blind=parsed.blind)
         if parsed.output:
