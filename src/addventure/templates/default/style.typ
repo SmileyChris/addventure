@@ -6,6 +6,7 @@
 #let body-font = "Liberation Serif"
 #let mono-font = "Liberation Mono"
 #let heading-font = "Liberation Sans"
+#let title-font = "Montserrat"
 
 // sheet-title: centered bold title with a rule underneath
 #let sheet-title(title) = {
@@ -14,7 +15,7 @@
       width: 100%,
       below: 0.15em,
     )[
-      #text(font: heading-font, size: 16pt, weight: "bold")[#title]
+      #text(font: title-font, size: 20pt, weight: "black", tracking: 0.1em)[#title]
     ]
     #line(length: 100%, stroke: 1.5pt)
   ]

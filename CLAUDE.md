@@ -25,12 +25,14 @@ Games are directories of `.md` files. Each game directory needs an `index.md` (m
 pyproject.toml             # Package config — `uv run adv` entry point
 addventure.py              # Legacy entry point (delegates to cli.py)
 src/addventure/
-  __init__.py              # Re-exports: compile_game, GameWriter, print_full_report
-  cli.py                   # CLI: `adv run`, `adv new` subcommands
+  __init__.py              # Re-exports: compile_game, GameWriter, print_build_summary
+  cli.py                   # CLI: `adv build`, `adv new` subcommands
   models.py                # All dataclasses (Verb, Noun, Item, Room, Arrow, Interaction, etc.)
   parser.py                # .md script parsing (markdown-based, indentation-sensitive)
   compiler.py              # ID allocation, inheritance, resolver, collision detection
-  writer.py                # GameWriter — generates printable player-facing components
+  writer.py                # GameWriter — shared presentation logic + build summary
+  md_writer.py             # Markdown output (--md flag)
+  pdf_writer.py            # PDF output via Typst (default)
 docs/
   grammar.ebnf             # Formal EBNF grammar for .md script syntax
 games/

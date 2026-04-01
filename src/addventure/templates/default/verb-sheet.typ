@@ -48,20 +48,6 @@
     ]
   ]
 
-  // Start room instruction
-  if start-room != none {
-    block(
-      below: 1.5em,
-      width: 100%,
-      stroke: (left: 2pt + luma(100)),
-      inset: (left: 8pt, y: 6pt),
-    )[
-      #text(size: 10pt, weight: "bold")[
-        You begin in: #start-room
-      ]
-    ]
-  }
-
   section-title("Verbs")
 
   for verb in data.verbs {
@@ -85,7 +71,7 @@
 
   v(1em)
   section-title("Additional Verbs")
-  text(size: 9pt, style: "italic")[If the game adds verbs during play, record them here.]
+  text(size: 9pt, style: "italic")[If instructed, record new verbs here.]
   v(0.4em)
 
   for _ in range(3) {

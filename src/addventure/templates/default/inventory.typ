@@ -2,7 +2,7 @@
 #import "style.typ": sheet-title, section-title, write-slot, id-box
 
 #let inventory-sheet(data, game-title) = {
-  sheet-title(game-title + " — INVENTORY & POTENTIALS")
+  sheet-title("INVENTORY & POTENTIALS")
 
   // Inventory section
   section-title("Inventory")

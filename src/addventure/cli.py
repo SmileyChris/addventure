@@ -6,7 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-from . import compile_game, print_full_report, generate_pdf, find_typst
+from . import compile_game, print_build_summary, generate_pdf, find_typst, generate_markdown
 
 
 def load_game(game_dir: Path) -> tuple[str, list[str]]:
@@ -26,13 +26,13 @@ def load_game(game_dir: Path) -> tuple[str, list[str]]:
 
 
 def cmd_build(args: list[str]):
-    """Compile a game and output PDF (default) or text."""
+    """Compile a game and output PDF (default) or markdown."""
     import argparse
     parser = argparse.ArgumentParser(prog="adv build", description="Compile and output a game")
     parser.add_argument("game_dir", nargs="?", default=None,
                         help="Path to game directory (default: cwd if index.md exists, else games/example)")
-    parser.add_argument("--text", action="store_true",
-                        help="Output plain text instead of PDF")
+    parser.add_argument("--markdown", "--md", action="store_true",
+                        help="Output markdown to stdout (use -o to write to file)")
     parser.add_argument("--output", "-o", type=str, default=None,
                         help="Output PDF path (default: <game_name>.pdf)")
     parser.add_argument("--theme", type=str, default="default",
@@ -56,25 +56,31 @@ def cmd_build(args: list[str]):
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
 
-    if parsed.text:
-        print_full_report(game)
-        return
-
-    if find_typst() is None:
-        print("ERROR: typst not found on PATH (needed for PDF output)",
-              file=sys.stderr)
-        print("  Install typst: https://github.com/typst/typst",
-              file=sys.stderr)
-        print("  Or use: adv build --text", file=sys.stderr)
-        sys.exit(1)
-
-    if parsed.output:
-        output_path = Path(parsed.output)
+    if parsed.markdown:
+        md = generate_markdown(game, blind=parsed.blind)
+        if parsed.output:
+            Path(parsed.output).write_text(md)
+            print(f"Markdown written to {parsed.output}", file=sys.stderr)
+        else:
+            print(md, end="")
     else:
-        name = game.metadata.get("title") or game_dir.resolve().name
-        output_path = Path(f"{_slugify(name)}.pdf")
-    if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind):
-        print(f"PDF written to {output_path}")
+        if find_typst() is None:
+            print("ERROR: typst not found on PATH (needed for PDF output)",
+                  file=sys.stderr)
+            print("  Install typst: https://github.com/typst/typst",
+                  file=sys.stderr)
+            print("  Or use: adv build --md", file=sys.stderr)
+            sys.exit(1)
+
+        if parsed.output:
+            output_path = Path(parsed.output)
+        else:
+            name = game.metadata.get("title") or game_dir.resolve().name
+            output_path = Path(f"{_slugify(name)}.pdf")
+        if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind):
+            print(f"PDF written to {output_path}", file=sys.stderr)
+
+    print_build_summary(game)
 
 
 def _slugify(name: str) -> str:
@@ -198,8 +204,8 @@ USAGE = """\
 Usage: adv <command> [args]
 
 Commands:
-  build [dir] [--text] [-o FILE] [--theme NAME] [--paper SIZE] [--blind]
-                     Compile game to PDF (default) or text
+  build [dir] [--md] [-o FILE] [--theme NAME] [--paper SIZE] [--blind]
+                     Compile game to PDF (default) or markdown
   new [name]         Scaffold a new game or chapter (interactive if no name given)\
 """
 

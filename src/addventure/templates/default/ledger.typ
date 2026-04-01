@@ -1,5 +1,5 @@
 // ledger.typ — Story Ledger entries (two-column layout)
-#import "style.typ": sheet-title, section-title, separator
+#import "style.typ": sheet-title, section-title, separator, title-font
 
 #let ledger-entry(entry, prefix) = {
   block(
@@ -9,7 +9,7 @@
     stroke: 0.5pt + luma(180),
     inset: 6pt,
   )[
-    #text(font: "Liberation Sans", size: 9pt, weight: "bold")[
+    #text(font: title-font, size: 9pt, weight: "bold", tracking: 0.05em)[
       #prefix\-#str(entry.entry)
     ]
     #v(0.15em)
@@ -26,7 +26,7 @@
 }
 
 #let story-ledger(data, game-title) = {
-  sheet-title(game-title + " — STORY LEDGER")
+  sheet-title("STORY LEDGER")
 
   block(below: 0.8em)[
     #text(size: 9pt, style: "italic")[

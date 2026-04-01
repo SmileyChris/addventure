@@ -1,5 +1,5 @@
 // main.typ — Entry point: reads JSON and assembles all pages
-#import "style.typ": page-paper as default-paper, page-margin, body-font
+#import "style.typ": page-paper as default-paper, page-margin, body-font, title-font
 #import "verb-sheet.typ": verb-sheet
 #import "room-sheet.typ": room-sheet
 #import "inventory.typ": inventory-sheet
@@ -26,9 +26,12 @@
     let parts = (game-title,)
     if author != none { parts.push(author) }
     align(center)[
-      #text(size: 7pt, fill: luma(150))[
-        #parts.join(" — ") #h(1fr) Page #counter(page).display()
+      #text(font: title-font, size: 7pt, weight: "bold", fill: luma(150))[#game-title]
+      #if author != none [
+        #text(size: 7pt, fill: luma(150))[ — #author]
       ]
+      #h(1fr)
+      #text(size: 7pt, fill: luma(150))[Page #counter(page).display()]
     ]
   },
 )

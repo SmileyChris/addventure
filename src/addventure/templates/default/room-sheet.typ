@@ -1,5 +1,5 @@
 // room-sheet.typ — Per-room page
-#import "style.typ": sheet-title, section-title, write-slot, id-box
+#import "style.typ": sheet-title, section-title, write-slot, id-box, title-font
 
 #let room-sheet(room, is-start: false, blind: false) = {
   let hide-name = blind and not is-start
@@ -25,7 +25,7 @@
             #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[START ROOM]
           ],
           align(center + bottom)[
-            #text(font: "Liberation Sans", size: 16pt, weight: "bold")[#title]
+            #text(font: title-font, size: 20pt, weight: "black", tracking: 0.1em)[#title]
           ],
           align(right + bottom)[
             #hide[#text(font: "Liberation Sans", size: 9pt)[START ROOM]]
