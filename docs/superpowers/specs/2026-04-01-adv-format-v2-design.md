@@ -127,7 +127,7 @@ games/facility/
   index.md           # meta + verbs + items
   control_room.md
   basement.md
-  The Underground/   # chapter B
+  the-underground/   # chapter B
     index.md         # new verbs/items for chapter B
     tunnels.md
 ```
