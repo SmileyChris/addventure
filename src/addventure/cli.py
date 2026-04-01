@@ -61,10 +61,12 @@ def cmd_build(args: list[str]):
         return
 
     if find_typst() is None:
-        print("WARNING: typst not found on PATH, falling back to text output",
+        print("ERROR: typst not found on PATH (needed for PDF output)",
               file=sys.stderr)
-        print_full_report(game)
-        return
+        print("  Install typst: https://github.com/typst/typst",
+              file=sys.stderr)
+        print("  Or use: adv build --text", file=sys.stderr)
+        sys.exit(1)
 
     if parsed.output:
         output_path = Path(parsed.output)

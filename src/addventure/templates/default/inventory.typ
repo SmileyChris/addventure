@@ -22,10 +22,10 @@
       (
         block(width: 100%)[
           #grid(
-            columns: (1fr, 3.5em),
+            columns: (1fr, auto),
             gutter: 0.4em,
             align(left + bottom)[#write-slot()],
-            align(right + bottom)[#write-slot(width: 100%)],
+            align(right + horizon)[#id-box(hide[000])],
           )
         ],
       )
@@ -43,10 +43,10 @@
     v(0.4em)
     let cue-count = calc.max(cue-slots, 6)
     grid(
-      columns: (3.5em,) * 6,
+      columns: (auto,) * 6,
       gutter: (0.8em, 0.6em),
       ..for i in range(cue-count) {
-        (write-slot(width: 100%),)
+        (id-box(hide[000]),)
       }
     )
   }

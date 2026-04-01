@@ -94,10 +94,10 @@
       below: 0.6em,
     )[
       #grid(
-        columns: (1fr, 4em),
+        columns: (1fr, auto),
         gutter: 0.5em,
         align(left + bottom)[#write-slot()],
-        align(right + bottom)[#write-slot(width: 100%)],
+        align(right + horizon)[#id-box(hide[00])],
       )
     ]
   }
