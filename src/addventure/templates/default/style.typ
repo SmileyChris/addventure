@@ -2,8 +2,8 @@
 
 // Page setup constants
 #let page-paper = "a4"
-#let page-margin = 0.75in
-#let body-font = "Liberation Serif"
+#let page-margin = (top: 0.5in, left: 0.5in, right: 0.5in, bottom: 0.75in)
+#let body-font = "Alegreya"
 #let mono-font = "Liberation Mono"
 #let heading-font = "Liberation Sans"
 #let title-font = "Montserrat"

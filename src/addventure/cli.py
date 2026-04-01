@@ -41,6 +41,8 @@ def cmd_build(args: list[str]):
                         help="Paper size: a4, letter (default: a4)")
     parser.add_argument("--blind", action="store_true",
                         help="Blind mode: room sheets hide names/IDs until discovered via LOOK")
+    parser.add_argument("--cover", action="store_true",
+                        help="Include a How to Play cover page")
     parsed = parser.parse_args(args)
 
     if parsed.game_dir:
@@ -77,7 +79,7 @@ def cmd_build(args: list[str]):
         else:
             name = game.metadata.get("title") or game_dir.resolve().name
             output_path = Path(f"{_slugify(name)}.pdf")
-        if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind):
+        if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=parsed.cover):
             print(f"PDF written to {output_path}", file=sys.stderr)
 
     print_build_summary(game)
@@ -204,7 +206,7 @@ USAGE = """\
 Usage: adv <command> [args]
 
 Commands:
-  build [dir] [--md] [-o FILE] [--theme NAME] [--paper SIZE] [--blind]
+  build [dir] [--md] [-o FILE] [--theme NAME] [--paper SIZE] [--blind] [--cover]
                      Compile game to PDF (default) or markdown
   new [name]         Scaffold a new game or chapter (interactive if no name given)\
 """

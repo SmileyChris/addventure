@@ -124,6 +124,7 @@ def generate_pdf(
     game_dir: Path | None = None,
     paper: str | None = None,
     blind: bool = False,
+    cover: bool = False,
 ) -> bool:
     """Generate a PDF from GameData. Returns True on success, False if typst not found."""
     typst_bin = find_typst()
@@ -166,6 +167,9 @@ def generate_pdf(
         if paper:
             paper = PAPER_ALIASES.get(paper, paper)
             cmd.extend(["--input", f"paper={paper}"])
+        if cover:
+            logo_path = str(Path(__file__).resolve().parent.parent.parent / "addventure.jpg")
+            cmd.extend(["--input", f"cover={logo_path}"])
         subprocess.run(
             cmd,
             check=True,
