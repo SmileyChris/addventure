@@ -1,6 +1,7 @@
 ---
 title: The Facility
 author: Example
+start: Control Room
 ---
 
 # Verbs

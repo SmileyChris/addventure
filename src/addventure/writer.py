@@ -31,6 +31,13 @@ class GameWriter:
         for _ in range(3):
             lines.append(f"  {'_' * 20} [ ____ ]")
 
+        start_room = self._start_room()
+        if start_room:
+            lines.append(f"\nYou begin in: {start_room}")
+            look_entry = self._find_entry("LOOK", f"@{start_room}", start_room)
+            if look_entry:
+                lines.append(f"Open the {start_room} room sheet and read Ledger #{look_entry.entry_number}.")
+
         return "\n".join(lines)
 
     # ── Room Sheet ──────────────────────────────────────────────────────────
@@ -40,7 +47,11 @@ class GameWriter:
         if not rm:
             return f"ERROR: Unknown room '{room_name}'"
 
-        lines = [f"ROOM: {room_name}", f"Room ID: {rm.id}", "=" * 40, ""]
+        is_start = room_name == self._start_room()
+        header = f"ROOM: {room_name}"
+        if is_start:
+            header += "  ★ START"
+        lines = [header, f"Room ID: {rm.id}", "=" * 40, ""]
 
         # Initial nouns (no state = visible on entry)
         lines.append("Objects in this room:")
@@ -215,6 +226,16 @@ class GameWriter:
                     )
 
         return instructions
+
+    def _start_room(self) -> str | None:
+        """Return the starting room name from metadata, or first base room."""
+        start = self.game.metadata.get("start")
+        if start:
+            return start
+        for name, rm in self.game.rooms.items():
+            if rm.state is None:
+                return name
+        return None
 
     def _find_entry(self, verb: str, target: str, room: str) -> ResolvedInteraction | None:
         """Find a resolved interaction by verb + single target + room."""
