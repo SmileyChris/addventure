@@ -127,19 +127,30 @@ games/facility/
   index.md           # meta + verbs + items
   control_room.md
   basement.md
-  The Underground/   # part 2
-    index.md         # new verbs/items for part 2
+  The Underground/   # chapter B
+    index.md         # new verbs/items for chapter B
     tunnels.md
 ```
 
 The CLI looks for `index.md` instead of `global.adv`.
 
-## Multi-Part Stories (Future)
+## Multi-Chapter Stories (Future)
 
-The frontmatter `parts` key and directory-based structure are designed but not implemented in this change. Future work:
-- Subdirectories as parts, each with its own `index.md` for new verbs/items
-- Root-level files = Part 1, directory name from `title` in frontmatter
-- Each part compiles semi-independently, inheriting items from prior parts
+The frontmatter `chapters` key and directory-based structure are designed but not implemented in this change.
+
+Entry prefixes: root = A, first listed chapter = B, etc. (`entry_prefix` metadata key, default "A").
+
+### Planned structure
+- `chapters:` key in root `index.md` frontmatter defines order explicitly
+- Subdirectories as chapters, each with its own `index.md` for new verbs/items
+- Root-level files = Chapter A, directory name is the chapter title
+- Each chapter compiles semi-independently, inheriting items from prior chapters
+- `adv build` defaults to chapter A only; `adv build --chapter B` or `adv build --all` for more
+
+### Validation (must implement)
+- Verify every directory listed in `chapters:` exists and contains an `index.md`
+- Warn if subdirectories with an `index.md` exist but are not listed in `chapters:`
+- Error if `chapters:` references a non-existent directory
 
 ## Migration
 
