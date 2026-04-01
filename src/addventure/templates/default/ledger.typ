@@ -6,8 +6,8 @@
     width: 100%,
     below: 0.5em,
     breakable: false,
-    stroke: (left: 1.5pt + luma(180)),
-    inset: (left: 6pt, y: 3pt),
+    stroke: 0.5pt + luma(180),
+    inset: 6pt,
   )[
     #text(font: "Liberation Sans", size: 9pt, weight: "bold")[
       ENTRY #str(entry.entry)
