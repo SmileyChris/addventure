@@ -2,7 +2,7 @@ import random
 from itertools import combinations, product as cart_product
 
 from .models import (
-    GameData, Verb, Noun, Interaction, ResolvedInteraction,
+    GameData, Verb, Noun, Interaction, ResolvedInteraction, Cue,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
 
@@ -30,6 +30,8 @@ def _try_allocate(game: GameData):
         n.id = entity_pool.pop()
     for it in game.items.values():
         it.id = entity_pool.pop()
+    for cue in game.cues:
+        cue.id = entity_pool.pop()
 
 
 # ── Verb State Registration ────────────────────────────────────────────────
@@ -96,24 +98,25 @@ def apply_inheritance(game: GameData):
     game.interactions.extend(new_ixs)
 
 
-# ── Room Alerts ─────────────────────────────────────────────────────────────
+# ── Cue Resolution ──────────────────────────────────────────────────────────
 
-def generate_room_alerts(game: GameData):
-    counter = 1
-    for ix in game.interactions:
-        for arrow in ix.arrows:
-            dest = arrow.destination
-            if dest.startswith('"') and dest.endswith('"'):
-                target_room = dest[1:-1]
-                if target_room != ix.room:
-                    game.alerts.append(RoomAlert(
-                        trigger_room=ix.room,
-                        target_room=target_room,
-                        trigger_label=ix.label,
-                        alert_number=counter,
-                        resolution_arrows=[arrow],
-                    ))
-                    counter += 1
+def resolve_cues(game: GameData):
+    """Create ResolvedInteractions for each cue (cue.id + target_room.id)."""
+    for cue in game.cues:
+        target_rm = game.rooms.get(cue.target_room)
+        if not target_rm:
+            raise ParseError(cue.source_line, f"Cue targets unknown room: {cue.target_room}")
+        cue.sum_id = cue.id + target_rm.id
+        game.resolved.append(ResolvedInteraction(
+            verb="CUE",
+            targets=[],
+            sum_id=cue.sum_id,
+            narrative=cue.narrative,
+            arrows=cue.arrows,
+            source_line=cue.source_line,
+            room=cue.target_room,
+            parent_label=f"Cue #{cue.id}",
+        ))
 
 
 # ── Resolver ────────────────────────────────────────────────────────────────
@@ -273,8 +276,23 @@ def compile_game(global_source: str, room_sources: list[str],
             break
         # Reset mutable state for retry
         game.resolved = []
+        for cue in game.cues:
+            cue.id = 0
+            cue.sum_id = 0
+            cue.entry_number = 0
     else:
         print(f"WARNING: No collision-free allocation in {max_retries} attempts.")
 
-    generate_room_alerts(game)
+    resolve_cues(game)
+
+    # Renumber all entries (cue resolutions were appended after initial numbering)
+    for idx, ri in enumerate(game.resolved, 1):
+        ri.entry_number = idx
+    # Copy entry numbers back to cue objects
+    for cue in game.cues:
+        for ri in game.resolved:
+            if ri.sum_id == cue.sum_id:
+                cue.entry_number = ri.entry_number
+                break
+
     return game

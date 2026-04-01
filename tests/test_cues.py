@@ -86,3 +86,78 @@ LOOK: C.
     assert len(game.cues) == 2
     targets = {c.target_room for c in game.cues}
     assert targets == {"Room B", "Room C"}
+
+
+def test_cue_gets_id_and_sum():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    A gate appears.
+    - GATE -> room
+
+# Room B
+LOOK: B.
+"""
+    game = compile_game(global_src, [room_src])
+    cue = game.cues[0]
+    assert cue.id != 0, "Cue should have an allocated ID"
+    assert 100 <= cue.id <= 999, "Cue ID should be in entity range"
+    room_b = game.rooms["Room B"]
+    assert cue.sum_id == cue.id + room_b.id
+
+
+def test_cue_appears_in_resolved():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    A gate appears.
+    - GATE -> room
+
+# Room B
+LOOK: B.
+"""
+    game = compile_game(global_src, [room_src])
+    cue = game.cues[0]
+    # Find the resolved interaction for this cue
+    cue_ri = [ri for ri in game.resolved if ri.sum_id == cue.sum_id]
+    assert len(cue_ri) == 1
+    ri = cue_ri[0]
+    assert ri.narrative == "A gate appears."
+    assert ri.entry_number > 0
+    assert cue.entry_number == ri.entry_number
+
+
+def test_cue_sum_in_collision_check():
+    """Cue sums participate in collision detection."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    A gate appears.
+    - GATE -> room
+
+# Room B
+LOOK: B.
+"""
+    game = compile_game(global_src, [room_src])
+    cue = game.cues[0]
+    # The cue's resolved interaction should be in the resolved list
+    sums = [ri.sum_id for ri in game.resolved]
+    assert cue.sum_id in sums
