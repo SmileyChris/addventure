@@ -12,6 +12,7 @@
 // Game title from metadata (falls back to "ADDVENTURE")
 #let game-title = upper(data.metadata.at("title", default: "Addventure"))
 #let start-room = data.at("start_room", default: none)
+#let blind = data.at("blind", default: false)
 
 // Paper size: CLI --paper overrides template default
 #let page-paper = sys.inputs.at("paper", default: default-paper)
@@ -42,7 +43,7 @@
   for room in data.rooms {
     if room.name == start-room {
       pagebreak()
-      room-sheet(room, is-start: true)
+      room-sheet(room, is-start: true, blind: blind)
     }
   }
 }
@@ -55,7 +56,7 @@
 #for room in data.rooms {
   if room.name != start-room {
     pagebreak()
-    room-sheet(room, is-start: false)
+    room-sheet(room, is-start: false, blind: blind)
   }
 }
 

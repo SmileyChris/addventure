@@ -12,8 +12,9 @@ class GameWriter:
       - Physical sheet layout decisions
     """
 
-    def __init__(self, game: GameData):
+    def __init__(self, game: GameData, blind: bool = False):
         self.game = game
+        self.blind = blind
         self.entry_prefix = game.metadata.get("entry_prefix", "A")
 
     # ── Verb Sheet (BIOS) ──────────────────────────────────────────────────
@@ -145,13 +146,17 @@ class GameWriter:
                 if rm:
                     # Find the room's LOOK entry
                     look_entry = self._find_entry("LOOK", f"@{room_name}", room_name)
+                    if self.blind:
+                        room_ref = f"room sheet {rm.id}"
+                    else:
+                        room_ref = f"the {room_name} room sheet"
                     if look_entry:
                         instructions.append(
-                            f"Switch to the {room_name} room sheet. "
+                            f"Switch to {room_ref}. "
                             f"Read Ledger {self.entry_prefix}-{look_entry.entry_number}."
                         )
                     else:
-                        instructions.append(f"Switch to the {room_name} room sheet.")
+                        instructions.append(f"Switch to {room_ref}.")
 
             # THING -> trash
             elif dest == "trash":
@@ -226,7 +231,50 @@ class GameWriter:
                         f"Write {dest} ({new_id})."
                     )
 
+        # Blind mode: append room reveal instructions for LOOK + @room
+        if self.blind:
+            instructions.extend(self._blind_room_instructions(ri))
+
         return instructions
+
+    def _blind_room_instructions(self, ri: ResolvedInteraction) -> list[str]:
+        """In blind mode, LOOK + @room reveals room info to write on the sheet."""
+        if ri.verb != "LOOK" or len(ri.targets) != 1 or not ri.targets[0].startswith("@"):
+            return []
+
+        room_name = ri.targets[0][1:]
+        start = self._start_room()
+        objects = self._initial_objects(room_name)
+        instructions = []
+
+        if room_name == start:
+            # Start room: names already on sheet, just reveal IDs
+            if objects:
+                for obj in objects:
+                    instructions.append(
+                        f"Write {obj.id} next to {obj.name} on your room sheet."
+                    )
+        else:
+            # Non-start: reveal room name and all objects
+            instructions.append(f'Write "{room_name}" as the room title.')
+            for obj in objects:
+                instructions.append(
+                    f"Write {obj.name} ({obj.id}) in an object slot."
+                )
+
+        return instructions
+
+    def _initial_objects(self, room_name: str):
+        """Return visible objects in a room (excludes discovered-via-arrow objects)."""
+        discovered_names = set()
+        for ix in self.game.interactions:
+            for a in ix.arrows:
+                if a.destination == "room" and ix.room == room_name:
+                    discovered_names.add(a.subject)
+        return [
+            n for n in self.game.nouns.values()
+            if n.room == room_name and n.state is None and n.name not in discovered_names
+        ]
 
     def _start_room(self) -> str | None:
         """Return the starting room name from metadata, or first base room."""

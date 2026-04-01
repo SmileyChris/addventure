@@ -1,46 +1,116 @@
 // room-sheet.typ — Per-room page
 #import "style.typ": sheet-title, section-title, write-slot, id-box
 
-#let room-sheet(room, is-start: false) = {
-  let title = "ROOM: " + upper(room.name)
-  if is-start { title = title + "  ★ START" }
-  sheet-title(title)
+#let room-sheet(room, is-start: false, blind: false) = {
+  let hide-name = blind and not is-start
+  let hide-objects = blind
 
-  // Room ID
-  block(below: 1em)[
-    #grid(
-      columns: (auto, 1fr),
-      gutter: 0.5em,
-      align(left + horizon)[
-        #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]
-      ],
-      align(left + horizon)[
-        #id-box(str(room.id))
-      ],
-    )
-  ]
+  // Title: blank write-in for blind non-start, normal otherwise
+  if hide-name {
+    // Show only the room ID with a blank title slot
+    block(below: 0.2em)[
+      #align(center)[
+        #block(width: 100%, below: 0.15em)[
+          #grid(
+            columns: (1fr, auto, 1fr),
+            gutter: 0.5em,
+            [],
+            align(center + horizon)[
+              #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM] #h(0.5em) #id-box(str(room.id))
+            ],
+            [],
+          )
+        ]
+        #line(length: 100%, stroke: 1.5pt)
+      ]
+    ]
+    // Blank line for room name
+    v(0.3em)
+    text(size: 9pt, style: "italic")[Room name:]
+    h(0.5em)
+    write-slot(width: 60%)
+    v(0.8em)
+  } else {
+    let title = "ROOM: " + upper(room.name)
+    if is-start { title = title + "  ★ START" }
+    sheet-title(title)
 
-  // Objects table
-  if room.objects.len() > 0 {
+    // Room ID
+    block(below: 1em)[
+      #grid(
+        columns: (auto, 1fr),
+        gutter: 0.5em,
+        align(left + horizon)[
+          #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]
+        ],
+        align(left + horizon)[
+          #id-box(str(room.id))
+        ],
+      )
+    ]
+  }
+
+  // Objects section
+  let obj-count = room.objects.len()
+  if obj-count > 0 {
     section-title("Objects in this Room")
 
-    for obj in room.objects {
-      block(
-        width: 100%,
-        below: 0.4em,
-      )[
-        #grid(
-          columns: (1fr, auto),
-          gutter: 0.5em,
-          align(left + horizon)[
-            #text(font: "Liberation Sans", size: 10pt)[#obj.name]
-          ],
-          align(right + horizon)[
-            #id-box(str(obj.id))
-          ],
-        )
-      ]
-      line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+    if hide-objects {
+      // Blind mode: all object slots are blank write-ins
+      if is-start {
+        // Start room: show names, blank ID slots
+        for obj in room.objects {
+          block(
+            width: 100%,
+            below: 0.4em,
+          )[
+            #grid(
+              columns: (1fr, 4em),
+              gutter: 0.5em,
+              align(left + horizon)[
+                #text(font: "Liberation Sans", size: 10pt)[#obj.name]
+              ],
+              align(right + bottom)[#write-slot(width: 100%)],
+            )
+          ]
+          line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+        }
+      } else {
+        // Non-start: blank name and ID slots
+        for _ in range(obj-count) {
+          block(
+            width: 100%,
+            below: 0.6em,
+          )[
+            #grid(
+              columns: (1fr, 4em),
+              gutter: 0.5em,
+              align(left + bottom)[#write-slot()],
+              align(right + bottom)[#write-slot(width: 100%)],
+            )
+          ]
+        }
+      }
+    } else {
+      // Normal mode: show names and IDs
+      for obj in room.objects {
+        block(
+          width: 100%,
+          below: 0.4em,
+        )[
+          #grid(
+            columns: (1fr, auto),
+            gutter: 0.5em,
+            align(left + horizon)[
+              #text(font: "Liberation Sans", size: 10pt)[#obj.name]
+            ],
+            align(right + horizon)[
+              #id-box(str(obj.id))
+            ],
+          )
+        ]
+        line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+      }
     }
   }
 

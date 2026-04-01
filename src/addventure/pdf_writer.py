@@ -19,7 +19,7 @@ PAPER_ALIASES = {
 }
 
 
-def serialize_game_data(game: GameData, writer: GameWriter) -> dict:
+def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False) -> dict:
     """Transform GameData into a JSON-serializable dict for Typst templates."""
     verbs = [
         {"name": v.name, "id": v.id}
@@ -74,10 +74,15 @@ def serialize_game_data(game: GameData, writer: GameWriter) -> dict:
     start_room = writer._start_room()
     entry_prefix = game.metadata.get("entry_prefix", "A")
 
+    # Mark start room for template rendering
+    for room in rooms:
+        room["is_start"] = room["name"] == start_room
+
     return {
         "metadata": game.metadata,
         "start_room": start_room,
         "entry_prefix": entry_prefix,
+        "blind": blind,
         "verbs": verbs,
         "rooms": rooms,
         "inventory_slots": max(len(game.items) + 2, 6),
@@ -97,6 +102,7 @@ def generate_pdf(
     theme: str = "default",
     game_dir: Path | None = None,
     paper: str | None = None,
+    blind: bool = False,
 ) -> bool:
     """Generate a PDF from GameData. Returns True on success, False if typst not found."""
     typst_bin = find_typst()
@@ -107,8 +113,8 @@ def generate_pdf(
     if not theme_dir.exists():
         raise FileNotFoundError(f"Theme not found: {theme} (looked in {theme_dir})")
 
-    writer = GameWriter(game)
-    data = serialize_game_data(game, writer)
+    writer = GameWriter(game, blind=blind)
+    data = serialize_game_data(game, writer, blind=blind)
 
     # Resolve cover image path relative to game directory
     image_rel = game.metadata.get("image")

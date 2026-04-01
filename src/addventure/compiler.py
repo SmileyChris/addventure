@@ -220,6 +220,34 @@ def check_potential_collisions(game: GameData) -> list[str]:
     ]
 
 
+# ── Auto-generation ───────────────────────────────────────────────────────
+
+def ensure_room_looks(game: GameData):
+    """Auto-generate LOOK + @room for any base room missing one."""
+    if "LOOK" not in game.verbs:
+        return
+
+    has_look = set()
+    for ix in game.interactions:
+        if ix.verb == "LOOK" and len(ix.target_groups) == 1:
+            target = ix.target_groups[0][0]
+            if target.startswith("@"):
+                has_look.add(target[1:])
+
+    for room_name, rm in game.rooms.items():
+        if rm.state is not None:
+            continue
+        if room_name not in has_look:
+            game.interactions.append(Interaction(
+                verb="LOOK",
+                target_groups=[[f"@{room_name}"]],
+                narrative="You look around.",
+                arrows=[],
+                source_line=0,
+                room=room_name,
+            ))
+
+
 # ── Compile Pipeline ───────────────────────────────────────────────────────
 
 def compile_game(global_source: str, room_sources: list[str],
@@ -231,6 +259,8 @@ def compile_game(global_source: str, room_sources: list[str],
     game = parse_global(global_source)
     for src in room_sources:
         parse_room_file(src, game)
+
+    ensure_room_looks(game)
 
     # Try allocations until collision-free
     for attempt in range(max_retries):
