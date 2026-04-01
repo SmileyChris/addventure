@@ -154,7 +154,7 @@ def generate_pdf(
         if image_path.is_file():
             data["metadata"]["image"] = str(image_path)
         else:
-            print(f"WARNING: image not found: {image_path}", file=__import__('sys').stderr)
+            print(f"⚠ Image not found: {image_path}", file=__import__('sys').stderr)
 
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".json", delete=False

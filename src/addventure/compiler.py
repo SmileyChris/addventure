@@ -449,7 +449,7 @@ def compile_game(global_source: str, room_sources: list[str],
         _reset_mutable(game)
         if not _try_compile_pass(game, max_retries, four_digit=True):
             print(
-                f"WARNING: No collision-free allocation in "
+                f"⚠ No collision-free allocation in "
                 f"{max_retries * 2} attempts.",
                 file=__import__('sys').stderr,
             )

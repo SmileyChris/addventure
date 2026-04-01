@@ -61,7 +61,7 @@ def cmd_build(args: list[str]):
     # Reachability check
     from .validator import validate_reachability
     for warning in validate_reachability(game):
-        print(f"WARNING: {warning}", file=sys.stderr)
+        print(f"⚠ {warning}", file=sys.stderr)
 
     if parsed.markdown:
         md = generate_markdown(game, blind=parsed.blind)

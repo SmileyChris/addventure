@@ -50,10 +50,8 @@ BINDINGS
 
 # Interactions
 
-USE__RESTRAINED + KNIFE + BINDINGS:
-  You saw through the rope. Your hands are free.
-  - BINDINGS -> trash
-  - USE__RESTRAINED -> USE
+USE__RESTRAINED + *:
+  You strain against the bindings. No use.
 
 USE__RESTRAINED + CRATE:
   You lash out with your foot and kick the crate. It scrapes across the floor, revealing a knife underneath.
@@ -63,5 +61,7 @@ USE__RESTRAINED + CRATE:
       You grab the knife.
       - KNIFE -> player
 
-USE__RESTRAINED + *:
-  You strain against the bindings. No use.
+USE__RESTRAINED + KNIFE + BINDINGS:
+  You saw through the rope. Your hands are free.
+  - BINDINGS -> trash
+  - USE__RESTRAINED -> USE
