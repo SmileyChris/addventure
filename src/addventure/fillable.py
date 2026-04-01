@@ -91,6 +91,55 @@ def _make_cross_checkbox(rect: list[float], name: str) -> DictionaryObject:
     return field
 
 
+def _make_strike_checkbox(rect: list[float], name: str) -> DictionaryObject:
+    """Create a checkbox that draws a horizontal strikethrough line when checked."""
+    x1, y1, x2, y2 = rect
+    w = x2 - x1
+    h = y2 - y1
+
+    field = DictionaryObject()
+    field[NameObject("/Type")] = NameObject("/Annot")
+    field[NameObject("/Subtype")] = NameObject("/Widget")
+    field[NameObject("/FT")] = NameObject("/Btn")
+    field[NameObject("/T")] = TextStringObject(name)
+    field[NameObject("/Rect")] = ArrayObject([FloatObject(v) for v in rect])
+    field[NameObject("/F")] = NumberObject(4)  # Print flag
+    field[NameObject("/V")] = NameObject("/Off")
+    field[NameObject("/AS")] = NameObject("/Off")
+    field[NameObject("/Border")] = ArrayObject(
+        [NumberObject(0), NumberObject(0), NumberObject(0)]
+    )
+
+    # Custom appearance: horizontal line through the middle when checked
+    mid_y = h / 2
+    on_stream = DecodedStreamObject()
+    on_stream.set_data(
+        f"q 1.5 w 0.4 0.4 0.4 RG "
+        f"0 {mid_y:.1f} m {w:.1f} {mid_y:.1f} l S Q".encode()
+    )
+    on_stream[NameObject("/Type")] = NameObject("/XObject")
+    on_stream[NameObject("/Subtype")] = NameObject("/Form")
+    on_stream[NameObject("/BBox")] = ArrayObject([FloatObject(0), FloatObject(0), FloatObject(w), FloatObject(h)])
+
+    off_stream = DecodedStreamObject()
+    off_stream.set_data(b"")
+    off_stream[NameObject("/Type")] = NameObject("/XObject")
+    off_stream[NameObject("/Subtype")] = NameObject("/Form")
+    off_stream[NameObject("/BBox")] = ArrayObject([FloatObject(0), FloatObject(0), FloatObject(w), FloatObject(h)])
+
+    n_dict = DictionaryObject()
+    n_dict[NameObject("/Yes")] = on_stream
+    n_dict[NameObject("/Off")] = off_stream
+
+    ap = DictionaryObject()
+    ap[NameObject("/N")] = n_dict
+
+    field[NameObject("/AP")] = ap
+    field[NameObject("/MK")] = DictionaryObject()
+
+    return field
+
+
 def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
     """Convert form:// link annotations to fillable PDF form fields."""
     if output_path is None:
@@ -129,6 +178,8 @@ def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
 
                     if field_type == "cross":
                         field = _make_cross_checkbox(rect, name)
+                    elif field_type == "strike":
+                        field = _make_strike_checkbox(rect, name)
                     elif field_type == "id":
                         field = _make_text_field(rect, name, font_size=8, bold=True, centered=True, uppercase=True)
                     elif field_type == "desc":

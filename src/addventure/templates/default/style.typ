@@ -71,6 +71,17 @@
   }
 }
 
+// strike-text: text that can be struck through when clicked (fillable mode)
+#let strike-text(body) = {
+  let b = box(baseline: 0pt, inset: (y: 2pt))[#body]
+  if fillable {
+    form-counter.step()
+    context link("form://strike/" + str(form-counter.get().first()))[#b]
+  } else {
+    b
+  }
+}
+
 // separator: decorative separator between ledger entries
 #let separator() = {
   v(0.5em)

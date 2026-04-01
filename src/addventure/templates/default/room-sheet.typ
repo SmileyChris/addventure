@@ -1,5 +1,5 @@
 // room-sheet.typ — Per-room page
-#import "style.typ": sheet-title, section-title, write-slot, id-box, title-font
+#import "style.typ": sheet-title, section-title, write-slot, id-box, strike-text, title-font
 
 #let room-sheet(room, is-start: false, blind: false) = {
   let hide-name = blind and not is-start
@@ -85,7 +85,7 @@
               columns: (1fr, auto),
               gutter: 0.5em,
               align(left + horizon)[
-                #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
+                #strike-text(text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")])
               ],
               align(right + horizon)[#id-box(hide[000])],
             )
@@ -119,7 +119,7 @@
             columns: (1fr, auto, auto),
             gutter: 0.5em,
             align(left + horizon)[
-              #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
+              #strike-text(text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")])
             ],
             align(right + horizon)[
               #id-box(str(obj.id), crossable: true)
