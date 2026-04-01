@@ -43,8 +43,12 @@ def cmd_build(args: list[str]):
         game_dir = Path(parsed.game_dir)
     elif _in_game_dir():
         game_dir = Path(".")
-    else:
+    elif Path("games/example").is_dir():
         game_dir = Path("games/example")
+    else:
+        print("ERROR: No game directory specified and not in a game directory")
+        print("Usage: adv build [dir]")
+        sys.exit(1)
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
 
