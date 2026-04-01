@@ -243,6 +243,9 @@ class GameWriter:
             return []
 
         room_name = ri.targets[0][1:]
+        # Skip room states — they're internal, player is already in the room
+        if "__" in room_name:
+            return []
         start = self._start_room()
         objects = self._initial_objects(room_name)
         instructions = []
