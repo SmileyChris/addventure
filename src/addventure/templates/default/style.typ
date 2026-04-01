@@ -18,7 +18,6 @@
     ]
     #line(length: 100%, stroke: 1.5pt)
   ]
-  v(0.4em)
 }
 
 // section-title: left-aligned section heading with thin rule underneath

@@ -6,9 +6,7 @@
 
   // Inventory section
   section-title("Inventory")
-  block(below: 0.6em)[
-    #text(size: 9pt, style: "italic")[Record items you are carrying. Write the item name and its ID.]
-  ]
+  text(size: 9pt, style: "italic")[Record items you are carrying. Write the item name and its ID.]
   v(0.4em)
 
   let slot-count = data.inventory_slots
@@ -17,7 +15,8 @@
 
   grid(
     columns: (1fr, 1fr),
-    gutter: (1em, 0.6em),
+    column-gutter: 1em,
+    row-gutter: 0.6em,
     ..for i in range(slot-count) {
       (
         block(width: 100%)[
@@ -44,7 +43,8 @@
     let cue-count = calc.max(cue-slots, 6)
     grid(
       columns: (auto,) * 6,
-      gutter: (0.8em, 0.6em),
+      column-gutter: 0.8em,
+      row-gutter: 0.6em,
       ..for i in range(cue-count) {
         (id-box(hide[000]),)
       }
@@ -62,8 +62,8 @@
   ]
   v(0.4em)
 
-  // 3-column potentials grid
-  let pot-cols = 3
+  // 4-column potentials grid
+  let pot-cols = 4
   let pots = data.potentials
   let prefix = data.at("entry_prefix", default: "A")
   let rows = calc.ceil(pots.len() / pot-cols)
