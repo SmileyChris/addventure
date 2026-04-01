@@ -88,11 +88,7 @@ def _in_game_dir() -> bool:
 
 def cmd_new(args: list[str]):
     """Scaffold a new game or part directory with index.md."""
-    if not args:
-        print("Usage: adv new <name>")
-        sys.exit(1)
-
-    name = " ".join(args)
+    name = " ".join(args) if args else None
 
     if _in_game_dir():
         _cmd_new_part(name)
@@ -100,19 +96,24 @@ def cmd_new(args: list[str]):
         _cmd_new_game(name)
 
 
-def _cmd_new_game(name: str):
+def _cmd_new_game(name: str | None):
     """Scaffold a new game directory."""
+    if not name:
+        name = input("Game name: ").strip()
+        if not name:
+            print("ERROR: Game name is required")
+            sys.exit(1)
+        author = input("Author: ").strip()
+        default_verbs = "LOOK, USE, TAKE"
+        verbs_input = input(f"Starting verbs (comma-separated, default: {default_verbs}): ").strip()
+        verbs = [v.strip() for v in (verbs_input or default_verbs).split(",")]
+        title = name
+    else:
+        title = name
+        author = ""
+        verbs = ["LOOK", "USE", "TAKE"]
+
     game_dir = _resolve_game_dir(name)
-
-    if (game_dir / "index.md").exists():
-        print(f"ERROR: {game_dir / 'index.md'} already exists")
-        sys.exit(1)
-
-    title = input(f"Game title (default: {name}): ").strip() or name
-    author = input("Author: ").strip()
-    default_verbs = "LOOK, USE, TAKE"
-    verbs_input = input(f"Starting verbs (comma-separated, default: {default_verbs}): ").strip()
-    verbs = [v.strip() for v in (verbs_input or default_verbs).split(",")]
 
     game_dir.mkdir(parents=True, exist_ok=True)
 
@@ -133,8 +134,13 @@ def _cmd_new_game(name: str):
     print(f"\nCreated game: {game_dir / 'index.md'}")
 
 
-def _cmd_new_part(name: str):
+def _cmd_new_part(name: str | None):
     """Scaffold a new part subdirectory within an existing game."""
+    if not name:
+        name = input("Part name: ").strip()
+        if not name:
+            print("ERROR: Part name is required")
+            sys.exit(1)
     slug = _slugify(name)
     part_dir = Path(slug)
 
@@ -166,7 +172,7 @@ Usage: adv <command> [args]
 Commands:
   run [dir] [--text] [-o FILE] [--theme NAME]
                      Compile game to PDF (default) or text
-  new <name>         Scaffold a new game or part (context-aware)\
+  new [name]         Scaffold a new game or part (interactive if no name given)\
 """
 
 
