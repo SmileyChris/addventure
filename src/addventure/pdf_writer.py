@@ -65,6 +65,7 @@ def serialize_game_data(game: GameData, writer: GameWriter) -> dict:
         })
 
     return {
+        "metadata": game.metadata,
         "verbs": verbs,
         "rooms": rooms,
         "inventory_slots": 12,

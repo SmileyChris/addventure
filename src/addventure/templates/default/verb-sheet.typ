@@ -1,8 +1,8 @@
 // verb-sheet.typ — Verb reference page
 #import "style.typ": sheet-title, section-title, write-slot, id-box
 
-#let verb-sheet(data) = {
-  sheet-title("ADDVENTURE — VERB SHEET")
+#let verb-sheet(data, game-title) = {
+  sheet-title(game-title + " — VERB SHEET")
 
   block(below: 1em)[
     #text(size: 9pt, style: "italic")[

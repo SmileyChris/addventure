@@ -17,7 +17,7 @@ def test_serialize_top_level_keys():
     game = _make_game()
     writer = GameWriter(game)
     data = serialize_game_data(game, writer)
-    assert set(data.keys()) == {"verbs", "rooms", "inventory_slots", "potentials", "ledger"}
+    assert set(data.keys()) == {"metadata", "verbs", "rooms", "inventory_slots", "potentials", "ledger"}
 
 
 def test_serialize_verbs():

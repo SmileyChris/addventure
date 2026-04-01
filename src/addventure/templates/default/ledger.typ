@@ -1,8 +1,8 @@
 // ledger.typ — Story Ledger entries
 #import "style.typ": sheet-title, section-title, separator
 
-#let story-ledger(data) = {
-  sheet-title("ADDVENTURE — STORY LEDGER")
+#let story-ledger(data, game-title) = {
+  sheet-title(game-title + " — STORY LEDGER")
 
   block(below: 1em)[
     #text(size: 9pt, style: "italic")[

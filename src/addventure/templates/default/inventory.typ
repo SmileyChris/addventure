@@ -1,8 +1,8 @@
 // inventory.typ — Inventory slots + Master Potentials List
 #import "style.typ": sheet-title, section-title, write-slot, id-box
 
-#let inventory-sheet(data) = {
-  sheet-title("ADDVENTURE — INVENTORY & POTENTIALS")
+#let inventory-sheet(data, game-title) = {
+  sheet-title(game-title + " — INVENTORY & POTENTIALS")
 
   // Inventory section
   section-title("Inventory")
