@@ -160,6 +160,7 @@ def generate_pdf(
             str(main_typ),
             str(output_path),
             "--root", "/",
+            "--font-path", str(theme_dir / "fonts"),
             "--input", f"data={json_path}",
         ]
         if paper:
