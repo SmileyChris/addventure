@@ -44,7 +44,7 @@
   // How to play
   block(below: 1em)[
     #text(size: 9pt, style: "italic")[
-      To take an action, add a Verb ID to an Entity ID. Look up the resulting sum in the Potentials List. If listed, read the matching Ledger entry. If not listed, nothing happens.
+      To take an action, calculate verb number + object number(s). Look up the resulting sum in the Potentials List. If listed, read the matching Ledger entry. If not listed, nothing happens.
     ]
   ]
 

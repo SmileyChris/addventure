@@ -57,7 +57,7 @@
   section-title("Master Potentials List")
   block(below: 0.6em)[
     #text(size: 9pt, style: "italic")[
-      Add a Verb ID + Entity ID and look up the sum below. If listed, go to that Ledger Entry.
+      Calculate verb number + object number(s) and look up the sum below. If listed, go to that Ledger entry.
     ]
   ]
   v(0.4em)
