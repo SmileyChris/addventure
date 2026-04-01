@@ -308,6 +308,162 @@ BOX
     assert data["cue_slots"] == 0
 
 
+def test_cue_resolves_in_all_room_states():
+    """A cue targeting 'Room B' resolves in base AND all states of Room B."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    Something changed.
+    - WIDGET -> room
+
+SWITCH
++ LOOK: A switch.
++ USE:
+  You flip the switch.
+  - room -> room__DARK
+
+# Room A__DARK
+LOOK: It is dark.
+
+# Room B
+LOOK: B.
+
+BUTTON
++ USE:
+  You press the button.
+  - room -> room__FLOODED
+
+# Room B__FLOODED
+LOOK: Water everywhere.
+"""
+    game = compile_game(global_src, [room_src])
+    cue = game.cues[0]
+
+    # Should have resolved interactions for base Room B AND Room B__FLOODED
+    room_b = game.rooms["Room B"]
+    room_b_flooded = game.rooms["Room B__FLOODED"]
+
+    cue_sums = {ri.sum_id for ri in game.resolved if ri.verb == "CUE"}
+    assert cue.id + room_b.id in cue_sums
+    assert cue.id + room_b_flooded.id in cue_sums
+
+    # All cue resolved interactions should share the same entry number
+    cue_entries = {ri.entry_number for ri in game.resolved if ri.verb == "CUE"}
+    assert len(cue_entries) == 1
+
+
+def test_cue_targets_specific_room_state():
+    """A cue targeting 'Room B__FLOODED' only resolves in that state."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B__FLOODED"
+    The water reveals something.
+    - WIDGET -> room
+
+# Room B
+LOOK: B.
+
+BUTTON
++ USE:
+  You press the button.
+  - room -> room__FLOODED
+
+# Room B__FLOODED
+LOOK: Water everywhere.
+"""
+    game = compile_game(global_src, [room_src])
+    cue = game.cues[0]
+
+    room_b = game.rooms["Room B"]
+    room_b_flooded = game.rooms["Room B__FLOODED"]
+
+    cue_sums = {ri.sum_id for ri in game.resolved if ri.verb == "CUE"}
+    # Only the flooded state should match
+    assert cue.id + room_b_flooded.id in cue_sums
+    assert cue.id + room_b.id not in cue_sums
+
+
+def test_cue_targets_base_state_only():
+    """A cue targeting 'Room B__' only resolves in the base state."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B__"
+    Something in the calm water.
+    - WIDGET -> room
+
+# Room B
+LOOK: B.
+
+BUTTON
++ USE:
+  You press the button.
+  - room -> room__FLOODED
+
+# Room B__FLOODED
+LOOK: Water everywhere.
+"""
+    game = compile_game(global_src, [room_src])
+    cue = game.cues[0]
+
+    room_b = game.rooms["Room B"]
+    room_b_flooded = game.rooms["Room B__FLOODED"]
+
+    cue_sums = {ri.sum_id for ri in game.resolved if ri.verb == "CUE"}
+    # Only the base state should match
+    assert cue.id + room_b.id in cue_sums
+    assert cue.id + room_b_flooded.id not in cue_sums
+
+
+def test_cue_all_states_no_duplicate_ledger():
+    """A cue resolving in multiple states should produce only one ledger entry."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    Something changed.
+    - WIDGET -> room
+
+# Room B
+LOOK: B.
+
+BUTTON
++ USE:
+  You press the button.
+  - room -> room__FLOODED
+
+# Room B__FLOODED
+LOOK: Water everywhere.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    ledger = writer.write_story_ledger()
+    # "Something changed." should appear exactly once in the ledger
+    assert ledger.count("Something changed.") == 1
+
+
 def test_room_sheet_no_alerts():
     global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
     room_src = """# Room A

@@ -71,7 +71,11 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
     )
 
     ledger = []
+    seen_entries = set()
     for ri in game.resolved:
+        if ri.entry_number in seen_entries:
+            continue
+        seen_entries.add(ri.entry_number)
         instructions = writer._generate_instructions(ri)
         ledger.append({
             "entry": ri.entry_number,

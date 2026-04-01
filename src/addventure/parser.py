@@ -383,13 +383,15 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
             trigger_room=room_name,
         ))
         # Register any nouns that the cue arrows reveal in the target room
+        # Strip trailing __ (base-state-only marker) for noun registration
+        noun_room = target_room[:-2] if target_room.endswith("__") else target_room
         for ca in cue_arrows:
             if ca.destination == "room":
                 subj = ca.subject
                 base, state = _split_name(subj)
-                key = f"{target_room}::{subj}"
+                key = f"{noun_room}::{subj}"
                 if key not in game.nouns:
-                    game.nouns[key] = Noun(subj, base, state, target_room)
+                    game.nouns[key] = Noun(subj, base, state, noun_room)
         return i
 
     if dest in ("trash", "player"):

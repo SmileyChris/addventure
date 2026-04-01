@@ -100,23 +100,67 @@ def apply_inheritance(game: GameData):
 
 # ── Cue Resolution ──────────────────────────────────────────────────────────
 
+def _cue_target_rooms(cue: Cue, game: GameData) -> list[str]:
+    """Determine which room IDs a cue resolves against.
+
+    - "Room"     → base room + all Room__STATE variants
+    - "Room__"   → base room only (trailing __ = base state)
+    - "Room__X"  → that specific state only
+    """
+    target = cue.target_room
+
+    # Trailing __ = base state only
+    if target.endswith("__"):
+        base_name = target[:-2]
+        rm = game.rooms.get(base_name)
+        if not rm:
+            raise ParseError(cue.source_line, f"Cue targets unknown room: {base_name}")
+        return [base_name]
+
+    # Explicit state (contains __)
+    if "__" in target:
+        rm = game.rooms.get(target)
+        if not rm:
+            raise ParseError(cue.source_line, f"Cue targets unknown room state: {target}")
+        return [target]
+
+    # Plain room name → base + all states
+    rm = game.rooms.get(target)
+    if not rm:
+        raise ParseError(cue.source_line, f"Cue targets unknown room: {target}")
+    names = [target]
+    for name, r in game.rooms.items():
+        if r.base == target and r.state is not None:
+            names.append(name)
+    return names
+
+
 def resolve_cues(game: GameData):
-    """Create ResolvedInteractions for each cue (cue.id + target_room.id)."""
+    """Create ResolvedInteractions for each cue.
+
+    A cue may resolve against multiple room states, producing multiple
+    potentials entries that share the same ledger entry number.
+    """
     for cue in game.cues:
-        target_rm = game.rooms.get(cue.target_room)
-        if not target_rm:
-            raise ParseError(cue.source_line, f"Cue targets unknown room: {cue.target_room}")
-        cue.sum_id = cue.id + target_rm.id
-        game.resolved.append(ResolvedInteraction(
-            verb="CUE",
-            targets=[],
-            sum_id=cue.sum_id,
-            narrative=cue.narrative,
-            arrows=cue.arrows,
-            source_line=cue.source_line,
-            room=cue.target_room,
-            parent_label=f"Cue #{cue.id}",
-        ))
+        room_names = _cue_target_rooms(cue, game)
+        first_ri = None
+        for rn in room_names:
+            rm = game.rooms[rn]
+            sum_id = cue.id + rm.id
+            ri = ResolvedInteraction(
+                verb="CUE",
+                targets=[],
+                sum_id=sum_id,
+                narrative=cue.narrative,
+                arrows=cue.arrows,
+                source_line=cue.source_line,
+                room=rn,
+                parent_label=f"Cue #{cue.id}",
+            )
+            game.resolved.append(ri)
+            if first_ri is None:
+                first_ri = ri
+                cue.sum_id = sum_id
 
 
 # ── Resolver ────────────────────────────────────────────────────────────────
@@ -285,14 +329,25 @@ def compile_game(global_source: str, room_sources: list[str],
 
     resolve_cues(game)
 
-    # Renumber all entries (cue resolutions were appended after initial numbering)
-    for idx, ri in enumerate(game.resolved, 1):
-        ri.entry_number = idx
+    # Renumber entries. Cue aliases (same cue, different room state) share
+    # the primary entry number so the ledger has one entry, not duplicates.
+    cue_primary_entry = {}  # cue.id -> entry_number
+    entry_num = 0
+    for ri in game.resolved:
+        if ri.verb == "CUE":
+            # Extract cue id from parent_label "Cue #NNN"
+            cue_id = int(ri.parent_label.split("#")[1])
+            if cue_id in cue_primary_entry:
+                ri.entry_number = cue_primary_entry[cue_id]
+            else:
+                entry_num += 1
+                ri.entry_number = entry_num
+                cue_primary_entry[cue_id] = entry_num
+        else:
+            entry_num += 1
+            ri.entry_number = entry_num
     # Copy entry numbers back to cue objects
     for cue in game.cues:
-        for ri in game.resolved:
-            if ri.sum_id == cue.sum_id:
-                cue.entry_number = ri.entry_number
-                break
+        cue.entry_number = cue_primary_entry.get(cue.id, 0)
 
     return game

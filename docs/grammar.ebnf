@@ -158,6 +158,11 @@ arrow-children-cue      = cue-block ;
 (* A cue defines a deferred cross-room effect. The indented  *)
 (* block contains a narrative and arrows that execute when    *)
 (* the player enters the target room and the cue resolves.   *)
+(*                                                            *)
+(* Cue destination determines which room states it fires in:  *)
+(*   ? -> "Room"           any state (base + all variants)    *)
+(*   ? -> "Room__STATE"    only that specific state           *)
+(*   ? -> "Room__"         only the base state (no variant)   *)
 
 cue-block       = { INDENT(>arrow) , ( narrative-line | cue-arrow-line ) } ;
 

@@ -134,7 +134,11 @@ class GameWriter:
         lines = ["ADDVENTURE — STORY LEDGER", "=" * 40, ""]
         lines.append("Only read an entry when directed to by the Potentials List.\n")
 
+        seen_entries = set()
         for ri in self.game.resolved:
+            if ri.entry_number in seen_entries:
+                continue
+            seen_entries.add(ri.entry_number)
             lines.append(f"── {self.entry_prefix}-{ri.entry_number} ──")
             lines.append(f'"{ri.narrative}"')
 
