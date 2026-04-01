@@ -57,13 +57,26 @@ def cmd_run(args: list[str]):
         print(f"PDF written to {output_path}")
 
 
+def _resolve_game_dir(name: str) -> Path:
+    """Resolve a game name to a directory path.
+    If the name is a bare name (no separators) and we're in the project root
+    (games/ directory exists), put it under games/.
+    """
+    path = Path(name)
+    if path.is_absolute() or "/" in name or "\\" in name:
+        return path
+    if Path("games").is_dir():
+        return Path("games") / name
+    return path
+
+
 def cmd_new(args: list[str]):
     """Scaffold a new game directory with index.md."""
     if not args:
-        print("Usage: adv new <directory>")
+        print("Usage: adv new <name>")
         sys.exit(1)
 
-    game_dir = Path(args[0])
+    game_dir = _resolve_game_dir(args[0])
 
     if (game_dir / "index.md").exists():
         print(f"ERROR: {game_dir / 'index.md'} already exists")
@@ -106,7 +119,7 @@ Usage: adv <command> [args]
 Commands:
   run [dir] [--text] [-o FILE] [--theme NAME]
                      Compile game to PDF (default) or text
-  new <dir>          Scaffold a new game directory with index.md\
+  new <name>         Scaffold a new game (auto-placed in games/ if at project root)\
 """
 
 
