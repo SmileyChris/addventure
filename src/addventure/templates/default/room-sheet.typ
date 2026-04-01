@@ -55,19 +55,20 @@
       text(size: 11pt)[#eval(room.description, mode: "markup")]
     } else {
       write-slot()
-      v(0.3em)
       write-slot()
     }
   ]
 
   // Objects section
   let obj-count = room.objects.len()
-  if obj-count > 0 {
+  let total-slots = if blind { obj-count + room.discovery_slots } else { obj-count }
+
+  if total-slots > 0 {
     v(1em)
     section-title("Objects in this Room")
 
-    if hide-objects {
-      // Blind mode: all object slots are blank write-ins
+    if blind {
+      // Blind mode: all slots are blank write-ins (objects + discoveries merged)
       if is-start {
         // Start room: show names, blank ID slots
         for obj in room.objects {
@@ -87,11 +88,11 @@
           line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
         }
       } else {
-        // Non-start: blank name and ID slots
-        for _ in range(obj-count) {
+        // Non-start: all blank
+        for _ in range(total-slots) {
           block(
             width: 100%,
-            below: 0.6em,
+            below: 0.8em,
           )[
             #grid(
               columns: (1fr, auto),
@@ -126,8 +127,8 @@
     }
   }
 
-  // Discovery slots
-  if room.discovery_slots > 0 {
+  // Discovery slots (non-blind, or blind start room)
+  if (not blind or is-start) and room.discovery_slots > 0 {
     v(1em)
     section-title("Discoveries")
     text(size: 9pt, style: "italic")[If objects are discovered in this room, record them here.]
@@ -136,7 +137,7 @@
     for _ in range(room.discovery_slots) {
       block(
         width: 100%,
-        below: 0.6em,
+        below: 0.8em,
       )[
         #grid(
           columns: (1fr, auto),

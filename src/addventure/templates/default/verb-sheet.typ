@@ -91,7 +91,7 @@
   for _ in range(3) {
     block(
       width: 100%,
-      below: 0.6em,
+      below: 0.8em,
     )[
       #grid(
         columns: (1fr, auto),
