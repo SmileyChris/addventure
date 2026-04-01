@@ -4,12 +4,14 @@
 #let verb-sheet(data, game-title, start-room) = {
   sheet-title(game-title)
 
-  // Game description (from metadata, between frontmatter and first # header)
+  // Game description (from body text before first # header)
   let description = data.metadata.at("description", default: none)
   if description != none {
-    block(below: 1.5em)[
-      #text(size: 10pt)[#description]
+    block(below: 0.8em)[
+      #text(size: 11pt)[#eval(description, mode: "markup")]
     ]
+    line(length: 100%, stroke: (paint: luma(150), thickness: 0.5pt))
+    v(0.8em)
   }
 
   // How to play

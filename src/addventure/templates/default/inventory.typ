@@ -60,11 +60,12 @@
       ..for _ in range(pot-cols) {
         (
           grid(
-            columns: (1fr, 1fr),
+            columns: (auto, auto),
+            column-gutter: 1em,
             align(left)[
               #text(font: "Liberation Sans", size: 8pt, weight: "bold")[SUM]
             ],
-            align(right)[
+            align(left)[
               #text(font: "Liberation Sans", size: 8pt, weight: "bold")[ENTRY]
             ],
           ),
@@ -87,11 +88,12 @@
           if idx < pots.len() {
             (
               grid(
-                columns: (1fr, 1fr),
+                columns: (auto, auto),
+                column-gutter: 1em,
                 align(left + horizon)[
                   #text(font: "Liberation Mono", size: 9pt, weight: "bold")[#str(pots.at(idx).sum)]
                 ],
-                align(right + horizon)[
+                align(left + horizon)[
                   #text(font: "Liberation Mono", size: 9pt)[#str(pots.at(idx).entry)]
                 ],
               ),

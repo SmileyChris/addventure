@@ -30,7 +30,7 @@
       below: 0.4em,
       inset: (left: 1em),
     )[
-      #text(size: 10pt, style: "italic")[#entry.narrative]
+      #text(size: 10pt, style: "italic")[#eval(entry.narrative, mode: "markup")]
     ]
 
     // Instructions (if any)

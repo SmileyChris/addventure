@@ -100,6 +100,18 @@ def parse_global(source: str) -> GameData:
     # Parse frontmatter
     game.metadata, i = _parse_frontmatter(lines)
 
+    # Collect description: text between frontmatter and first # header
+    desc_lines = []
+    while i < len(lines):
+        line = lines[i].strip()
+        if _is_header(lines[i]):
+            break
+        if line and not _is_comment(line):
+            desc_lines.append(line)
+        i += 1
+    if desc_lines:
+        game.metadata["description"] = "\n\n".join(desc_lines)
+
     while i < len(lines):
         line = lines[i].strip()
         if not line or _is_comment(line):
