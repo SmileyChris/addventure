@@ -29,8 +29,8 @@ def cmd_run(args: list[str]):
     """Compile a game and output PDF (default) or text."""
     import argparse
     parser = argparse.ArgumentParser(prog="adv run", description="Compile and output a game")
-    parser.add_argument("game_dir", nargs="?", default="games/example",
-                        help="Path to game directory (default: games/example)")
+    parser.add_argument("game_dir", nargs="?", default=None,
+                        help="Path to game directory (default: cwd if index.md exists, else games/example)")
     parser.add_argument("--text", action="store_true",
                         help="Output plain text instead of PDF")
     parser.add_argument("--output", "-o", type=str, default=None,
@@ -39,7 +39,12 @@ def cmd_run(args: list[str]):
                         help="Typst template theme (default: default)")
     parsed = parser.parse_args(args)
 
-    game_dir = Path(parsed.game_dir)
+    if parsed.game_dir:
+        game_dir = Path(parsed.game_dir)
+    elif _in_game_dir():
+        game_dir = Path(".")
+    else:
+        game_dir = Path("games/example")
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
 
@@ -53,7 +58,11 @@ def cmd_run(args: list[str]):
         print_full_report(game)
         return
 
-    output_path = Path(parsed.output) if parsed.output else Path(f"{game_dir.name}.pdf")
+    if parsed.output:
+        output_path = Path(parsed.output)
+    else:
+        name = game.metadata.get("title") or game_dir.resolve().name
+        output_path = Path(f"{_slugify(name)}.pdf")
     if generate_pdf(game, output_path, theme=parsed.theme):
         print(f"PDF written to {output_path}")
 
@@ -82,8 +91,17 @@ def _resolve_game_dir(name: str) -> Path:
 
 
 def _in_game_dir() -> bool:
-    """Check if cwd is inside a game directory (has index.md)."""
-    return Path("index.md").is_file()
+    """Check if cwd is inside an addventure game directory.
+    Looks for index.md containing a # Verbs header.
+    """
+    index = Path("index.md")
+    if not index.is_file():
+        return False
+    try:
+        content = index.read_text()
+        return "# Verbs" in content or "# verbs" in content
+    except OSError:
+        return False
 
 
 def cmd_new(args: list[str]):
