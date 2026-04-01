@@ -24,7 +24,7 @@
 #set page(
   paper: page-paper,
   margin: page-margin,
-  background: place(bottom + right, dx: -0.45in, dy: -0.65in,
+  background: place(bottom + right, dx: -0.63in, dy: -0.50in,
     image(logo-path, width: 0.5in, height: 0.5in),
   ),
   footer: context {
