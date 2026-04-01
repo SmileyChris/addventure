@@ -7,3 +7,6 @@ dependencies = []
 
 [project.scripts]
 adv = "addventure.cli:main"
+
+[tool.uv]
+package = true
