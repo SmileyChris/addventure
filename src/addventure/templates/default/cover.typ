@@ -18,11 +18,17 @@
   align(center)[
     #text(font: title-font, size: 14pt, weight: "bold", tracking: 0.08em)[HOW TO PLAY]
   ]
-  v(0.3in)
+  v(0.15in)
 
-  block(width: 85%, inset: (x: 7.5%))[
-    #set text(size: 10pt)
-    #set par(leading: 0.7em, spacing: 1em)
+  context {
+  let small = page.height < 10in
+  let body-size = if small { 8.5pt } else { 10pt }
+  let body-leading = if small { 0.5em } else { 0.7em }
+  let body-spacing = if small { 0.7em } else { 1em }
+  align(center)[#block(width: 85%)[
+    #set align(left)
+    #set text(size: body-size)
+    #set par(leading: body-leading, spacing: body-spacing)
 
     *The core mechanic* is addition. Pick a verb and add its number to an object's number. Look up the resulting sum in the Master Potentials List. If it's listed, read the matching Story Ledger entry aloud. If it's not listed, nothing happens --- try something else!
 
@@ -40,7 +46,8 @@
     #if has-cues [
       *Cue Checks:* Some events set up triggers for later. When you receive a Cue, record its number on your Inventory sheet. Each time you enter a new room, add each Cue number to the Room ID and check the Potentials List.
     ]
-  ]
+  ]]
+  }
 
   v(1fr)
 

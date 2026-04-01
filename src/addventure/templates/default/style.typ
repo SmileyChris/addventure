@@ -37,7 +37,7 @@
 #let form-counter = counter("form-field")
 
 // write-slot: underline box for player to write in
-#let write-slot(width: 100%) = {
+#let write-slot(width: 100%, uppercase: true) = {
   let slot = box(
     width: width,
     height: 1.4em,
@@ -45,7 +45,8 @@
   )[]
   if fillable {
     form-counter.step()
-    context link("form://text/" + str(form-counter.get().first()))[#slot]
+    let kind = if uppercase { "text" } else { "desc" }
+    context link("form://" + kind + "/" + str(form-counter.get().first()))[#slot]
   } else {
     slot
   }

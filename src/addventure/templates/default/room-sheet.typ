@@ -55,8 +55,8 @@
     #if is-start and room.description != "" {
       text(size: 11pt)[#eval(room.description, mode: "markup")]
     } else {
-      write-slot()
-      write-slot()
+      write-slot(uppercase: false)
+      write-slot(uppercase: false)
     }
   ]
 

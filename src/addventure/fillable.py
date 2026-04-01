@@ -14,7 +14,7 @@ from pypdf.generic import (
 )
 
 
-def _make_text_field(rect: list[float], name: str, font_size: int = 10, bold: bool = False, centered: bool = False) -> DictionaryObject:
+def _make_text_field(rect: list[float], name: str, font_size: int = 10, bold: bool = False, centered: bool = False, uppercase: bool = False) -> DictionaryObject:
     """Create a PDF text field widget annotation."""
     font_name = "/HeBo" if bold else "/Helv"
     field = DictionaryObject()
@@ -30,6 +30,14 @@ def _make_text_field(rect: list[float], name: str, font_size: int = 10, bold: bo
     )
     if centered:
         field[NameObject("/Q")] = NumberObject(1)  # 0=left, 1=center, 2=right
+    if uppercase:
+        # JavaScript keystroke action to force uppercase
+        js_action = DictionaryObject()
+        js_action[NameObject("/S")] = NameObject("/JavaScript")
+        js_action[NameObject("/JS")] = TextStringObject("event.change = event.change.toUpperCase();")
+        aa = DictionaryObject()
+        aa[NameObject("/K")] = js_action  # Keystroke trigger
+        field[NameObject("/AA")] = aa
     return field
 
 
@@ -122,9 +130,11 @@ def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
                     if field_type == "cross":
                         field = _make_cross_checkbox(rect, name)
                     elif field_type == "id":
-                        field = _make_text_field(rect, name, font_size=8, bold=True, centered=True)
-                    else:
+                        field = _make_text_field(rect, name, font_size=8, bold=True, centered=True, uppercase=True)
+                    elif field_type == "desc":
                         field = _make_text_field(rect, name, font_size=10)
+                    else:
+                        field = _make_text_field(rect, name, font_size=10, uppercase=True)
 
                     ref = writer._add_object(field)
                     all_fields.append(ref)
