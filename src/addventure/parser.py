@@ -561,5 +561,15 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                 source_line=source_line, room=room_name,
             ))
             continue
+        # Bare name = noun definition (entity with + children)
+        if line and not line.startswith("+") and not line.startswith("-"):
+            noun_name = line
+            base, state = _split_name(noun_name)
+            key = f"{room_name}::{noun_name}"
+            if key not in game.nouns:
+                game.nouns[key] = Noun(noun_name, base, state, room_name)
+            i += 1
+            i = _parse_entity_block(lines, i, game, room_name, noun_name, 0)
+            continue
         raise ParseError(i + 1, f"Unexpected: {line}")
     return i

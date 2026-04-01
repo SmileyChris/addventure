@@ -56,12 +56,15 @@ USE__RESTRAINED + *:
 USE__RESTRAINED + CRATE:
   You lash out with your foot and kick the crate. It scrapes across the floor, revealing a knife underneath.
   - KNIFE -> room
-    + LOOK: A rusty utility knife. Still sharp enough.
-    + TAKE:
-      You grab the knife.
-      - KNIFE -> player
+
+KNIFE
++ LOOK: A rusty utility knife. Still sharp enough.
++ TAKE:
+  You stretch your bound hands down and just manage to close your fingers around the handle.
+  - KNIFE -> player
 
 USE__RESTRAINED + KNIFE + BINDINGS:
   You saw through the rope. Your hands are free.
+  - KNIFE -> player
   - BINDINGS -> trash
   - USE__RESTRAINED -> USE
