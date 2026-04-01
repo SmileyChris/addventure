@@ -268,6 +268,46 @@ BOX
     assert "CUE" not in inv
 
 
+from addventure.pdf_writer import serialize_game_data
+
+
+def test_serialize_includes_cue_slots():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    A gate appears.
+    - GATE -> room
+
+# Room B
+LOOK: B.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert "cue_slots" in data
+    assert data["cue_slots"] > 0
+
+
+def test_serialize_no_cue_slots_without_cues():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
++ LOOK: A box.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert data["cue_slots"] == 0
+
+
 def test_room_sheet_no_alerts():
     global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
     room_src = """# Room A

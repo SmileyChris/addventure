@@ -86,6 +86,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         "verbs": verbs,
         "rooms": rooms,
         "inventory_slots": max(len(game.items) + 2, 6),
+        "cue_slots": len(game.cues),
         "potentials": potentials,
         "ledger": ledger,
     }
