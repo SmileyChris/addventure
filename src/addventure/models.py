@@ -72,6 +72,7 @@ class RoomAlert:
 
 @dataclass
 class GameData:
+    metadata: dict[str, str] = field(default_factory=dict)
     verbs: dict[str, Verb] = field(default_factory=dict)
     nouns: dict[str, Noun] = field(default_factory=dict)
     items: dict[str, Item] = field(default_factory=dict)

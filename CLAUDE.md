@@ -13,20 +13,20 @@ uv run python addventure.py                # Runs example game, prints full repo
 uv run python addventure.py games/example   # Explicit game directory
 ```
 
-Games are directories of `.adv` files. Each game directory needs a `global.adv` (verbs + items); all other `.adv` files are room scripts loaded alphabetically.
+Games are directories of `.md` files. Each game directory needs an `index.md` (metadata + verbs + items); all other `.md` files are room scripts loaded alphabetically.
 
 ## Project Structure
 
 ```
-addventure.py              # Thin CLI entry point — loads .adv files, runs pipeline
+addventure.py              # Thin CLI entry point — loads .md files, runs pipeline
 src/addventure/
   __init__.py              # Re-exports: compile_game, GameWriter, print_full_report
   models.py                # All dataclasses (Verb, Noun, Item, Room, Arrow, Interaction, etc.)
-  parser.py                # .adv script parsing (indentation-sensitive)
+  parser.py                # .md script parsing (markdown-based, indentation-sensitive)
   compiler.py              # ID allocation, inheritance, resolver, collision detection
   writer.py                # GameWriter — generates printable player-facing components
 games/
-  example/                 # Example game (.adv files)
+  example/                 # Example game (.md files)
 ```
 
 ## Architecture
@@ -37,9 +37,9 @@ Dependency flow: `models` ← `parser` ← `compiler` ← `writer`
 
 ### Compiler (`parser.py` + `compiler.py`)
 
-Transforms `.adv` script sources into a validated `GameData` model. Pipeline:
+Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 
-1. `parse_global` — extract verbs and items
+1. `parse_global` — extract metadata (frontmatter), verbs and items
 2. `parse_room_file` — extract rooms, nouns, interactions (indentation-sensitive)
 3. `_try_allocate` — randomly assign IDs (verbs: 11–99, entities: 100–999, excluding multiples of 5/10)
 4. `register_verb_states` — create temporary verb states (e.g., `USE__RESTRAINED`)
@@ -58,11 +58,19 @@ Transforms `.adv` script sources into a validated `GameData` model. Pipeline:
 - **Inventory Sheet** — item tracking + Master Potentials List (sum lookups)
 - **Story Ledger** — narratives + human-readable instructions from arrows
 
-### Script Syntax (`.adv` files)
+### Script Syntax (`.md` files)
 
+Game scripts use markdown-based syntax:
+
+- `# Section` — headers for sections (`# Verbs`, `# Items`, `# Interactions`) and room names (`# Control Room`)
+- `---` fences — YAML frontmatter for metadata (title, author, etc.) at top of `index.md`
+- `+ line` — additions: interactions and behaviors on an entity
+- `- line` — state changes: arrows (movement, destruction, transformation)
+- Unquoted text — narrative text, no markers needed (just indented under an interaction)
+- `//` — comments
 - `ENTITY__STATE` — double-underscore separates base name from state
 - `VERB + TARGET:` — multi-entity interactions
 - Arrow destinations: `player`, `trash`, `"RoomName"`, `room` (current room), `ENTITY__STATE`
 - `@room` — reference to current room entity
 - `*` wildcard — matches all entities in room
-- Indentation defines arrow hierarchies and state-conditional blocks
+- Indentation (2-space) defines hierarchy within `+`/`-` blocks

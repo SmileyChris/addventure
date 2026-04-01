@@ -20,19 +20,26 @@ def _split_name(name: str) -> tuple[str, str | None]:
         return b, s
     return name, None
 
+def _is_comment(line: str) -> bool:
+    return line.strip().startswith("//")
+
 def _is_header(line: str) -> bool:
     s = line.strip()
-    return s.startswith("---") and s.endswith("---")
+    return s.startswith("# ")
 
 def _parse_header(line: str) -> tuple[str, str | None]:
-    inner = line.strip().strip("-").strip()
-    m = re.match(r'"([^"]*)"', inner)
-    if m:
-        return "room", m.group(1)
-    return inner, None
+    """Parse a # header. Returns (section_type, name).
+    Known sections (verbs, items, interactions) return (type, None).
+    Everything else is a room name: ("room", name).
+    """
+    name = line.strip()[2:].strip()
+    lower = name.lower()
+    if lower in ("verbs", "items", "interactions"):
+        return lower, None
+    return "room", name
 
 def _is_arrow(s: str) -> bool:
-    return "->" in s and not s.startswith('"')
+    return "->" in s
 
 def _parse_arrow(text: str, ln: int) -> Arrow:
     parts = [p.strip() for p in text.split("->", 1)]
@@ -40,8 +47,48 @@ def _parse_arrow(text: str, ln: int) -> Arrow:
         raise ParseError(ln, f"Bad arrow: {text}")
     return Arrow(parts[0], parts[1], ln)
 
+def _strip_marker(s: str) -> tuple[str, str]:
+    """Strip leading + or - marker. Returns (marker, content)."""
+    if s.startswith("+ "):
+        return "+", s[2:]
+    if s.startswith("- "):
+        return "-", s[2:]
+    return "", s
+
 def _has_colon_header(s: str) -> bool:
-    return ":" in s and not s.startswith('"') and not s.startswith("#")
+    return ":" in s and not s.startswith("//")
+
+def _is_narrative(s: str) -> bool:
+    """A line is narrative if it has no marker and no structural syntax."""
+    if s.startswith("+ ") or s.startswith("- "):
+        return False
+    if "->" in s:
+        return False
+    if _is_header(s) or _is_comment(s):
+        return False
+    # ALL_CAPS with optional underscores = entity name, not narrative
+    if re.match(r'^[A-Z][A-Z0-9_]*$', s):
+        return False
+    return True
+
+
+# ── Frontmatter Parser ─────────────────────────────────────────────────────
+
+def _parse_frontmatter(lines: list[str]) -> tuple[dict[str, str], int]:
+    """Parse YAML-style frontmatter between --- fences. Returns (metadata, next_line_index)."""
+    if not lines or lines[0].strip() != "---":
+        return {}, 0
+    meta = {}
+    i = 1
+    while i < len(lines):
+        line = lines[i].strip()
+        if line == "---":
+            return meta, i + 1
+        if ":" in line and not line.startswith("//"):
+            key, _, val = line.partition(":")
+            meta[key.strip()] = val.strip()
+        i += 1
+    return meta, i
 
 
 # ── Global Parser ───────────────────────────────────────────────────────────
@@ -49,10 +96,13 @@ def _has_colon_header(s: str) -> bool:
 def parse_global(source: str) -> GameData:
     game = GameData()
     lines = source.splitlines()
-    i = 0
+
+    # Parse frontmatter
+    game.metadata, i = _parse_frontmatter(lines)
+
     while i < len(lines):
         line = lines[i].strip()
-        if not line or line.startswith("#"):
+        if not line or _is_comment(line):
             i += 1
             continue
         if _is_header(line):
@@ -61,13 +111,13 @@ def parse_global(source: str) -> GameData:
             if sec == "verbs":
                 while i < len(lines) and not _is_header(lines[i]):
                     w = lines[i].strip()
-                    if w and not w.startswith("#"):
+                    if w and not _is_comment(lines[i]):
                         game.verbs[w] = Verb(w)
                     i += 1
             elif sec == "items":
                 while i < len(lines) and not _is_header(lines[i]):
                     w = lines[i].strip()
-                    if w and not w.startswith("#"):
+                    if w and not _is_comment(lines[i]):
                         game.items[w] = Item(w)
                     i += 1
             else:
@@ -84,9 +134,13 @@ def parse_room_file(source: str, game: GameData) -> str:
     i = 0
     room_name = None
 
+    # Skip any frontmatter in room files
+    if lines and lines[0].strip() == "---":
+        _, i = _parse_frontmatter(lines)
+
     while i < len(lines):
         line = lines[i].strip()
-        if not line or line.startswith("#"):
+        if not line or _is_comment(line):
             i += 1
             continue
         if _is_header(line):
@@ -112,14 +166,17 @@ def _parse_room_body(lines, i, game, room_name):
     while i < len(lines) and not _is_header(lines[i]):
         line = lines[i]
         stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
+        if not stripped or _is_comment(stripped):
             i += 1
             continue
 
         ind = _indent(line)
-        if ind == 0:
+        marker, content = _strip_marker(stripped)
+
+        if ind == 0 and not marker:
+            # Bare name at indent 0 = entity or room-level interaction
             if _has_colon_header(stripped) and not _is_arrow(stripped):
-                # Room-level interaction: LOOK: "desc" or USE + ITEM:
+                # Room-level interaction: LOOK: desc or USE + ITEM:
                 i = _parse_inline_interaction(
                     lines, i, game, room_name,
                     context_entity=f"@{room_name}", parent_indent=-1,
@@ -130,41 +187,75 @@ def _parse_room_body(lines, i, game, room_name):
                     arrow.subject = f"@{room_name}"
                 i += 1
                 i = _parse_arrow_children(lines, i, game, room_name, arrow, 1)
-            elif not stripped.startswith("---"):
+            elif not _is_header(stripped):
                 noun_name = stripped
                 base, state = _split_name(noun_name)
                 game.nouns[f"{room_name}::{noun_name}"] = Noun(
                     noun_name, base, state, room_name
                 )
                 i += 1
-                i = _parse_entity_block(lines, i, game, room_name, noun_name, 1)
+                i = _parse_entity_block(lines, i, game, room_name, noun_name, 0)
             else:
                 break
+        elif marker == "+":
+            # + at indent 0 would be under a room-level entity — shouldn't happen
+            # at root level without a prior entity, skip
+            i += 1
         else:
             i += 1
     return i
 
 
-def _parse_entity_block(lines, i, game, room_name, entity_name, base_indent):
+def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent):
+    """Parse children of an entity. Children are + or - lines indented deeper than entity_indent."""
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
+        if not stripped or _is_comment(stripped):
             i += 1
             continue
-        if _indent(line) < base_indent or _is_header(line):
+        if _is_header(line):
             break
-        if _has_colon_header(stripped) and not _is_arrow(stripped):
-            i = _parse_inline_interaction(
-                lines, i, game, room_name, entity_name, base_indent - 1
-            )
-        elif _is_arrow(stripped):
-            arrow = _parse_arrow(stripped, i + 1)
-            arr_indent = _indent(line)
-            i += 1
-            i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1)
+
+        ind = _indent(line)
+        marker, content = _strip_marker(stripped)
+
+        # Must be indented deeper than entity, or at same level with a marker
+        if ind <= entity_indent and not marker:
+            break
+        if ind < entity_indent:
+            break
+
+        if marker == "+":
+            if _has_colon_header(content) and not _is_arrow(content):
+                # Reconstruct the line without marker for interaction parsing
+                i = _parse_inline_interaction(
+                    lines, i, game, room_name, entity_name, entity_indent
+                )
+            else:
+                i += 1
+        elif marker == "-":
+            if _is_arrow(content):
+                arrow = _parse_arrow(content, i + 1)
+                if arrow.subject == "room":
+                    arrow.subject = f"@{room_name}"
+                arr_indent = _indent(line)
+                i += 1
+                i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1)
+            else:
+                i += 1
         else:
-            i += 1
+            # No marker — could be a bare entity name at deeper indent
+            if not _is_narrative(stripped) and ind > entity_indent:
+                noun_name = stripped
+                base, state = _split_name(noun_name)
+                key = f"{room_name}::{noun_name}"
+                if key not in game.nouns:
+                    game.nouns[key] = Noun(noun_name, base, state, room_name)
+                i += 1
+                i = _parse_entity_block(lines, i, game, room_name, noun_name, ind)
+            else:
+                break
     return i
 
 
@@ -173,7 +264,10 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     stripped = line.strip()
     current_indent = _indent(line)
 
-    header_part, _, after_colon = stripped.partition(":")
+    # Strip + marker if present
+    _, content = _strip_marker(stripped)
+
+    header_part, _, after_colon = content.partition(":")
     header_part = header_part.strip()
     after_colon = after_colon.strip()
 
@@ -189,31 +283,41 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     source_line = i + 1
     i += 1
 
-    narrative = ""
-    if after_colon.startswith('"') and after_colon.endswith('"'):
-        narrative = after_colon[1:-1]
+    # Inline narrative (text after colon)
+    narrative = after_colon if after_colon else ""
 
     arrows = []
 
     while i < len(lines):
         bline = lines[i]
         bstripped = bline.strip()
-        if not bstripped or bstripped.startswith("#"):
+        if not bstripped or _is_comment(bstripped):
             i += 1
             continue
         if _indent(bline) <= current_indent or _is_header(bline):
             break
-        if bstripped.startswith('"') and bstripped.endswith('"') and not narrative:
-            narrative = bstripped[1:-1]
-            i += 1
-        elif _is_arrow(bstripped):
-            arrow = _parse_arrow(bstripped, i + 1)
+
+        bmarker, bcontent = _strip_marker(bstripped)
+
+        if bmarker == "-" and _is_arrow(bcontent):
+            arrow = _parse_arrow(bcontent, i + 1)
             if arrow.subject == "room":
                 arrow.subject = f"@{room_name}"
             arrows.append(arrow)
             arr_indent = _indent(bline)
             i += 1
             i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1)
+        elif bmarker == "+":
+            # A + line inside an interaction is a child of a prior arrow's state
+            # This shouldn't happen at this level — break out
+            break
+        elif _is_narrative(bstripped) and not narrative:
+            narrative = bstripped
+            i += 1
+        elif _is_narrative(bstripped) and narrative:
+            # Additional narrative lines — append
+            narrative += " " + bstripped
+            i += 1
         else:
             i += 1
 
@@ -231,7 +335,8 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
 
     if dest in ("trash", "player"):
         while i < len(lines):
-            if not lines[i].strip() or lines[i].strip().startswith("#"):
+            stripped = lines[i].strip()
+            if not stripped or _is_comment(stripped):
                 i += 1
                 continue
             if _indent(lines[i]) < child_indent or _is_header(lines[i]):
@@ -246,7 +351,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
         key = f"{target_room}::{subject}"
         if key not in game.nouns:
             game.nouns[key] = Noun(subject, base, state, target_room)
-        return _parse_entity_block(lines, i, game, target_room, subject, child_indent)
+        return _parse_entity_block(lines, i, game, target_room, subject, child_indent - 1)
 
     if dest == "room":
         subject = arrow.subject
@@ -254,7 +359,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
         key = f"{room_name}::{subject}"
         if key not in game.nouns:
             game.nouns[key] = Noun(subject, base, state, room_name)
-        return _parse_entity_block(lines, i, game, room_name, subject, child_indent)
+        return _parse_entity_block(lines, i, game, room_name, subject, child_indent - 1)
 
     # Transform
     dest_name = dest
@@ -273,7 +378,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
         key = f"{room_name}::{dest_name}"
         if key not in game.nouns:
             game.nouns[key] = Noun(dest_name, base, state, room_name)
-        return _parse_entity_block(lines, i, game, room_name, dest_name, child_indent)
+        return _parse_entity_block(lines, i, game, room_name, dest_name, child_indent - 1)
 
 
 def _parse_room_state_children(lines, i, game, room_state_name, child_indent):
@@ -281,28 +386,43 @@ def _parse_room_state_children(lines, i, game, room_state_name, child_indent):
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
+        if not stripped or _is_comment(stripped):
             i += 1
             continue
         if _indent(line) < child_indent or _is_header(line):
             break
 
-        if _has_colon_header(stripped) and not _is_arrow(stripped):
-            i = _parse_inline_interaction(
-                lines, i, game, room_state_name, room_entity, child_indent - 1
-            )
-        elif _is_arrow(stripped):
-            arrow = _parse_arrow(stripped, i + 1)
-            i += 1
-            i = _parse_arrow_children(lines, i, game, room_state_name, arrow, _indent(line) + 1)
+        marker, content = _strip_marker(stripped)
+
+        if marker == "+":
+            if _has_colon_header(content) and not _is_arrow(content):
+                i = _parse_inline_interaction(
+                    lines, i, game, room_state_name, room_entity, child_indent - 1
+                )
+            else:
+                noun_name = content
+                base, state = _split_name(noun_name)
+                game.nouns[f"{room_state_name}::{noun_name}"] = Noun(
+                    noun_name, base, state, room_state_name
+                )
+                i += 1
+                i = _parse_entity_block(lines, i, game, room_state_name, noun_name, _indent(line))
+        elif marker == "-":
+            if _is_arrow(content):
+                arrow = _parse_arrow(content, i + 1)
+                i += 1
+                i = _parse_arrow_children(lines, i, game, room_state_name, arrow, _indent(line) + 1)
+            else:
+                i += 1
         else:
+            # Bare name = noun in room state
             noun_name = stripped
             base, state = _split_name(noun_name)
             game.nouns[f"{room_state_name}::{noun_name}"] = Noun(
                 noun_name, base, state, room_state_name
             )
             i += 1
-            i = _parse_entity_block(lines, i, game, room_state_name, noun_name, _indent(line) + 1)
+            i = _parse_entity_block(lines, i, game, room_state_name, noun_name, _indent(line))
     return i
 
 
@@ -321,7 +441,7 @@ def _register_interaction(game, interaction):
 def _parse_freeform_interactions(lines, i, game, room_name):
     while i < len(lines) and not _is_header(lines[i]):
         line = lines[i].strip()
-        if not line or line.startswith("#"):
+        if not line or _is_comment(line):
             i += 1
             continue
         if "+" in line and line.endswith(":"):
@@ -336,18 +456,21 @@ def _parse_freeform_interactions(lines, i, game, room_name):
             while i < len(lines) and not _is_header(lines[i]):
                 bline = lines[i]
                 bs = bline.strip()
-                if not bs or bs.startswith("#"):
+                if not bs or _is_comment(bs):
                     i += 1
                     continue
                 if not bline.startswith("  "):
                     break
-                if bs.startswith('"') and bs.endswith('"'):
-                    narrative = bs[1:-1]
-                elif _is_arrow(bs):
-                    a = _parse_arrow(bs, i + 1)
+                bmarker, bcontent = _strip_marker(bs)
+                if bmarker == "-" and _is_arrow(bcontent):
+                    a = _parse_arrow(bcontent, i + 1)
                     if a.subject == "room":
                         a.subject = f"@{room_name}"
                     arrows.append(a)
+                elif _is_narrative(bs) and not narrative:
+                    narrative = bs
+                elif _is_narrative(bs):
+                    narrative += " " + bs
                 i += 1
             _register_interaction(game, Interaction(
                 verb=verb, target_groups=target_groups,

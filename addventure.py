@@ -11,17 +11,17 @@ from addventure import compile_game, print_full_report
 
 
 def load_game(game_dir: Path) -> tuple[str, list[str]]:
-    """Load global.adv and all room .adv files from a game directory."""
-    global_file = game_dir / "global.adv"
-    if not global_file.exists():
-        print(f"ERROR: No global.adv found in {game_dir}")
+    """Load index.md and all room .md files from a game directory."""
+    index_file = game_dir / "index.md"
+    if not index_file.exists():
+        print(f"ERROR: No index.md found in {game_dir}")
         sys.exit(1)
 
-    global_source = global_file.read_text()
+    global_source = index_file.read_text()
     room_sources = [
         f.read_text()
-        for f in sorted(game_dir.glob("*.adv"))
-        if f.name != "global.adv"
+        for f in sorted(game_dir.glob("*.md"))
+        if f.name != "index.md"
     ]
     return global_source, room_sources
 
