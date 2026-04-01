@@ -2,7 +2,7 @@ import random
 from itertools import combinations, product as cart_product
 
 from .models import (
-    GameData, Verb, Noun, Interaction, ResolvedInteraction, RoomAlert,
+    GameData, Verb, Noun, Interaction, ResolvedInteraction,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
 

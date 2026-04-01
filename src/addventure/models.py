@@ -63,12 +63,15 @@ class ResolvedInteraction:
     entry_number: int = 0
 
 @dataclass
-class RoomAlert:
-    trigger_room: str
+class Cue:
     target_room: str
-    trigger_label: str
-    alert_number: int = 0
-    resolution_arrows: list[Arrow] = field(default_factory=list)
+    narrative: str
+    arrows: list[Arrow]
+    source_line: int
+    trigger_room: str
+    id: int = 0
+    sum_id: int = 0
+    entry_number: int = 0
 
 @dataclass
 class GameData:
@@ -79,4 +82,4 @@ class GameData:
     rooms: dict[str, Room] = field(default_factory=dict)
     interactions: list[Interaction] = field(default_factory=list)
     resolved: list[ResolvedInteraction] = field(default_factory=list)
-    alerts: list[RoomAlert] = field(default_factory=list)
+    cues: list[Cue] = field(default_factory=list)
