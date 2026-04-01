@@ -136,20 +136,4 @@
     }
   }
 
-  // Room alerts section
-  v(1em)
-  section-title("Room Alerts")
-  block(
-    width: 100%,
-    stroke: (left: 2pt + luma(180)),
-    inset: (left: 8pt, y: 6pt),
-  )[
-    #text(size: 9pt, style: "italic")[
-      Some actions in other rooms may affect what you find here. If instructed to update this room's state, record it below.
-    ]
-  ]
-  v(0.5em)
-  write-slot()
-  v(0.4em)
-  write-slot()
 }

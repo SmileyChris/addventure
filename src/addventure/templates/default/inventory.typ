@@ -32,6 +32,25 @@
     }
   )
 
+  // Cue Checks section (only if game has cues)
+  let cue-slots = data.at("cue_slots", default: 0)
+  if cue-slots > 0 {
+    v(1.5em)
+    section-title("Cue Checks")
+    block(below: 0.6em)[
+      #text(size: 9pt, style: "italic")[On room entry, add each cue + Room ID and check the Potentials List.]
+    ]
+    v(0.4em)
+    let cue-count = calc.max(cue-slots, 6)
+    grid(
+      columns: (3.5em,) * 6,
+      gutter: (0.8em, 0.6em),
+      ..for i in range(cue-count) {
+        (write-slot(width: 100%),)
+      }
+    )
+  }
+
   v(1.5em)
 
   // Master Potentials List
