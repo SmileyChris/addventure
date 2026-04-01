@@ -6,12 +6,12 @@ TERMINAL
 + USE: ACCESS DENIED flashes on the screen.
 + USE + KEYCARD:
   You slide the keycard. The screen floods with data.
-  - ? -> "Basement"
-    The power surge triggers the fuse box. A hidden compartment clicks open behind it.
-    - COMPARTMENT -> room
   - TERMINAL -> TERMINAL__UNLOCKED
     + LOOK: Scrolling text. A map shows the facility layout.
   - KEYCARD -> trash
+  - ? -> "Basement"
+    The power surge triggers the fuse box. A hidden compartment clicks open behind it.
+    - COMPARTMENT -> room
   - room -> room__POWERED
     + LOOK: The room hums with energy. A hatch has opened in the floor.
     + HATCH -> room

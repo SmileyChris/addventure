@@ -232,11 +232,13 @@ def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent):
         ind = _indent(line)
         marker, content = _strip_marker(stripped)
 
-        # Must be indented deeper than entity, or at same level with a marker
-        if ind <= entity_indent and not marker:
-            break
+        # Must be indented deeper than entity, or + at same level (interactions on entity).
+        # - arrows at entity_indent are siblings, not children.
         if ind < entity_indent:
             break
+        if ind == entity_indent:
+            if marker != "+":
+                break
 
         if marker == "+":
             if _has_colon_header(content) and not _is_arrow(content):
