@@ -1,7 +1,8 @@
 """
-Addventure CLI — `adv run [dir]` and `adv new [dir]`.
+Addventure CLI — `adv run [dir]` and `adv new [name]`.
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -57,32 +58,57 @@ def cmd_run(args: list[str]):
         print(f"PDF written to {output_path}")
 
 
+def _slugify(name: str) -> str:
+    """Convert a name to a directory-friendly slug: lowercase, hyphens, no special chars."""
+    slug = name.lower().strip()
+    slug = re.sub(r'[^a-z0-9\s-]', '', slug)
+    slug = re.sub(r'[\s_]+', '-', slug)
+    slug = re.sub(r'-+', '-', slug).strip('-')
+    return slug
+
+
 def _resolve_game_dir(name: str) -> Path:
     """Resolve a game name to a directory path.
     If the name is a bare name (no separators) and we're in the project root
     (games/ directory exists), put it under games/.
     """
+    slug = _slugify(name)
     path = Path(name)
     if path.is_absolute() or "/" in name or "\\" in name:
         return path
     if Path("games").is_dir():
-        return Path("games") / name
-    return path
+        return Path("games") / slug
+    return Path(slug)
+
+
+def _in_game_dir() -> bool:
+    """Check if cwd is inside a game directory (has index.md)."""
+    return Path("index.md").is_file()
 
 
 def cmd_new(args: list[str]):
-    """Scaffold a new game directory with index.md."""
+    """Scaffold a new game or part directory with index.md."""
     if not args:
         print("Usage: adv new <name>")
         sys.exit(1)
 
-    game_dir = _resolve_game_dir(args[0])
+    name = " ".join(args)
+
+    if _in_game_dir():
+        _cmd_new_part(name)
+    else:
+        _cmd_new_game(name)
+
+
+def _cmd_new_game(name: str):
+    """Scaffold a new game directory."""
+    game_dir = _resolve_game_dir(name)
 
     if (game_dir / "index.md").exists():
         print(f"ERROR: {game_dir / 'index.md'} already exists")
         sys.exit(1)
 
-    title = input("Game title: ").strip()
+    title = input(f"Game title (default: {name}): ").strip() or name
     author = input("Author: ").strip()
     default_verbs = "LOOK, USE, TAKE"
     verbs_input = input(f"Starting verbs (comma-separated, default: {default_verbs}): ").strip()
@@ -91,8 +117,7 @@ def cmd_new(args: list[str]):
     game_dir.mkdir(parents=True, exist_ok=True)
 
     lines = ["---"]
-    if title:
-        lines.append(f"title: {title}")
+    lines.append(f"title: {title}")
     if author:
         lines.append(f"author: {author}")
     lines.append("---")
@@ -105,7 +130,29 @@ def cmd_new(args: list[str]):
     lines.append("")
 
     (game_dir / "index.md").write_text("\n".join(lines) + "\n")
-    print(f"\nCreated {game_dir / 'index.md'}")
+    print(f"\nCreated game: {game_dir / 'index.md'}")
+
+
+def _cmd_new_part(name: str):
+    """Scaffold a new part subdirectory within an existing game."""
+    slug = _slugify(name)
+    part_dir = Path(slug)
+
+    if (part_dir / "index.md").exists():
+        print(f"ERROR: {part_dir / 'index.md'} already exists")
+        sys.exit(1)
+
+    part_dir.mkdir(parents=True, exist_ok=True)
+
+    lines = [
+        f"# Verbs",
+        "",
+        f"# Items",
+        "",
+    ]
+
+    (part_dir / "index.md").write_text("\n".join(lines) + "\n")
+    print(f"\nCreated part \"{name}\": {part_dir / 'index.md'}")
 
 
 COMMANDS = {
@@ -119,7 +166,7 @@ Usage: adv <command> [args]
 Commands:
   run [dir] [--text] [-o FILE] [--theme NAME]
                      Compile game to PDF (default) or text
-  new <name>         Scaffold a new game (auto-placed in games/ if at project root)\
+  new <name>         Scaffold a new game or part (context-aware)\
 """
 
 
