@@ -22,9 +22,13 @@ STEEL_DOOR
 + USE: The door won't budge. It needs power.
 
 COMPARTMENT
-+ LOOK: A small compartment behind the fuse box. A fuse sits inside, still intact.
-+ TAKE:
-  You pull the fuse free.
++ LOOK: A small compartment behind the fuse box. Something is wedged inside.
++ USE:
+  You reach in and pull out an old fuse, still intact.
   - COMPARTMENT -> COMPARTMENT__EMPTY
     + LOOK: An empty compartment behind the fuse box.
-  - FUSE -> player
+  - FUSE -> room
+    + LOOK: A glass fuse. It looks like it might still work.
+    + TAKE:
+      You pocket the fuse.
+      - FUSE -> player
