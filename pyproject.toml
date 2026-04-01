@@ -1,0 +1,9 @@
+[project]
+name = "addventure"
+version = "0.1.0"
+description = "Compiler and writer for paper-based text adventures where addition IS the parser"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+adv = "addventure.cli:main"

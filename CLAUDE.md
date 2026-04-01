@@ -9,8 +9,10 @@ Addventure is a compiler and writer for paper-based text adventures where "addit
 ## Running
 
 ```bash
-uv run python addventure.py                # Runs example game, prints full report
-uv run python addventure.py games/example   # Explicit game directory
+uv run adv                     # Show help
+uv run adv run                 # Run example game, print full report
+uv run adv run games/example   # Explicit game directory
+uv run adv new games/my_game   # Scaffold a new game (interactive)
 ```
 
 Games are directories of `.md` files. Each game directory needs an `index.md` (metadata + verbs + items); all other `.md` files are room scripts loaded alphabetically.
@@ -18,9 +20,11 @@ Games are directories of `.md` files. Each game directory needs an `index.md` (m
 ## Project Structure
 
 ```
-addventure.py              # Thin CLI entry point — loads .md files, runs pipeline
+pyproject.toml             # Package config — `uv run adv` entry point
+addventure.py              # Legacy entry point (delegates to cli.py)
 src/addventure/
   __init__.py              # Re-exports: compile_game, GameWriter, print_full_report
+  cli.py                   # CLI: `adv run`, `adv new` subcommands
   models.py                # All dataclasses (Verb, Noun, Item, Room, Arrow, Interaction, etc.)
   parser.py                # .md script parsing (markdown-based, indentation-sensitive)
   compiler.py              # ID allocation, inheritance, resolver, collision detection
