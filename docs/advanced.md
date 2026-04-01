@@ -103,15 +103,29 @@ When written at the room level (not under a noun), `LOOK` already targets the ro
 
 **Nouns** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
 
-**Items** are defined in `index.md` under `# Items` and live on the inventory sheet. They travel with the player between rooms.
+**Items** live on the inventory sheet. They travel with the player between rooms.
 
-When to use which:
+When a noun has a `-> player` arrow, the compiler automatically creates an inventory version. The player crosses out the noun on their room sheet and writes the inventory ID on their inventory sheet. The inventory ID is derived from the TAKE verb: `TAKE ID + noun ID`.
 
-- Something the player picks up and carries → start as a **noun**, use `-> player` to move it to inventory (it becomes item-like)
-- Something always in inventory from the start → define as an **item**
-- A fixture in a room → **noun** (never moves to inventory)
+This means you don't need to declare items in `# Items` for things the player picks up — just write the noun in a room with a TAKE interaction:
 
-Items defined in `index.md` don't start in the player's inventory — they need to be placed somewhere with an arrow (`-> player` or `-> room`) or revealed through an interaction.
+```markdown
+KEYCARD
++ LOOK: A small keycard with a red stripe.
++ TAKE:
+  You pocket the keycard.
+  - KEYCARD -> player
+```
+
+All interactions on the noun (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried items.
+
+The `# Items` section in `index.md` is only needed for items that **never exist as room nouns**:
+
+- Crafted items (combining two things produces a new item)
+- Abstract rewards or tokens
+- Items available from the start that aren't in any room
+
+**Note:** A game must have a `TAKE` verb defined if any noun uses `-> player`.
 
 ## Cue checks (cross-room effects)
 

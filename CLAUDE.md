@@ -49,12 +49,14 @@ Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 
 1. `parse_global` — extract metadata (frontmatter), verbs and items
 2. `parse_room_file` — extract rooms, nouns, interactions (indentation-sensitive)
-3. `_try_allocate` — randomly assign IDs (verbs: 11–99, entities: 100–999, excluding multiples of 5/10)
-4. `register_verb_states` — create temporary verb states (e.g., `USE__RESTRAINED`)
-5. `apply_inheritance` — auto-generate child interactions for entity states
-6. `resolve_interactions` — expand verb+entity combinations into sums (Cartesian product for multi-target)
-7. `resolve_cues` — resolve cross-room cue interactions
-8. Validate — check for authored and potential ID collisions
+3. `auto_register_items` — auto-create items from `-> player` arrows (ID = TAKE + noun ID)
+4. `_try_allocate` — randomly assign IDs (verbs: 11–99, entities: 100–999, excluding multiples of 5/10)
+5. `register_verb_states` — create temporary verb states (e.g., `USE__RESTRAINED`)
+6. `apply_inheritance` — auto-generate child interactions for entity states
+7. `resolve_interactions` — expand verb+entity combinations into sums (Cartesian product for multi-target)
+8. `duplicate_item_interactions` — create parallel sums for inventory IDs
+9. `resolve_cues` — resolve cross-room cue interactions
+10. Validate — check for authored and potential ID collisions
 
 `compile_game()` orchestrates this with up to 200 retries if ID collisions occur.
 

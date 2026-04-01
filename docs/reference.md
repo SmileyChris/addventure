@@ -110,7 +110,7 @@ Nested under the arrow that creates the state.
 
 | Destination | Effect |
 |---|---|
-| `player` | Move entity to inventory |
+| `player` | Move to inventory (auto-creates item; inventory ID = TAKE + noun ID) |
 | `trash` | Remove entity from the game |
 | `room` | Place entity in the current room |
 | `"Room Name"` | Move the player to another room |
