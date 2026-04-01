@@ -11,6 +11,13 @@ from .compiler import get_entity_id, check_authored_collisions, check_potential_
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
+# Friendly aliases for common paper sizes
+PAPER_ALIASES = {
+    "letter": "us-letter",
+    "legal": "us-legal",
+    "tabloid": "us-tabloid",
+}
+
 
 def serialize_game_data(game: GameData, writer: GameWriter) -> dict:
     """Transform GameData into a JSON-serializable dict for Typst templates."""
@@ -89,6 +96,7 @@ def generate_pdf(
     output_path: Path,
     theme: str = "default",
     game_dir: Path | None = None,
+    paper: str | None = None,
 ) -> bool:
     """Generate a PDF from GameData. Returns True on success, False if typst not found."""
     typst_bin = find_typst()
@@ -120,14 +128,18 @@ def generate_pdf(
     try:
         main_typ = theme_dir / "main.typ"
         output_path = Path(output_path)
+        cmd = [
+            typst_bin, "compile",
+            str(main_typ),
+            str(output_path),
+            "--root", "/",
+            "--input", f"data={json_path}",
+        ]
+        if paper:
+            paper = PAPER_ALIASES.get(paper, paper)
+            cmd.extend(["--input", f"paper={paper}"])
         subprocess.run(
-            [
-                typst_bin, "compile",
-                str(main_typ),
-                str(output_path),
-                "--root", "/",
-                "--input", f"data={json_path}",
-            ],
+            cmd,
             check=True,
             capture_output=True,
             text=True,

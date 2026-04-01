@@ -37,6 +37,8 @@ def cmd_build(args: list[str]):
                         help="Output PDF path (default: <game_name>.pdf)")
     parser.add_argument("--theme", type=str, default="default",
                         help="Typst template theme (default: default)")
+    parser.add_argument("--paper", type=str, default=None,
+                        help="Paper size: a4, letter (default: a4)")
     parsed = parser.parse_args(args)
 
     if parsed.game_dir:
@@ -67,7 +69,7 @@ def cmd_build(args: list[str]):
     else:
         name = game.metadata.get("title") or game_dir.resolve().name
         output_path = Path(f"{_slugify(name)}.pdf")
-    if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve()):
+    if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper):
         print(f"PDF written to {output_path}")
 
 

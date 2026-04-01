@@ -1,5 +1,5 @@
 // main.typ — Entry point: reads JSON and assembles all pages
-#import "style.typ": page-paper, page-margin, body-font
+#import "style.typ": page-paper as default-paper, page-margin, body-font
 #import "verb-sheet.typ": verb-sheet
 #import "room-sheet.typ": room-sheet
 #import "inventory.typ": inventory-sheet
@@ -12,6 +12,9 @@
 // Game title from metadata (falls back to "ADDVENTURE")
 #let game-title = upper(data.metadata.at("title", default: "Addventure"))
 #let start-room = data.at("start_room", default: none)
+
+// Paper size: CLI --paper overrides template default
+#let page-paper = sys.inputs.at("paper", default: default-paper)
 
 // Page and text defaults
 #set page(

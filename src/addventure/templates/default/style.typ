@@ -1,7 +1,7 @@
 // style.typ — shared helpers and page setup for Addventure PDF output
 
 // Page setup constants
-#let page-paper = "us-letter"
+#let page-paper = "a4"
 #let page-margin = 0.75in
 #let body-font = "Liberation Serif"
 #let mono-font = "Liberation Mono"
