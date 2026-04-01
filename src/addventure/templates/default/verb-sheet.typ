@@ -4,9 +4,36 @@
 #let verb-sheet(data, game-title, start-room) = {
   sheet-title(game-title)
 
-  // Game description (from body text before first # header)
+  // Cover image + description
+  let cover-image = data.metadata.at("image", default: none)
+  let image-height = eval(data.metadata.at("image_height", default: "12em"))
   let description = data.metadata.at("description", default: none)
-  if description != none {
+
+  if cover-image != none and description != none {
+    // Image alongside description
+    block(below: 0.8em)[
+      #grid(
+        columns: (auto, 1fr),
+        gutter: 1em,
+        align(top)[
+          #image(cover-image, height: image-height)
+        ],
+        align(left + top)[
+          #text(size: 11pt)[#eval(description, mode: "markup")]
+        ],
+      )
+    ]
+    line(length: 100%, stroke: (paint: luma(150), thickness: 0.5pt))
+    v(0.8em)
+  } else if cover-image != none {
+    // Image only, centered
+    block(below: 0.8em)[
+      #align(center)[#image(cover-image, height: image-height)]
+    ]
+    line(length: 100%, stroke: (paint: luma(150), thickness: 0.5pt))
+    v(0.8em)
+  } else if description != none {
+    // Description only (original behavior)
     block(below: 0.8em)[
       #text(size: 11pt)[#eval(description, mode: "markup")]
     ]

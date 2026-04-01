@@ -84,7 +84,12 @@ def find_typst() -> str | None:
     return which("typst")
 
 
-def generate_pdf(game: GameData, output_path: Path, theme: str = "default") -> bool:
+def generate_pdf(
+    game: GameData,
+    output_path: Path,
+    theme: str = "default",
+    game_dir: Path | None = None,
+) -> bool:
     """Generate a PDF from GameData. Returns True on success, False if typst not found."""
     typst_bin = find_typst()
     if typst_bin is None:
@@ -96,6 +101,15 @@ def generate_pdf(game: GameData, output_path: Path, theme: str = "default") -> b
 
     writer = GameWriter(game)
     data = serialize_game_data(game, writer)
+
+    # Resolve cover image path relative to game directory
+    image_rel = game.metadata.get("image")
+    if image_rel and game_dir is not None:
+        image_path = (game_dir / image_rel).resolve()
+        if image_path.is_file():
+            data["metadata"]["image"] = str(image_path)
+        else:
+            print(f"WARNING: image not found: {image_path}", file=__import__('sys').stderr)
 
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".json", delete=False

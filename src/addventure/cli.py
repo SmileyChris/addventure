@@ -67,7 +67,7 @@ def cmd_build(args: list[str]):
     else:
         name = game.metadata.get("title") or game_dir.resolve().name
         output_path = Path(f"{_slugify(name)}.pdf")
-    if generate_pdf(game, output_path, theme=parsed.theme):
+    if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve()):
         print(f"PDF written to {output_path}")
 
 

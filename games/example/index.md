@@ -2,6 +2,7 @@
 title: The Facility
 author: Example
 start: Control Room
+image: the-facility.jpg
 ---
 
 You wake up bound to a chair. Your wrists burn against coarse rope. The air tastes of rust and stale electricity. A row of dead monitors lines the far wall, their screens dark and cracked. Somewhere above, a fluorescent tube flickers and hums.
