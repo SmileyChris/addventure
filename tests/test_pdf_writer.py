@@ -1,0 +1,64 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from addventure import compile_game, GameWriter
+from addventure.pdf_writer import serialize_game_data
+
+
+def _make_game():
+    global_src = "--- verbs ---\nUSE\nLOOK\n\n--- items ---\nKEY\n"
+    room_src = '--- "Room" ---\nLOOK: "A room."\n\nBOX\n  LOOK: "A box."\n  USE + KEY:\n    "You open it."\n    BOX -> BOX__OPEN\n      LOOK: "An open box."\n    KEY -> trash\n'
+    return compile_game(global_src, [room_src])
+
+
+def test_serialize_top_level_keys():
+    game = _make_game()
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert set(data.keys()) == {"verbs", "rooms", "inventory_slots", "potentials", "ledger"}
+
+
+def test_serialize_verbs():
+    game = _make_game()
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    base_verbs = [v for v in data["verbs"] if "__" not in v["name"]]
+    assert len(base_verbs) == 2
+    assert all("name" in v and "id" in v for v in data["verbs"])
+
+
+def test_serialize_rooms():
+    game = _make_game()
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    base_rooms = [r for r in data["rooms"] if r.get("state") is None]
+    assert len(base_rooms) == 1
+    room = base_rooms[0]
+    assert room["name"] == "Room"
+    assert isinstance(room["id"], int)
+    assert isinstance(room["objects"], list)
+    assert isinstance(room["discovery_slots"], int)
+
+
+def test_serialize_potentials():
+    game = _make_game()
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert len(data["potentials"]) == len(game.resolved)
+    assert all("sum" in p and "entry" in p for p in data["potentials"])
+    sums = [p["sum"] for p in data["potentials"]]
+    assert sums == sorted(sums), "Potentials should be sorted by sum"
+
+
+def test_serialize_ledger():
+    game = _make_game()
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert len(data["ledger"]) == len(game.resolved)
+    for entry in data["ledger"]:
+        assert "entry" in entry
+        assert "narrative" in entry
+        assert "instructions" in entry
+        assert isinstance(entry["instructions"], list)
