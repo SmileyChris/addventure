@@ -485,3 +485,273 @@ LOOK: B.
     sheet = writer.write_room_sheet("Room A")
     assert "Alert" not in sheet
     assert "alert" not in sheet
+
+
+def test_auto_register_item_from_player_arrow():
+    """A noun with -> player should auto-create an Item."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A brass key.
++ TAKE:
+  You pick up the key.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    assert "KEY" in game.items
+
+
+def test_auto_register_requires_take_verb():
+    """Compiler should error if -> player exists but no TAKE verb."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A key.
++ USE:
+  You grab it.
+  - KEY -> player
+"""
+    try:
+        compile_game(global_src, [room_src])
+        assert False, "Should have raised"
+    except Exception as e:
+        assert "TAKE" in str(e)
+
+
+def test_auto_register_name_collision_across_rooms():
+    """Two nouns with same name in different rooms both with -> player should error."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A.
+
+LEVER
++ TAKE:
+  You take it.
+  - LEVER -> player
+
+# Room B
+LOOK: B.
+
+LEVER
++ TAKE:
+  You take it.
+  - LEVER -> player
+"""
+    try:
+        compile_game(global_src, [room_src])
+        assert False, "Should have raised"
+    except Exception as e:
+        assert "LEVER" in str(e)
+
+
+def test_explicit_item_skips_auto_register():
+    """If an item is declared in # Items, auto-registration is skipped."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\nKEY\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A key.
++ TAKE:
+  You pick it up.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    key_item = game.items["KEY"]
+    # Explicit item keeps its own allocated ID (from entity pool, 100-999)
+    assert 100 <= key_item.id <= 999
+
+
+def test_auto_item_id_derived_from_take():
+    """Auto-registered item ID should be TAKE_id + noun_id."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A brass key.
++ TAKE:
+  You pick up the key.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    key_noun = game.nouns["Room::KEY"]
+    key_item = game.items["KEY"]
+    take_id = game.verbs["TAKE"].id
+    assert key_item.id == take_id + key_noun.id
+
+
+def test_auto_item_id_not_in_entity_ids():
+    """The derived inventory ID should not collide with any other entity ID."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A key.
++ TAKE:
+  You grab it.
+  - KEY -> player
+
+BOX
++ LOOK: A box.
+"""
+    game = compile_game(global_src, [room_src])
+    key_item = game.items["KEY"]
+    all_entity_ids = set()
+    for n in game.nouns.values():
+        all_entity_ids.add(n.id)
+    for r in game.rooms.values():
+        all_entity_ids.add(r.id)
+    assert key_item.id not in all_entity_ids
+
+
+def test_interactions_duplicated_for_inventory_id():
+    """LOOK + noun and LOOK + inventory_id should both appear in resolved."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A brass key.
++ TAKE:
+  You pick up the key.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    key_noun = game.nouns["Room::KEY"]
+    key_item = game.items["KEY"]
+    look_id = game.verbs["LOOK"].id
+
+    # LOOK + noun_id should exist
+    noun_look = [ri for ri in game.resolved
+                 if ri.sum_id == look_id + key_noun.id and ri.narrative == "A brass key."]
+    assert len(noun_look) == 1
+
+    # LOOK + inventory_id should also exist (same narrative)
+    inv_look = [ri for ri in game.resolved
+                if ri.sum_id == look_id + key_item.id and ri.narrative == "A brass key."]
+    assert len(inv_look) == 1
+
+
+def test_multi_target_duplicated_for_inventory_id():
+    """USE + DOOR + KEY should work with both noun and inventory KEY IDs."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A key.
++ TAKE:
+  You grab it.
+  - KEY -> player
+
+DOOR
++ LOOK: A locked door.
++ USE + KEY:
+  You unlock the door.
+  - DOOR -> trash
+"""
+    game = compile_game(global_src, [room_src])
+    key_item = game.items["KEY"]
+    use_id = game.verbs["USE"].id
+    door_id = game.nouns["Room::DOOR"].id
+    key_noun_id = game.nouns["Room::KEY"].id
+
+    # USE + DOOR + KEY(noun) should exist
+    noun_sum = use_id + door_id + key_noun_id
+    assert any(ri.sum_id == noun_sum for ri in game.resolved)
+
+    # USE + DOOR + KEY(inventory) should also exist
+    inv_sum = use_id + door_id + key_item.id
+    assert any(ri.sum_id == inv_sum for ri in game.resolved)
+
+
+def test_pickup_instruction_uses_inventory_id():
+    """The pickup instruction should reference the inventory ID, not the noun ID."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A key.
++ TAKE:
+  You grab it.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    key_item = game.items["KEY"]
+    key_noun = game.nouns["Room::KEY"]
+
+    # Find the TAKE + KEY resolved interaction (using noun ID, not inventory ID)
+    take_ri = [ri for ri in game.resolved
+               if ri.verb == "TAKE" and "KEY" in ri.targets
+               and ri.sum_id == game.verbs["TAKE"].id + key_noun.id]
+    assert len(take_ri) == 1
+    instructions = writer._generate_instructions(take_ri[0])
+
+    # Should mention crossing out noun ID on room sheet
+    assert any(str(key_noun.id) in inst and "room sheet" in inst for inst in instructions)
+    # Should mention writing to Inventory
+    assert any("Inventory" in inst for inst in instructions)
+
+
+def test_pickup_via_take_says_write_your_sum():
+    """When pickup is triggered by TAKE directly, use 'Write your sum'."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A key.
++ TAKE:
+  You grab it.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    key_noun = game.nouns["Room::KEY"]
+
+    take_ri = [ri for ri in game.resolved
+               if ri.verb == "TAKE" and "KEY" in ri.targets
+               and ri.sum_id == game.verbs["TAKE"].id + key_noun.id]
+    assert len(take_ri) == 1
+    instructions = writer._generate_instructions(take_ri[0])
+    inv_instr = [i for i in instructions if "Inventory" in i]
+    assert len(inv_instr) == 1
+    assert "your sum" in inv_instr[0].lower()
+
+
+def test_pickup_via_other_verb_states_id_explicitly():
+    """When pickup is triggered by a non-TAKE verb, state the inventory ID."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+CRATE
++ LOOK: A crate.
++ USE:
+  You smash it open. A gem falls out.
+  - GEM -> player
+
+GEM
++ LOOK: A sparkling gem.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    gem_item = game.items["GEM"]
+
+    # Find USE + CRATE (which triggers GEM -> player)
+    use_crate = [ri for ri in game.resolved
+                 if ri.verb == "USE" and "CRATE" in ri.targets]
+    assert len(use_crate) >= 1
+    instructions = writer._generate_instructions(use_crate[0])
+    inv_instr = [i for i in instructions if "Inventory" in i]
+    assert len(inv_instr) == 1
+    # Should state the number explicitly, not "your sum"
+    assert str(gem_item.id) in inv_instr[0]

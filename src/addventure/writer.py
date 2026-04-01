@@ -189,10 +189,17 @@ class GameWriter:
                 entity_id = self._get_id(subj, ri.room)
                 item = self.game.items.get(subj)
                 if item:
-                    instructions.append(
-                        f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
-                        f"Write {dn(subj)} ({item.id}) on your Inventory."
-                    )
+                    # Auto-item picked up via TAKE: player already computed the sum
+                    if ri.verb == "TAKE" and subj in self.game.auto_items:
+                        instructions.append(
+                            f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
+                            f"Write your sum on your Inventory."
+                        )
+                    else:
+                        instructions.append(
+                            f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
+                            f"Write {item.id} on your Inventory."
+                        )
                 else:
                     instructions.append(
                         f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "

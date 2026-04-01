@@ -83,3 +83,4 @@ class GameData:
     interactions: list[Interaction] = field(default_factory=list)
     resolved: list[ResolvedInteraction] = field(default_factory=list)
     cues: list[Cue] = field(default_factory=list)
+    auto_items: set[str] = field(default_factory=set)
