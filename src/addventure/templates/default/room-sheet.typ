@@ -8,41 +8,34 @@
   // Title
   if hide-name {
     // Blind non-start: small label with heavy rule as write line
-    align(center)[
-      #block(
-        width: 100%,
-        below: 0.15em,
-      )[
-        #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM TITLE]
-      ]
-      #line(length: 100%, stroke: 1.5pt)
+    block(
+      width: 100%,
+      below: 0.15em,
+    )[
+      #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM TITLE]
     ]
+    line(length: 100%, stroke: 1.5pt)
   } else {
-    let title = "ROOM: " + upper(room.name)
+    let title = upper(room.name)
     if is-start { title = title + "  ★ START" }
     sheet-title(title)
   }
 
   // Room ID
-  block(below: 1em)[
-    #grid(
-      columns: (auto, 1fr),
-      gutter: 0.5em,
-      align(left + horizon)[
-        #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]
-      ],
-      align(left + horizon)[
-        #id-box(str(room.id)) #id-box(hide[000])
-      ],
-    )
+  block(width: 100%, below: 1em)[
+    #align(center)[
+      #box(baseline: -35%)[#text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]]
+      #h(0.5em)
+      #id-box(str(room.id)) #id-box(hide[000])
+    ]
   ]
 
   // Description
+  v(1em)
+  section-title("Description")
   block(below: 1.5em)[
-    #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[DESCRIPTION]
-    #v(0.2em)
     #if is-start and room.description != "" {
-      text(size: 11pt, style: "italic")[#room.description]
+      text(size: 11pt)[#eval(room.description, mode: "markup")]
     } else {
       write-slot()
       v(0.3em)
