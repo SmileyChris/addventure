@@ -43,7 +43,7 @@
     #align(center)[
       #box(baseline: -35%)[#text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM ID]]
       #h(0.5em)
-      #id-box(str(room.id)) #id-box(hide[000])
+      #id-box(str(room.id), crossable: true) #id-box(hide[000])
     ]
   ]
 
@@ -119,7 +119,7 @@
               #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
             ],
             align(right + horizon)[
-              #id-box(str(obj.id))
+              #id-box(str(obj.id), crossable: true)
             ],
             align(right + horizon)[#id-box(hide[000])],
           )

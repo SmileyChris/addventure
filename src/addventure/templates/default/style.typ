@@ -30,24 +30,44 @@
   v(-0.3em)
 }
 
+// Fillable mode flag
+#let fillable = sys.inputs.at("fillable", default: none) != none
+
+// Form field counter for unique names
+#let form-counter = counter("form-field")
+
 // write-slot: underline box for player to write in
 #let write-slot(width: 100%) = {
-  box(
+  let slot = box(
     width: width,
     height: 1.4em,
     stroke: (bottom: 0.75pt),
   )[]
+  if fillable {
+    form-counter.step()
+    context link("form://text/" + str(form-counter.get().first()))[#slot]
+  } else {
+    slot
+  }
 }
 
 // id-box: a bordered box containing an ID number
-#let id-box(content) = {
-  box(
+// crossable: true for pre-filled IDs that can be crossed out when clicked
+#let id-box(content, crossable: false) = {
+  let b = box(
     stroke: 0.75pt,
     inset: (x: 5pt, y: 3pt),
     radius: 2pt,
   )[
     #text(font: mono-font, size: 10pt, weight: "bold")[#content]
   ]
+  if fillable {
+    form-counter.step()
+    let kind = if crossable { "cross" } else { "id" }
+    context link("form://" + kind + "/" + str(form-counter.get().first()))[#b]
+  } else {
+    b
+  }
 }
 
 // separator: decorative separator between ledger entries

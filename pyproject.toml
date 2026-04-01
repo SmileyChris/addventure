@@ -3,7 +3,9 @@ name = "addventure"
 version = "0.1.0"
 description = "Compiler and writer for paper-based text adventures where addition IS the parser"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "pypdf>=6.9.2",
+]
 
 [project.scripts]
 adv = "addventure.cli:main"

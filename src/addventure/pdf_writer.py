@@ -170,12 +170,15 @@ def generate_pdf(
         if cover:
             logo_path = str(Path(__file__).resolve().parent.parent.parent / "addventure.jpg")
             cmd.extend(["--input", f"cover={logo_path}"])
+        cmd.extend(["--input", "fillable=1"])
         subprocess.run(
             cmd,
             check=True,
             capture_output=True,
             text=True,
         )
+        from .fillable import make_fillable
+        make_fillable(output_path)
         return True
     except subprocess.CalledProcessError as e:
         print(f"Typst error:\n{e.stderr}", file=__import__('sys').stderr)
