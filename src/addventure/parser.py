@@ -425,7 +425,11 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
             game.nouns[key] = Noun(subject, base, state, room_name)
         return _parse_entity_block(lines, i, game, room_name, subject, child_indent - 1)
 
-    # Transform
+    # Verb state transform (e.g. USE__RESTRAINED -> USE): skip, no children
+    if arrow.subject in game.verbs or dest in game.verbs:
+        return i
+
+    # Entity state transform
     dest_name = dest
     if dest_name.startswith("@") or dest_name.startswith("room__"):
         # Room state transform
