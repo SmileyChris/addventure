@@ -5,9 +5,9 @@ TERMINAL
 + LOOK: A dusty CRT. A keycard slot sits beside it.
 + USE: ACCESS DENIED flashes on the screen.
 + USE + KEYCARD:
-  You slide the keycard. The screen floods with data.
+  You slide the keycard. The screen floods with data. The room shudders as something powers up.
   - TERMINAL -> TERMINAL__UNLOCKED
-    + LOOK: Scrolling text. A map shows the facility layout.
+    + LOOK: Scrolling text. A map shows the facility layout — Control Room, Basement, Hallway. An exit is marked at the far end of the hallway.
   - KEYCARD -> trash
   - ? -> "Basement"
     The power surge triggers the fuse box. A hidden compartment clicks open behind it.
@@ -15,7 +15,7 @@ TERMINAL
   - room -> room__POWERED
     + LOOK: The room hums with energy. A hatch has opened in the floor.
     - HATCH -> room
-      + LOOK: A dark opening, just wide enough to squeeze through.
+      + LOOK: A dark opening leading down. You can hear water dripping below.
       + USE:
         You lower yourself into the darkness.
         - player -> "Basement"
@@ -27,7 +27,7 @@ CRATE
   - CRATE -> CRATE__OPEN
     + LOOK: A splintered crate, lid hanging off.
   - KEYCARD -> room
-    + LOOK: A small keycard among the splinters.
+    + LOOK: A small keycard with a red stripe.
     + TAKE:
       You pocket the keycard.
       - KEYCARD -> player
