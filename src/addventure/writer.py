@@ -394,4 +394,4 @@ def print_full_report(game: GameData):
     print(f"  Nouns: {len(game.nouns)}")
     print(f"  Items: {len(game.items)}")
     print(f"  Resolved: {len(game.resolved)}")
-    print(f"  Alerts: {len(game.alerts)}")
+    print(f"  Cues: {len(game.cues)}")

@@ -256,7 +256,7 @@ def ensure_room_looks(game: GameData):
 def compile_game(global_source: str, room_sources: list[str],
                  max_retries=200) -> GameData:
     """
-    Full compilation: parse → allocate IDs (with retry) → resolve → alerts.
+    Full compilation: parse → allocate IDs (with retry) → resolve → cues.
     Returns a validated GameData ready for the writer.
     """
     game = parse_global(global_source)
