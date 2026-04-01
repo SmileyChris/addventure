@@ -68,7 +68,7 @@
               columns: (1fr, 4em),
               gutter: 0.5em,
               align(left + horizon)[
-                #text(font: "Liberation Sans", size: 10pt)[#obj.name]
+                #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
               ],
               align(right + bottom)[#write-slot(width: 100%)],
             )
@@ -102,7 +102,7 @@
             columns: (1fr, auto),
             gutter: 0.5em,
             align(left + horizon)[
-              #text(font: "Liberation Sans", size: 10pt)[#obj.name]
+              #text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")]
             ],
             align(right + horizon)[
               #id-box(str(obj.id))

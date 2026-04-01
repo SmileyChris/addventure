@@ -2,6 +2,15 @@ from .models import GameData, ResolvedInteraction
 from .compiler import get_entity_id, check_authored_collisions, check_potential_collisions
 
 
+def _display_name(name: str) -> str:
+    """Convert internal names to player-facing display names.
+    Strips state suffix (CRATE__OPEN -> CRATE) and converts
+    single underscores to spaces (WALL_PANEL -> WALL PANEL).
+    """
+    base = name.split("__")[0]
+    return base.replace("_", " ")
+
+
 class GameWriter:
     """
     Transforms compiled GameData into player-facing printable components.
@@ -134,6 +143,7 @@ class GameWriter:
     def _generate_instructions(self, ri: ResolvedInteraction) -> list[str]:
         """Convert arrows into human-readable player instructions."""
         instructions = []
+        dn = _display_name
 
         for arrow in ri.arrows:
             subj = arrow.subject
@@ -162,7 +172,7 @@ class GameWriter:
             elif dest == "trash":
                 sheet, entity_id = self._locate_entity(subj, ri.room)
                 instructions.append(
-                    f"Cross out {subj} ({entity_id}) on your {sheet}."
+                    f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
                 )
 
             # THING -> player
@@ -171,20 +181,20 @@ class GameWriter:
                 item = self.game.items.get(subj)
                 if item:
                     instructions.append(
-                        f"Cross out {subj} ({entity_id}) on your room sheet. "
-                        f"Write {subj} ({item.id}) on your Inventory."
+                        f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
+                        f"Write {dn(subj)} ({item.id}) on your Inventory."
                     )
                 else:
                     instructions.append(
-                        f"Cross out {subj} ({entity_id}) on your room sheet. "
-                        f"Write {subj} ({entity_id}) on your Inventory."
+                        f"Cross out {dn(subj)} ({entity_id}) on your room sheet. "
+                        f"Write {dn(subj)} ({entity_id}) on your Inventory."
                     )
 
             # THING -> room (reveal in current room)
             elif dest == "room":
                 entity_id = self._get_id(subj, ri.room)
                 instructions.append(
-                    f"Write {subj} ({entity_id}) in a discovery slot "
+                    f"Write {dn(subj)} ({entity_id}) in a discovery slot "
                     f"on your room sheet."
                 )
 
@@ -210,14 +220,14 @@ class GameWriter:
                     clean_subj = subj.lstrip("@")
                     if clean_subj in self.game.verbs or subj in self.game.verbs:
                         instructions.append(
-                            f"On your Verb Sheet, cross out {clean_subj} ({old_id}). "
-                            f"Write {dest.lstrip('@')} ({new_id})."
+                            f"On your Verb Sheet, cross out {dn(clean_subj)} ({old_id}). "
+                            f"Write {dn(dest.lstrip('@'))} ({new_id})."
                         )
                     else:
                         clean_dest = dest.lstrip("@")
                         instructions.append(
-                            f"Cross out {subj} ({old_id}) on your room sheet. "
-                            f"Write {clean_dest} ({new_id}) in its place."
+                            f"Cross out {dn(subj)} ({old_id}) on your room sheet. "
+                            f"Write {dn(clean_dest)} ({new_id}) in its place."
                         )
 
             # Verb state restore: USE__RESTRAINED -> USE
@@ -227,8 +237,8 @@ class GameWriter:
                     old_id = self.game.verbs[subj].id
                     new_id = self.game.verbs[dest].id
                     instructions.append(
-                        f"On your Verb Sheet, cross out {subj} ({old_id}). "
-                        f"Write {dest} ({new_id})."
+                        f"On your Verb Sheet, cross out {dn(subj)} ({old_id}). "
+                        f"Write {dn(dest)} ({new_id})."
                     )
 
         # Blind mode: append room reveal instructions for LOOK + @room
@@ -250,19 +260,20 @@ class GameWriter:
         objects = self._initial_objects(room_name)
         instructions = []
 
+        dn = _display_name
         if room_name == start:
             # Start room: names already on sheet, just reveal IDs
             if objects:
                 for obj in objects:
                     instructions.append(
-                        f"Write {obj.id} next to {obj.name} on your room sheet."
+                        f"Write {obj.id} next to {dn(obj.name)} on your room sheet."
                     )
         else:
             # Non-start: reveal room name and all objects
             instructions.append(f'Write "{room_name}" as the room title.')
             for obj in objects:
                 instructions.append(
-                    f"Write {obj.name} ({obj.id}) in an object slot."
+                    f"Write {dn(obj.name)} ({obj.id}) in an object slot."
                 )
 
         return instructions
