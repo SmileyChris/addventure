@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from addventure import compile_game, GameWriter
-from addventure.pdf_writer import serialize_game_data
+from addventure.pdf_writer import serialize_game_data, find_typst, generate_pdf
 
 
 def _make_game():
@@ -62,3 +62,30 @@ def test_serialize_ledger():
         assert "narrative" in entry
         assert "instructions" in entry
         assert isinstance(entry["instructions"], list)
+
+
+def test_find_typst():
+    result = find_typst()
+    assert result is None or Path(result).name.startswith("typst")
+
+
+def test_generate_pdf(tmp_path):
+    game = _make_game()
+    output = tmp_path / "test-output.pdf"
+    result = generate_pdf(game, output)
+    if find_typst() is None:
+        assert result is False
+    else:
+        assert result is True
+        assert output.exists()
+        assert output.stat().st_size > 0
+
+
+def test_generate_pdf_custom_theme_missing(tmp_path):
+    game = _make_game()
+    output = tmp_path / "test-output.pdf"
+    try:
+        generate_pdf(game, output, theme="nonexistent")
+        assert False, "Should have raised"
+    except FileNotFoundError:
+        pass

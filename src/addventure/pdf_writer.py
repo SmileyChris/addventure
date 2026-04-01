@@ -72,3 +72,50 @@ def serialize_game_data(game: GameData, writer: GameWriter) -> dict:
         "potentials": potentials,
         "ledger": ledger,
     }
+
+
+def find_typst() -> str | None:
+    """Return path to typst binary, or None if not found."""
+    return which("typst")
+
+
+def generate_pdf(game: GameData, output_path: Path, theme: str = "default") -> bool:
+    """Generate a PDF from GameData. Returns True on success, False if typst not found."""
+    typst_bin = find_typst()
+    if typst_bin is None:
+        return False
+
+    theme_dir = TEMPLATES_DIR / theme
+    if not theme_dir.exists():
+        raise FileNotFoundError(f"Theme not found: {theme} (looked in {theme_dir})")
+
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as f:
+        json.dump(data, f)
+        json_path = f.name
+
+    try:
+        main_typ = theme_dir / "main.typ"
+        output_path = Path(output_path)
+        subprocess.run(
+            [
+                typst_bin, "compile",
+                str(main_typ),
+                str(output_path),
+                "--root", "/",
+                "--input", f"data={json_path}",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Typst error:\n{e.stderr}", file=__import__('sys').stderr)
+        raise
+    finally:
+        Path(json_path).unlink(missing_ok=True)
