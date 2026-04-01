@@ -1,8 +1,10 @@
 // room-sheet.typ — Per-room page
 #import "style.typ": sheet-title, section-title, write-slot, id-box
 
-#let room-sheet(room) = {
-  sheet-title("ROOM: " + upper(room.name))
+#let room-sheet(room, is-start: false) = {
+  let title = "ROOM: " + upper(room.name)
+  if is-start { title = title + "  ★ START" }
+  sheet-title(title)
 
   // Room ID
   block(below: 1em)[

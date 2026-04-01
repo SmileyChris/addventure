@@ -43,43 +43,65 @@
   ]
   v(0.4em)
 
-  // Table header
+  // 3-column potentials grid
+  let pot-cols = 3
+  let pots = data.potentials
+  let rows = calc.ceil(pots.len() / pot-cols)
+
+  // Header row
   block(
     width: 100%,
     fill: luma(230),
     inset: (x: 8pt, y: 4pt),
   )[
     #grid(
-      columns: (1fr, 1fr),
-      align(left)[
-        #text(font: "Liberation Sans", size: 9pt, weight: "bold")[SUM]
-      ],
-      align(right)[
-        #text(font: "Liberation Sans", size: 9pt, weight: "bold")[LEDGER ENTRY]
-      ],
+      columns: (1fr,) * pot-cols,
+      gutter: 1.5em,
+      ..for _ in range(pot-cols) {
+        (
+          grid(
+            columns: (1fr, 1fr),
+            align(left)[
+              #text(font: "Liberation Sans", size: 8pt, weight: "bold")[SUM]
+            ],
+            align(right)[
+              #text(font: "Liberation Sans", size: 8pt, weight: "bold")[ENTRY]
+            ],
+          ),
+        )
+      }
     )
   ]
 
-  for pot in data.potentials {
+  // Data rows — fill column by column (down then right)
+  for row-idx in range(rows) {
     block(
       width: 100%,
-      below: 0pt,
+      inset: (x: 8pt, y: 1pt),
     )[
-      #block(
-        width: 100%,
-        inset: (x: 8pt, y: 3pt),
-      )[
-        #grid(
-          columns: (1fr, 1fr),
-          align(left + horizon)[
-            #text(font: "Liberation Mono", size: 10pt, weight: "bold")[#str(pot.sum)]
-          ],
-          align(right + horizon)[
-            #text(font: "Liberation Mono", size: 10pt)[#str(pot.entry)]
-          ],
-        )
-      ]
-      #line(length: 100%, stroke: (paint: luma(210), thickness: 0.3pt))
+      #grid(
+        columns: (1fr,) * pot-cols,
+        gutter: 1.5em,
+        ..for col-idx in range(pot-cols) {
+          let idx = col-idx * rows + row-idx
+          if idx < pots.len() {
+            (
+              grid(
+                columns: (1fr, 1fr),
+                align(left + horizon)[
+                  #text(font: "Liberation Mono", size: 9pt, weight: "bold")[#str(pots.at(idx).sum)]
+                ],
+                align(right + horizon)[
+                  #text(font: "Liberation Mono", size: 9pt)[#str(pots.at(idx).entry)]
+                ],
+              ),
+            )
+          } else {
+            ([], )
+          }
+        }
+      )
     ]
+    line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
   }
 }

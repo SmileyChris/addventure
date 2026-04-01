@@ -11,6 +11,7 @@
 
 // Game title from metadata (falls back to "ADDVENTURE")
 #let game-title = upper(data.metadata.at("title", default: "Addventure"))
+#let start-room = data.at("start_room", default: none)
 
 // Page and text defaults
 #set page(
@@ -30,19 +31,31 @@
 #set text(font: body-font, size: 10pt, lang: "en")
 #set par(leading: 0.65em)
 
-// Verb sheet
-#verb-sheet(data, game-title)
+// 1. Verb sheet (with game description and start room instruction)
+#verb-sheet(data, game-title, start-room)
 
-// Room sheets — one per room
-#for room in data.rooms {
-  pagebreak()
-  room-sheet(room)
+// 2. Start room (first, so the player sees it right after verbs)
+#if start-room != none {
+  for room in data.rooms {
+    if room.name == start-room {
+      pagebreak()
+      room-sheet(room, is-start: true)
+    }
+  }
 }
 
-// Inventory & Potentials
+// 3. Inventory & Potentials
 #pagebreak()
 #inventory-sheet(data, game-title)
 
-// Story Ledger
+// 4. Remaining rooms (skip start room, already printed)
+#for room in data.rooms {
+  if room.name != start-room {
+    pagebreak()
+    room-sheet(room, is-start: false)
+  }
+}
+
+// 5. Story Ledger (last — player references it during play)
 #pagebreak()
 #story-ledger(data, game-title)

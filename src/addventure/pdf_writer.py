@@ -64,11 +64,14 @@ def serialize_game_data(game: GameData, writer: GameWriter) -> dict:
             "instructions": instructions,
         })
 
+    start_room = writer._start_room()
+
     return {
         "metadata": game.metadata,
+        "start_room": start_room,
         "verbs": verbs,
         "rooms": rooms,
-        "inventory_slots": 12,
+        "inventory_slots": max(len(game.items) + 2, 6),
         "potentials": potentials,
         "ledger": ledger,
     }

@@ -6,7 +6,7 @@
 
   block(below: 1em)[
     #text(size: 9pt, style: "italic")[
-      When you reach a valid sum, find that entry number below. Read the narrative aloud, then follow any instructions. Cross out items when discarded.
+      Only read an entry when directed to by the Potentials List. Read the narrative aloud, then follow any instructions.
     ]
   ]
 

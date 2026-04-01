@@ -1,14 +1,37 @@
-// verb-sheet.typ — Verb reference page
+// verb-sheet.typ — Game intro, description, and verb reference
 #import "style.typ": sheet-title, section-title, write-slot, id-box
 
-#let verb-sheet(data, game-title) = {
-  sheet-title(game-title + " — VERB SHEET")
+#let verb-sheet(data, game-title, start-room) = {
+  sheet-title(game-title)
 
+  // Game description (from metadata, between frontmatter and first # header)
+  let description = data.metadata.at("description", default: none)
+  if description != none {
+    block(below: 1.5em)[
+      #text(size: 10pt)[#description]
+    ]
+  }
+
+  // How to play
   block(below: 1em)[
     #text(size: 9pt, style: "italic")[
-      To take an action, add a Verb ID to an Entity ID. The resulting sum is your result — look it up in the Story Ledger. If the sum is not listed, nothing happens.
+      To take an action, add a Verb ID to an Entity ID. Look up the resulting sum in the Potentials List. If listed, read the matching Ledger entry. If not listed, nothing happens.
     ]
   ]
+
+  // Start room instruction
+  if start-room != none {
+    block(
+      below: 1.5em,
+      width: 100%,
+      stroke: (left: 2pt + luma(100)),
+      inset: (left: 8pt, y: 6pt),
+    )[
+      #text(size: 10pt, weight: "bold")[
+        You begin in: #start-room
+      ]
+    ]
+  }
 
   section-title("Verbs")
 
@@ -33,7 +56,7 @@
 
   v(1em)
   section-title("Additional Verbs")
-  text(size: 9pt, style: "italic")[If the GM adds verbs during play, record them here.]
+  text(size: 9pt, style: "italic")[If the game adds verbs during play, record them here.]
   v(0.4em)
 
   for _ in range(3) {

@@ -347,6 +347,9 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
     if dest.startswith('"') and dest.endswith('"'):
         target_room = dest[1:-1]
         subject = arrow.subject
+        if subject == "player":
+            # player -> "Room" is movement, not a noun registration
+            return i
         base, state = _split_name(subject)
         key = f"{target_room}::{subject}"
         if key not in game.nouns:
