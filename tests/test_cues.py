@@ -224,3 +224,68 @@ LOOK: B.
     assert len(cross_out) == 1
     assert str(cue.id) in cross_out[0]
     assert "Cue Checks" in cross_out[0]
+
+
+def test_inventory_sheet_has_cue_checks_when_cues_exist():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    A gate appears.
+    - GATE -> room
+
+# Room B
+LOOK: B.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    inv = writer.write_inventory_sheet()
+    assert "CUE CHECKS" in inv
+    assert "Cue Checks" in inv or "cue" in inv.lower()
+
+
+def test_inventory_sheet_no_cue_checks_without_cues():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
++ LOOK: A box.
++ USE + KEY:
+  You open it.
+  - BOX -> BOX__OPEN
+    + LOOK: Open box.
+  - KEY -> trash
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    inv = writer.write_inventory_sheet()
+    assert "CUE" not in inv
+
+
+def test_room_sheet_no_alerts():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A room.
+
+LEVER
++ LOOK: A lever.
++ USE:
+  You pull the lever.
+  - ? -> "Room B"
+    A gate appears.
+    - GATE -> room
+
+# Room B
+LOOK: B.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    sheet = writer.write_room_sheet("Room A")
+    assert "Alert" not in sheet
+    assert "alert" not in sheet

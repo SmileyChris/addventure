@@ -91,12 +91,6 @@ class GameWriter:
             for _ in range(disc_count):
                 lines.append(f"  {'_' * 24} ____")
 
-        # Room alert check area
-        lines.append(f"\nRoom Alerts (check on entry):")
-        lines.append(f"  If you have alert numbers for this room,")
-        lines.append(f"  add the alert number + {rm.id} (Room ID)")
-        lines.append(f"  and check the Potentials List.")
-
         return "\n".join(lines)
 
     # ── Inventory Sheet ─────────────────────────────────────────────────────
@@ -109,6 +103,12 @@ class GameWriter:
         lines.append("Items you're carrying. Cross out when used.\n")
         for _ in range(max_slots):
             lines.append(f"  {'_' * 24} ____")
+
+        if self.game.cues:
+            lines.append("\n\nCUE CHECKS")
+            lines.append("-" * 40)
+            lines.append("On room entry, add each cue + Room ID and check the Potentials List.\n")
+            lines.append("  ____  ____  ____  ____  ____  ____")
 
         lines.append("\n\nMASTER POTENTIALS LIST")
         lines.append("-" * 40)
