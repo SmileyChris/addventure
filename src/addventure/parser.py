@@ -320,7 +320,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             arrows.append(arrow)
             arr_indent = _indent(bline)
             i += 1
-            i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1)
+            i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=arrows)
         elif bmarker == "+":
             # A + line inside an interaction is a child of a prior arrow's state
             # This shouldn't happen at this level — break out
@@ -344,7 +344,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     return i
 
 
-def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
+def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propagated_arrows=None):
     dest = arrow.destination
 
     # ? -> "Room" is a cue (cross-room deferred effect)
@@ -440,7 +440,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
         base, state = _split_name(clean)
         if clean not in game.rooms:
             game.rooms[clean] = Room(clean, base, state)
-        return _parse_room_state_children(lines, i, game, clean, child_indent)
+        return _parse_room_state_children(lines, i, game, clean, child_indent, propagated_arrows)
     else:
         base, state = _split_name(dest_name)
         key = f"{room_name}::{dest_name}"
@@ -449,7 +449,12 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
         return _parse_entity_block(lines, i, game, room_name, dest_name, child_indent - 1)
 
 
-def _parse_room_state_children(lines, i, game, room_state_name, child_indent):
+def _parse_room_state_children(lines, i, game, room_state_name, child_indent, propagated_arrows=None):
+    """Parse children of a room state block.
+
+    Any '-> room' arrows found here are collected into propagated_arrows
+    so the parent interaction can generate player instructions for them.
+    """
     room_entity = f"@{room_state_name}"
     while i < len(lines):
         line = lines[i]
@@ -478,8 +483,10 @@ def _parse_room_state_children(lines, i, game, room_state_name, child_indent):
         elif marker == "-":
             if _is_arrow(content):
                 arrow = _parse_arrow(content, i + 1)
+                if propagated_arrows is not None and arrow.destination == "room":
+                    propagated_arrows.append(arrow)
                 i += 1
-                i = _parse_arrow_children(lines, i, game, room_state_name, arrow, _indent(line) + 1)
+                i = _parse_arrow_children(lines, i, game, room_state_name, arrow, _indent(line) + 1, propagated_arrows)
             else:
                 i += 1
         else:
@@ -537,7 +544,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                     arrows.append(a)
                     arr_indent = _indent(bline)
                     i += 1
-                    i = _parse_arrow_children(lines, i, game, room_name, a, arr_indent + 1)
+                    i = _parse_arrow_children(lines, i, game, room_name, a, arr_indent + 1, propagated_arrows=arrows)
                 elif bmarker == "+":
                     break
                 elif _is_narrative(bs) and not narrative:

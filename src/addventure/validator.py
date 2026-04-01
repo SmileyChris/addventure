@@ -76,7 +76,7 @@ def validate_reachability(game: GameData) -> list[str]:
     triggered = set()  # (verb, tuple(targets), room) of interactions that fired
 
     while queue:
-        state = queue.pop()
+        state = queue.pop(0)  # BFS for more thorough exploration
         if state in visited:
             continue
         visited.add(state)
@@ -248,8 +248,10 @@ def _resolve_cues(state: GameState, game: GameData) -> GameState:
     for cue in game.cues:
         if cue.id not in cues:
             continue
-        # Check if cue resolves in current room (any state)
+        # Check if cue resolves in the room the player is currently in
         for base, sname in state.room_states:
+            if base != state.room and sname != state.room:
+                continue
             if cue.target_room in (base, sname):
                 # Apply cue arrows
                 for a in cue.arrows:
