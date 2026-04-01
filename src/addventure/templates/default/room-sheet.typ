@@ -50,6 +50,7 @@
   // Description
   v(1em)
   section-title("Description")
+  v(0.3em)
   block(below: 1.5em)[
     #if is-start and room.description != "" {
       text(size: 11pt)[#eval(room.description, mode: "markup")]
@@ -66,6 +67,7 @@
   if total-slots > 0 {
     v(1em)
     section-title("Objects in this Room")
+    v(0.3em)
 
     if blind {
       // Blind mode: all slots are blank write-ins (objects + discoveries merged)

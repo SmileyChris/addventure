@@ -41,14 +41,14 @@
     v(0.8em)
   }
 
+  section-title("Verbs")
+
   // How to play
-  block(below: 1em)[
+  block(below: 1.2em)[
     #text(size: 9pt, style: "italic")[
       To take an action, calculate verb number + object number(s). Look up the resulting sum in the Potentials List. If listed, read the matching Ledger entry. If not listed, nothing happens.
     ]
   ]
-
-  section-title("Verbs")
 
   for verb in data.verbs {
     block(
@@ -87,4 +87,5 @@
       )
     ]
   }
+
 }

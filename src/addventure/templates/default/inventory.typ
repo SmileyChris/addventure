@@ -55,12 +55,11 @@
 
   // Master Potentials List
   section-title("Master Potentials List")
-  block(below: 0.6em)[
+  block(below: 1.2em)[
     #text(size: 9pt, style: "italic")[
       Calculate verb number + object number(s) and look up the sum below. If listed, go to that Ledger entry.
     ]
   ]
-  v(0.4em)
 
   // 4-column potentials grid
   let pot-cols = 4
@@ -98,7 +97,7 @@
   for row-idx in range(rows) {
     block(
       width: 100%,
-      inset: (x: 8pt, y: 1pt),
+      inset: (x: 8pt, y: 0pt),
     )[
       #grid(
         columns: (1fr,) * pot-cols,

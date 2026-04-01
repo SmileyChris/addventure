@@ -27,7 +27,7 @@
     #text(font: heading-font, size: 11pt, weight: "bold", tracking: 0.05em)[#upper(title)]
   ]
   line(length: 100%, stroke: 0.5pt)
-  v(0.3em)
+  v(-0.3em)
 }
 
 // write-slot: underline box for player to write in
