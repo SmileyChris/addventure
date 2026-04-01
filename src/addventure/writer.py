@@ -198,17 +198,18 @@ class GameWriter:
                     f"on your room sheet."
                 )
 
-            # THING -> "Other Room" (remote reveal / alert)
-            elif dest.startswith('"') and dest.endswith('"'):
+            # ? -> "Room" (cue trigger — deferred cross-room effect)
+            elif subj == "?":
                 target_room = dest[1:-1]
-                alert = next(
-                    (a for a in self.game.alerts
-                     if a.target_room == target_room and a.trigger_label == ri.parent_label),
+                cue = next(
+                    (c for c in self.game.cues
+                     if c.target_room == target_room
+                     and c.trigger_room == ri.room),
                     None
                 )
-                if alert:
+                if cue:
                     instructions.append(
-                        f"Write alert #{alert.alert_number} on your player sheet."
+                        f"Write {cue.id} in your Cue Checks."
                     )
 
             # THING -> THING__STATE (transform)
@@ -258,6 +259,17 @@ class GameWriter:
                             f"On your Verb Sheet, cross out {subj_display} ({old_id}). "
                             f"Write {dest_display} ({new_id})."
                         )
+
+        # Cue resolution: append "Cross out N from your Cue Checks"
+        if ri.verb == "CUE":
+            cue = next(
+                (c for c in self.game.cues if c.sum_id == ri.sum_id),
+                None
+            )
+            if cue:
+                instructions.append(
+                    f"Cross out {cue.id} from your Cue Checks."
+                )
 
         # Blind mode: append room reveal instructions for LOOK + @room
         if self.blind:
