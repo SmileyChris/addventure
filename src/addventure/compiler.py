@@ -2,7 +2,7 @@ import random
 from itertools import combinations, product as cart_product
 
 from .models import (
-    GameData, Verb, Noun, Interaction, ResolvedInteraction, Cue,
+    GameData, Verb, Noun, Item, Interaction, ResolvedInteraction, Cue,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
 
@@ -28,8 +28,30 @@ def _try_allocate(game: GameData):
         r.id = entity_pool.pop()
     for n in game.nouns.values():
         n.id = entity_pool.pop()
-    for it in game.items.values():
-        it.id = entity_pool.pop()
+
+    # Reserve derived inventory IDs (TAKE + noun_id) from the pool
+    take = game.verbs.get("TAKE")
+    if take and game.auto_items:
+        reserved = set()
+        for key, noun in game.nouns.items():
+            if noun.name in game.auto_items or noun.base in game.auto_items:
+                inv_id = take.id + noun.id
+                reserved.add(inv_id)
+        entity_pool = [n for n in entity_pool if n not in reserved]
+
+    # Allocate explicit (non-auto) items from pool
+    for name, it in game.items.items():
+        if name not in game.auto_items:
+            it.id = entity_pool.pop()
+
+    # Derive auto-item IDs: TAKE + base noun ID
+    if take:
+        for name in game.auto_items:
+            for key, noun in game.nouns.items():
+                if noun.name == name and noun.state is None:
+                    game.items[name].id = take.id + noun.id
+                    break
+
     for cue in game.cues:
         cue.id = entity_pool.pop()
 
@@ -96,6 +118,40 @@ def apply_inheritance(game: GameData):
                 ))
 
     game.interactions.extend(new_ixs)
+
+
+# ── Auto Item Registration ────────────────────────────────────────────────
+
+def auto_register_items(game: GameData):
+    """Auto-create Items for nouns that have -> player arrows."""
+    pickup_nouns: dict[str, list[tuple[str, int]]] = {}  # name -> [(room, line)]
+    for ix in game.interactions:
+        for a in ix.arrows:
+            if a.destination == "player" and a.subject != "player":
+                name = a.subject
+                if name not in pickup_nouns:
+                    pickup_nouns[name] = []
+                pickup_nouns[name].append((ix.room, a.source_line))
+
+    if not pickup_nouns:
+        return
+
+    if not game.verbs.get("TAKE"):
+        first_line = next(iter(pickup_nouns.values()))[0][1]
+        raise ParseError(first_line, "Arrow '-> player' requires a TAKE verb in # Verbs")
+
+    for name, locations in pickup_nouns.items():
+        if name in game.items:
+            continue
+        rooms = {room for room, _ in locations}
+        if len(rooms) > 1:
+            raise ParseError(
+                locations[0][1],
+                f"Noun '{name}' has -> player in multiple rooms ({', '.join(sorted(rooms))}). "
+                f"Use # Items to declare it explicitly, or rename one."
+            )
+        game.items[name] = Item(name)
+        game.auto_items.add(name)
 
 
 # ── Cue Resolution ──────────────────────────────────────────────────────────
@@ -180,6 +236,45 @@ def get_entity_id(name: str, game: GameData, room: str) -> int | None:
     return None
 
 
+def duplicate_item_interactions(game: GameData):
+    """Create parallel ResolvedInteractions using inventory IDs for auto-items.
+
+    For every resolved interaction that references an auto-item noun,
+    create a copy with the noun ID swapped for the inventory ID in the sum.
+    """
+    if not game.auto_items:
+        return
+
+    # Build noun_id -> item_id mapping for all auto-item nouns
+    id_map: dict[int, int] = {}
+    for name in game.auto_items:
+        item = game.items[name]
+        for key, noun in game.nouns.items():
+            if noun.name == name:
+                id_map[noun.id] = item.id
+
+    new_resolved = []
+    for ri in game.resolved:
+        # Check if any target in this interaction is an auto-item noun
+        for target in ri.targets:
+            noun_id = get_entity_id(target, game, ri.room)
+            if noun_id and noun_id in id_map:
+                inv_id = id_map[noun_id]
+                new_sum = ri.sum_id - noun_id + inv_id
+                new_resolved.append(ResolvedInteraction(
+                    verb=ri.verb,
+                    targets=ri.targets,
+                    sum_id=new_sum,
+                    narrative=ri.narrative,
+                    arrows=ri.arrows,
+                    source_line=ri.source_line,
+                    room=ri.room,
+                    parent_label=ri.parent_label,
+                ))
+
+    game.resolved.extend(new_resolved)
+
+
 def resolve_interactions(game: GameData):
     game.resolved = []
     for ix in game.interactions:
@@ -247,7 +342,9 @@ def check_potential_collisions(game: GameData) -> list[str]:
     for key, n in game.nouns.items():
         all_ids[n.name] = n.id
     for n, it in game.items.items():
-        all_ids[n] = it.id
+        # Use a distinct key for auto-items so noun ID isn't overwritten
+        label = f"{n}(inv)" if n in game.auto_items else n
+        all_ids[label] = it.id
     for n, rm in game.rooms.items():
         all_ids[f"@{n}"] = rm.id
 
@@ -308,6 +405,7 @@ def compile_game(global_source: str, room_sources: list[str],
         parse_room_file(src, game)
 
     ensure_room_looks(game)
+    auto_register_items(game)
 
     # Try allocations until collision-free
     for attempt in range(max_retries):
@@ -317,7 +415,9 @@ def compile_game(global_source: str, room_sources: list[str],
         apply_inheritance(game)
         resolve_interactions(game)
         if not check_authored_collisions(game):
-            break
+            duplicate_item_interactions(game)
+            if not check_authored_collisions(game):
+                break
         # Reset mutable state for retry
         game.resolved = []
         for cue in game.cues:
