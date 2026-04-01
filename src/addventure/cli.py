@@ -25,10 +25,10 @@ def load_game(game_dir: Path) -> tuple[str, list[str]]:
     return global_source, room_sources
 
 
-def cmd_run(args: list[str]):
+def cmd_build(args: list[str]):
     """Compile a game and output PDF (default) or text."""
     import argparse
-    parser = argparse.ArgumentParser(prog="adv run", description="Compile and output a game")
+    parser = argparse.ArgumentParser(prog="adv build", description="Compile and output a game")
     parser.add_argument("game_dir", nargs="?", default=None,
                         help="Path to game directory (default: cwd if index.md exists, else games/example)")
     parser.add_argument("--text", action="store_true",
@@ -180,7 +180,7 @@ def _cmd_new_part(name: str | None):
 
 
 COMMANDS = {
-    "run": cmd_run,
+    "build": cmd_build,
     "new": cmd_new,
 }
 
@@ -188,7 +188,7 @@ USAGE = """\
 Usage: adv <command> [args]
 
 Commands:
-  run [dir] [--text] [-o FILE] [--theme NAME]
+  build [dir] [--text] [-o FILE] [--theme NAME]
                      Compile game to PDF (default) or text
   new [name]         Scaffold a new game or part (interactive if no name given)\
 """
@@ -210,5 +210,5 @@ def main():
     if cmd:
         cmd(args[1:])
     else:
-        # Backwards compat: bare directory arg = run
-        cmd_run(args)
+        # Backwards compat: bare directory arg = build
+        cmd_build(args)
