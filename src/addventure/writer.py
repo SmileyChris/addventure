@@ -218,17 +218,28 @@ class GameWriter:
                 if old_id and new_id:
                     # Check if it's a verb transform
                     clean_subj = subj.lstrip("@")
+                    subj_display = dn(clean_subj)
+                    dest_display = dn(dest.lstrip("@"))
                     if clean_subj in self.game.verbs or subj in self.game.verbs:
-                        instructions.append(
-                            f"On your Verb Sheet, cross out {dn(clean_subj)} ({old_id}). "
-                            f"Write {dn(dest.lstrip('@'))} ({new_id})."
-                        )
+                        if subj_display == dest_display:
+                            instructions.append(
+                                f"On your Verb Sheet, change {subj_display}'s number to {new_id}."
+                            )
+                        else:
+                            instructions.append(
+                                f"On your Verb Sheet, cross out {subj_display} ({old_id}). "
+                                f"Write {dest_display} ({new_id})."
+                            )
                     else:
-                        clean_dest = dest.lstrip("@")
-                        instructions.append(
-                            f"Cross out {dn(subj)} ({old_id}) on your room sheet. "
-                            f"Write {dn(clean_dest)} ({new_id}) in its place."
-                        )
+                        if subj_display == dest_display:
+                            instructions.append(
+                                f"Change {subj_display}'s number to {new_id} on your room sheet."
+                            )
+                        else:
+                            instructions.append(
+                                f"Cross out {subj_display} ({old_id}) on your room sheet. "
+                                f"Write {dest_display} ({new_id}) in its place."
+                            )
 
             # Verb state restore: USE__RESTRAINED -> USE
             elif subj != dest and not dest.startswith('"'):
@@ -236,10 +247,17 @@ class GameWriter:
                 if subj in self.game.verbs and dest in self.game.verbs:
                     old_id = self.game.verbs[subj].id
                     new_id = self.game.verbs[dest].id
-                    instructions.append(
-                        f"On your Verb Sheet, cross out {dn(subj)} ({old_id}). "
-                        f"Write {dn(dest)} ({new_id})."
-                    )
+                    subj_display = dn(subj)
+                    dest_display = dn(dest)
+                    if subj_display == dest_display:
+                        instructions.append(
+                            f"On your Verb Sheet, change {dest_display}'s number to {new_id}."
+                        )
+                    else:
+                        instructions.append(
+                            f"On your Verb Sheet, cross out {subj_display} ({old_id}). "
+                            f"Write {dest_display} ({new_id})."
+                        )
 
         # Blind mode: append room reveal instructions for LOOK + @room
         if self.blind:
