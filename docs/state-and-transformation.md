@@ -57,6 +57,8 @@ The entity appears on the current room sheet. Use this to reveal hidden objects 
 
 Sends the player to a different room. The room name must match a `#` header exactly and be wrapped in quotes. The story entry tells the player to flip to that room sheet.
 
+To affect another room *without* moving the player there, use [cue checks](advanced.md#cue-checks-cross-room-effects) (`? -> "Room Name"`).
+
 ### `ENTITY__STATE` — transform an entity
 
 ```markdown

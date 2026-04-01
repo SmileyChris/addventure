@@ -113,11 +113,79 @@ When to use which:
 
 Items defined in `index.md` don't start in the player's inventory — they need to be placed somewhere with an arrow (`-> player` or `-> room`) or revealed through an interaction.
 
-## Cross-room alerts
+## Cue checks (cross-room effects)
 
-When an interaction in one room affects another room (e.g., pulling a lever that opens a door elsewhere), the compiler generates a **room alert**. The story entry tells the player to go to the other room's sheet and make changes there.
+Sometimes an action in one room should affect another room — pulling a lever that opens a gate elsewhere, flipping a switch that powers on a machine in the basement, etc. **Cue checks** handle this.
 
-This happens automatically when an arrow references an entity that belongs to a different room.
+### How it works
+
+A cue is a number the player writes on their inventory sheet. When they enter any room, they add each cue number to the Room ID and check the Potentials List. If there's a match, a ledger entry fires — revealing entities, changing state, or whatever you need.
+
+The player never knows which room a cue is "for" until the sum matches. This preserves surprise.
+
+### Writing a cue
+
+Use `? -> "Room Name"` as the arrow subject, with the resolution content indented below it:
+
+```markdown
+LEVER
++ USE:
+  You pull the lever. Something heavy shifts in the distance.
+  - ? -> "Courtyard"
+    An iron gate has risen from the ground.
+    - GATE -> room
+```
+
+When the player triggers USE + LEVER:
+1. The ledger says *"Write 347 in your Cue Checks"* (number assigned at compile time)
+2. Later, when the player enters the Courtyard, they add 347 + Courtyard's Room ID
+3. The sum matches a potentials entry → a new ledger entry fires
+4. That entry says *"Write GATE in a discovery slot"* and *"Cross out 347 from your Cue Checks"*
+
+The indented block under `?` defines what happens when the cue resolves. It works like any interaction body: narrative text, then arrows for state changes.
+
+### Multiple cues from one interaction
+
+A single interaction can trigger cues in multiple rooms:
+
+```markdown
++ USE:
+  You pull the master lever. Machinery groans throughout the building.
+  - ? -> "Courtyard"
+    The iron gate swings open.
+    - GATE -> room
+  - ? -> "Basement"
+    A hidden panel slides aside.
+    - PANEL -> room
+```
+
+### Cues and room states
+
+By default, a cue resolves regardless of the target room's current state. If the Courtyard has base and `COURTYARD__NIGHT` states, `? -> "Courtyard"` fires in either.
+
+You can target a specific state:
+
+```markdown
+- ? -> "Courtyard__NIGHT"
+  A figure emerges from the shadows.
+  - FIGURE -> room
+```
+
+This only fires when the Courtyard is in the `NIGHT` state.
+
+To target *only* the base state (before any transformation), add a trailing `__`:
+
+```markdown
+- ? -> "Courtyard__"
+  The fountain sparkles in daylight.
+  - COIN -> room
+```
+
+| Syntax | Resolves in |
+|---|---|
+| `? -> "Room"` | Any state (base + all variants) |
+| `? -> "Room__STATE"` | Only that specific state |
+| `? -> "Room__"` | Only the base state |
 
 ## Design tips
 

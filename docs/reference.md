@@ -116,6 +116,7 @@ Nested under the arrow that creates the state.
 | `"Room Name"` | Move the player to another room |
 | `ENTITY__STATE` | Transform entity to a new state |
 | `VERB__STATE` | Transform a verb to a new state |
+| `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
 
 ## Special syntax
 
@@ -126,6 +127,9 @@ Nested under the arrow that creates the state.
 | `*` | Wildcard — matches all entities in the room |
 | `//` | Comment — ignored by the compiler |
 | `# Interactions` | Section for standalone interactions in a room file |
+| `? -> "Room"` | Cue arrow — deferred effect in another room |
+| `? -> "Room__STATE"` | Cue targeting a specific room state |
+| `? -> "Room__"` | Cue targeting only the base room state |
 
 ## Naming rules
 
