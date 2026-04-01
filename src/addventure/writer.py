@@ -131,7 +131,8 @@ class GameWriter:
         lines.append("Only read an entry when directed to by the Potentials List.\n")
 
         seen_entries = set()
-        for ri in self.game.resolved:
+        sorted_resolved = sorted(self.game.resolved, key=lambda r: r.entry_number)
+        for ri in sorted_resolved:
             if ri.entry_number in seen_entries:
                 continue
             seen_entries.add(ri.entry_number)
@@ -230,43 +231,23 @@ class GameWriter:
                     subj_display = dn(clean_subj)
                     dest_display = dn(dest.lstrip("@"))
                     if clean_subj in self.game.verbs or subj in self.game.verbs:
-                        if subj_display == dest_display:
-                            instructions.append(
-                                f"On your Verb Sheet, change {subj_display}'s number to {new_id}."
-                            )
-                        else:
-                            instructions.append(
-                                f"On your Verb Sheet, cross out {subj_display} ({old_id}). "
-                                f"Write {dest_display} ({new_id})."
-                            )
+                        instructions.append(
+                            f"Change {subj_display} to {new_id} on your Verb Sheet."
+                        )
                     else:
-                        if subj_display == dest_display:
-                            instructions.append(
-                                f"Change {subj_display}'s number to {new_id} on your room sheet."
-                            )
-                        else:
-                            instructions.append(
-                                f"Cross out {subj_display} ({old_id}) on your room sheet. "
-                                f"Write {dest_display} ({new_id}) in its place."
-                            )
+                        instructions.append(
+                            f"Change {subj_display} to {new_id} on your room sheet."
+                        )
 
             # Verb state restore: USE__RESTRAINED -> USE
             elif subj != dest and not dest.startswith('"'):
                 # Could be a verb restore
                 if subj in self.game.verbs and dest in self.game.verbs:
-                    old_id = self.game.verbs[subj].id
                     new_id = self.game.verbs[dest].id
-                    subj_display = dn(subj)
                     dest_display = dn(dest)
-                    if subj_display == dest_display:
-                        instructions.append(
-                            f"On your Verb Sheet, change {dest_display}'s number to {new_id}."
-                        )
-                    else:
-                        instructions.append(
-                            f"On your Verb Sheet, cross out {subj_display} ({old_id}). "
-                            f"Write {dest_display} ({new_id})."
-                        )
+                    instructions.append(
+                        f"Change {dest_display} to {new_id} on your Verb Sheet."
+                    )
 
         # Cue resolution: append "Cross out N from your Cue Checks"
         if ri.verb == "CUE":

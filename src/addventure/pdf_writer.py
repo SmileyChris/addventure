@@ -87,6 +87,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             "narrative": ri.narrative,
             "instructions": instructions,
         })
+    ledger.sort(key=lambda e: e["entry"])
 
     start_room = writer._start_room()
     entry_prefix = game.metadata.get("entry_prefix", "A")

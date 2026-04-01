@@ -329,9 +329,11 @@ def compile_game(global_source: str, room_sources: list[str],
 
     resolve_cues(game)
 
-    # Renumber entries. Cue aliases (same cue, different room state) share
-    # the primary entry number so the ledger has one entry, not duplicates.
+    # Renumber entries. Deduplicate entries with identical content:
+    # - Cue aliases (same cue, different room state) share entry numbers
+    # - Interactions with same narrative + arrows (e.g. wildcard expansions)
     cue_primary_entry = {}  # cue.id -> entry_number
+    content_entry = {}  # (narrative, arrows_key) -> entry_number
     entry_num = 0
     for ri in game.resolved:
         if ri.verb == "CUE":
@@ -344,8 +346,23 @@ def compile_game(global_source: str, room_sources: list[str],
                 ri.entry_number = entry_num
                 cue_primary_entry[cue_id] = entry_num
         else:
-            entry_num += 1
-            ri.entry_number = entry_num
+            arrows_key = tuple((a.subject, a.destination) for a in ri.arrows)
+            key = (ri.narrative, arrows_key)
+            if key in content_entry:
+                ri.entry_number = content_entry[key]
+            else:
+                entry_num += 1
+                ri.entry_number = entry_num
+                content_entry[key] = entry_num
+    # Shuffle entry numbers so ledger order doesn't reveal game structure.
+    # Deterministic: seeded by random.seed(attempt) in the allocation loop.
+    unique_entries = list(range(1, entry_num + 1))
+    random.shuffle(unique_entries)
+    remap = {old: new for old, new in zip(range(1, entry_num + 1), unique_entries)}
+    for ri in game.resolved:
+        ri.entry_number = remap[ri.entry_number]
+    cue_primary_entry = {k: remap[v] for k, v in cue_primary_entry.items()}
+
     # Copy entry numbers back to cue objects
     for cue in game.cues:
         cue.entry_number = cue_primary_entry.get(cue.id, 0)

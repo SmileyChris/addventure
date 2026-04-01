@@ -13,12 +13,12 @@
       #prefix\-#str(entry.entry)
     ]
     #v(0.15em)
-    #text(size: 9pt, style: "italic")[#eval(entry.narrative, mode: "markup")]
+    #text(size: 9pt)[#eval(entry.narrative, mode: "markup")]
     #if entry.instructions.len() > 0 {
       v(0.3em)
       for instr in entry.instructions {
         block(below: 0.2em)[
-          #text(size: 8pt)[→ #instr]
+          #text(size: 8pt, style: "italic")[→ #instr]
         ]
       }
     }
