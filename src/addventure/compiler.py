@@ -252,13 +252,13 @@ def duplicate_item_interactions(game: GameData):
     if not game.auto_items:
         return
 
-    # Build noun_id -> item_id mapping for all auto-item nouns
-    id_map: dict[int, int] = {}
+    # Build noun_id -> (item_id, item_name) mapping for all auto-item nouns
+    id_map: dict[int, tuple[int, str]] = {}
     for name in game.auto_items:
         item = game.items[name]
         for key, noun in game.nouns.items():
             if noun.name == name:
-                id_map[noun.id] = item.id
+                id_map[noun.id] = (item.id, name)
 
     new_resolved = []
     for ri in game.resolved:
@@ -266,14 +266,19 @@ def duplicate_item_interactions(game: GameData):
         for target in ri.targets:
             noun_id = get_entity_id(target, game, ri.room)
             if noun_id and noun_id in id_map:
-                inv_id = id_map[noun_id]
+                inv_id, item_name = id_map[noun_id]
                 new_sum = ri.sum_id - noun_id + inv_id
+                # Strip "item -> player" arrows — item is already in inventory
+                inv_arrows = [
+                    a for a in ri.arrows
+                    if not (a.subject == item_name and a.destination == "player")
+                ]
                 new_resolved.append(ResolvedInteraction(
                     verb=ri.verb,
                     targets=ri.targets,
                     sum_id=new_sum,
                     narrative=ri.narrative,
-                    arrows=ri.arrows,
+                    arrows=inv_arrows,
                     source_line=ri.source_line,
                     room=ri.room,
                     parent_label=ri.parent_label,
