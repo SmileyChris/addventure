@@ -1,6 +1,6 @@
 import re
 from .models import (
-    GameData, Verb, Noun, Item, Room, Arrow, Interaction,
+    GameData, Verb, Noun, Item, Room, Arrow, Interaction, Cue,
 )
 
 
@@ -344,6 +344,51 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
 
 def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent):
     dest = arrow.destination
+
+    # ? -> "Room" is a cue (cross-room deferred effect)
+    if arrow.subject == "?":
+        if not (dest.startswith('"') and dest.endswith('"')):
+            raise ParseError(arrow.source_line, "Cue arrow (?) must target a quoted room name")
+        target_room = dest[1:-1]
+        narrative = ""
+        cue_arrows = []
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+            if not stripped or _is_comment(stripped):
+                i += 1
+                continue
+            if _indent(line) < child_indent or _is_header(line):
+                break
+            marker, content = _strip_marker(stripped)
+            if marker == "-" and _is_arrow(content):
+                a = _parse_arrow(content, i + 1)
+                cue_arrows.append(a)
+                i += 1
+            elif _is_narrative(stripped):
+                if narrative:
+                    narrative += " " + stripped
+                else:
+                    narrative = stripped
+                i += 1
+            else:
+                i += 1
+        game.cues.append(Cue(
+            target_room=target_room,
+            narrative=narrative,
+            arrows=cue_arrows,
+            source_line=arrow.source_line,
+            trigger_room=room_name,
+        ))
+        # Register any nouns that the cue arrows reveal in the target room
+        for ca in cue_arrows:
+            if ca.destination == "room":
+                subj = ca.subject
+                base, state = _split_name(subj)
+                key = f"{target_room}::{subj}"
+                if key not in game.nouns:
+                    game.nouns[key] = Noun(subj, base, state, target_room)
+        return i
 
     if dest in ("trash", "player"):
         while i < len(lines):
