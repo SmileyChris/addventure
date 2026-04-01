@@ -5,8 +5,9 @@
   block(
     width: 100%,
     below: 0.5em,
+    breakable: false,
     stroke: (left: 1.5pt + luma(180)),
-    inset: (left: 6pt, y: 2pt),
+    inset: (left: 6pt, y: 3pt),
   )[
     #text(font: "Liberation Sans", size: 9pt, weight: "bold")[
       ENTRY #str(entry.entry)
@@ -14,9 +15,9 @@
     #v(0.15em)
     #text(size: 9pt, style: "italic")[#eval(entry.narrative, mode: "markup")]
     #if entry.instructions.len() > 0 {
-      v(0.15em)
+      v(0.3em)
       for instr in entry.instructions {
-        block(below: 0.1em)[
+        block(below: 0.2em)[
           #text(size: 8pt)[→ #instr]
         ]
       }
