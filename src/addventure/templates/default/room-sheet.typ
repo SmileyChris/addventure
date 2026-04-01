@@ -12,13 +12,30 @@
       width: 100%,
       below: 0.15em,
     )[
-      #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM TITLE]
+      #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[ROOM NAME]
     ]
     line(length: 100%, stroke: 1.5pt)
   } else {
     let title = upper(room.name)
-    if is-start { title = title + "  ★ START" }
-    sheet-title(title)
+    if is-start {
+      block(width: 100%, below: 0.15em)[
+        #grid(
+          columns: (auto, 1fr, auto),
+          align(left + bottom)[
+            #text(font: "Liberation Sans", size: 9pt, fill: luma(80))[START ROOM]
+          ],
+          align(center + bottom)[
+            #text(font: "Liberation Sans", size: 16pt, weight: "bold")[#title]
+          ],
+          align(right + bottom)[
+            #hide[#text(font: "Liberation Sans", size: 9pt)[START ROOM]]
+          ],
+        )
+      ]
+      line(length: 100%, stroke: 1.5pt)
+    } else {
+      sheet-title(title)
+    }
   }
 
   // Room ID
