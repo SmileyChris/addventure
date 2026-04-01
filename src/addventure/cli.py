@@ -5,7 +5,7 @@ Addventure CLI — `adv run [dir]` and `adv new [dir]`.
 import sys
 from pathlib import Path
 
-from . import compile_game, print_full_report
+from . import compile_game, print_full_report, generate_pdf, find_typst
 
 
 def load_game(game_dir: Path) -> tuple[str, list[str]]:
@@ -25,11 +25,36 @@ def load_game(game_dir: Path) -> tuple[str, list[str]]:
 
 
 def cmd_run(args: list[str]):
-    """Compile and print a full game report."""
-    game_dir = Path(args[0]) if args else Path("games/example")
+    """Compile a game and output PDF (default) or text."""
+    import argparse
+    parser = argparse.ArgumentParser(prog="adv run", description="Compile and output a game")
+    parser.add_argument("game_dir", nargs="?", default="games/example",
+                        help="Path to game directory (default: games/example)")
+    parser.add_argument("--text", action="store_true",
+                        help="Output plain text instead of PDF")
+    parser.add_argument("--output", "-o", type=str, default=None,
+                        help="Output PDF path (default: <game_name>.pdf)")
+    parser.add_argument("--theme", type=str, default="default",
+                        help="Typst template theme (default: default)")
+    parsed = parser.parse_args(args)
+
+    game_dir = Path(parsed.game_dir)
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
-    print_full_report(game)
+
+    if parsed.text:
+        print_full_report(game)
+        return
+
+    if find_typst() is None:
+        print("WARNING: typst not found on PATH, falling back to text output",
+              file=sys.stderr)
+        print_full_report(game)
+        return
+
+    output_path = Path(parsed.output) if parsed.output else Path(f"{game_dir.name}.pdf")
+    if generate_pdf(game, output_path, theme=parsed.theme):
+        print(f"PDF written to {output_path}")
 
 
 def cmd_new(args: list[str]):
@@ -79,8 +104,9 @@ USAGE = """\
 Usage: adv <command> [args]
 
 Commands:
-  run [dir]    Compile and print game report (default: games/example)
-  new <dir>    Scaffold a new game directory with index.md\
+  run [dir] [--text] [-o FILE] [--theme NAME]
+                     Compile game to PDF (default) or text
+  new <dir>          Scaffold a new game directory with index.md\
 """
 
 
