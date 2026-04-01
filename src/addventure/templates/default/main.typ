@@ -17,10 +17,16 @@
 // Paper size: CLI --paper overrides template default
 #let page-paper = sys.inputs.at("paper", default: default-paper)
 
+// Watermark logo
+#let logo-path = "addventure.jpg"
+
 // Page and text defaults
 #set page(
   paper: page-paper,
   margin: page-margin,
+  background: place(bottom + right, dx: -0.45in, dy: -0.65in,
+    image(logo-path, width: 0.5in, height: 0.5in),
+  ),
   footer: context {
     let author = data.metadata.at("author", default: none)
     let parts = (game-title,)
