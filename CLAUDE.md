@@ -31,6 +31,8 @@ src/addventure/
   parser.py                # .md script parsing (markdown-based, indentation-sensitive)
   compiler.py              # ID allocation, inheritance, resolver, collision detection
   writer.py                # GameWriter — generates printable player-facing components
+docs/
+  grammar.ebnf             # Formal EBNF grammar for .md script syntax
 games/
   example/                 # Example game (.md files)
 ```
