@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from addventure.models import Cue, Arrow, GameData
@@ -8,6 +10,27 @@ from addventure.compiler import compile_game
 from addventure.md_writer import generate_markdown
 from addventure.pdf_writer import serialize_game_data
 from addventure.writer import GameWriter
+
+
+def _make_game_with_cues(cue_count: int):
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_lines = ["# Room A", "LOOK: A."]
+    for idx in range(1, cue_count + 1):
+        room_lines.extend([
+            "",
+            f"TRIGGER_{idx}",
+            "+ USE:",
+            f"  Trigger cue {idx}.",
+            f'  - ? -> "Room B{idx}"',
+            f"    Cue {idx}.",
+        ])
+    for idx in range(1, cue_count + 1):
+        room_lines.extend([
+            "",
+            f"# Room B{idx}",
+            f"LOOK: B{idx}.",
+        ])
+    return compile_game(global_src, ["\n".join(room_lines) + "\n"])
 
 
 def test_cue_dataclass():
@@ -266,6 +289,35 @@ BOX
     game = compile_game(global_src, [room_src])
     md = generate_markdown(game)
     assert "### Cue Checks" not in md
+
+
+@pytest.mark.parametrize(
+    ("cue_count", "expected_placeholders", "expected_rows"),
+    [
+        (1, 6, 1),
+        (6, 6, 1),
+        (7, 7, 2),
+        (11, 11, 2),
+        (12, 12, 2),
+        (13, 13, 3),
+    ],
+)
+def test_cue_checks_table_scales_cleanly(cue_count, expected_placeholders, expected_rows):
+    game = _make_game_with_cues(cue_count)
+    md = generate_markdown(game)
+
+    cue_section = md.split("### Cue Checks", 1)[1].split("### Master Potentials List", 1)[0]
+    table_lines = [line for line in cue_section.splitlines() if line.startswith("|")]
+
+    assert len(table_lines) == expected_rows + 1
+    assert table_lines[1] == "| ---: | ---: | ---: | ---: | ---: | ---: |"
+    assert md.count("`____`") >= expected_placeholders
+
+    for line in table_lines:
+        assert line.count("|") == 7
+
+    cue_rows = [line for idx, line in enumerate(table_lines) if idx != 1]
+    assert sum(line.count("`____`") for line in cue_rows) == expected_placeholders
 
 
 def test_serialize_includes_cue_slots():

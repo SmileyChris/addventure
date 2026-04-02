@@ -6,6 +6,17 @@ from .models import GameData
 from .writer import GameWriter, _display_name
 
 
+def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
+    """Render placeholder table rows padded to a fixed column width."""
+    total = max(count, width)
+    rows = []
+    for offset in range(0, total, width):
+        cells = ["`____`"] * min(width, total - offset)
+        cells.extend([""] * (width - len(cells)))
+        rows.append("| " + " | ".join(cells) + " |")
+    return rows
+
+
 def generate_markdown(game: GameData, blind: bool = False) -> str:
     """Generate a complete markdown document from compiled GameData."""
     writer = GameWriter(game, blind=blind)
@@ -133,13 +144,10 @@ def _inventory_section(
             "\n### Cue Checks\n"
             "\n*On room entry, add each cue + Room ID and check the Potentials List.*\n"
         )
-        cue_count = max(len(game.cues), 6)
-        lines.append("| " + " | ".join(f"`____`" for _ in range(min(cue_count, 6))) + " |")
-        lines.append("| " + " | ".join("---:" for _ in range(min(cue_count, 6))) + " |")
-        if cue_count > 6:
-            lines.append("| " + " | ".join(
-                f"`____`" for _ in range(cue_count - 6)
-            ) + " |" + " |".join("" for _ in range(12 - cue_count)) + " |" if cue_count < 12 else "")
+        rows = _render_placeholder_rows(len(game.cues))
+        lines.append(rows[0])
+        lines.append("| " + " | ".join("---:" for _ in range(6)) + " |")
+        lines.extend(rows[1:])
 
     # Master Potentials List
     lines.append(
