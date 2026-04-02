@@ -140,6 +140,33 @@ def _make_strike_checkbox(rect: list[float], name: str) -> DictionaryObject:
     return field
 
 
+def _install_acroform(writer: PdfWriter, all_fields) -> None:
+    """Attach an AcroForm dictionary for the generated fields."""
+    helv = DictionaryObject()
+    helv[NameObject("/Type")] = NameObject("/Font")
+    helv[NameObject("/Subtype")] = NameObject("/Type1")
+    helv[NameObject("/BaseFont")] = NameObject("/Helvetica")
+
+    helv_bold = DictionaryObject()
+    helv_bold[NameObject("/Type")] = NameObject("/Font")
+    helv_bold[NameObject("/Subtype")] = NameObject("/Type1")
+    helv_bold[NameObject("/BaseFont")] = NameObject("/Helvetica-Bold")
+
+    font_dict = DictionaryObject()
+    font_dict[NameObject("/Helv")] = helv
+    font_dict[NameObject("/HeBo")] = helv_bold
+
+    dr = DictionaryObject()
+    dr[NameObject("/Font")] = font_dict
+
+    acroform = DictionaryObject()
+    acroform[NameObject("/Fields")] = ArrayObject(all_fields)
+    acroform[NameObject("/DR")] = dr
+    acroform[NameObject("/DA")] = TextStringObject("/HeBo 10 Tf 0 0 0 rg")
+    writer.root_object[NameObject("/AcroForm")] = acroform
+    writer.set_need_appearances_writer(True)
+
+
 def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
     """Convert form:// link annotations to fillable PDF form fields."""
     if output_path is None:
@@ -187,7 +214,8 @@ def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
                     else:
                         field = _make_text_field(rect, name, font_size=10, uppercase=True)
 
-                    ref = writer._add_object(field)
+                    writer.add_annotation(page_num, field)
+                    ref = page["/Annots"][-1]
                     all_fields.append(ref)
                     new_annots.append(ref)
                     continue
@@ -197,30 +225,7 @@ def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
         page[NameObject("/Annots")] = ArrayObject(new_annots)
 
     if all_fields:
-        # Font resources for form fields
-        helv = DictionaryObject()
-        helv[NameObject("/Type")] = NameObject("/Font")
-        helv[NameObject("/Subtype")] = NameObject("/Type1")
-        helv[NameObject("/BaseFont")] = NameObject("/Helvetica")
-
-        helv_bold = DictionaryObject()
-        helv_bold[NameObject("/Type")] = NameObject("/Font")
-        helv_bold[NameObject("/Subtype")] = NameObject("/Type1")
-        helv_bold[NameObject("/BaseFont")] = NameObject("/Helvetica-Bold")
-
-        font_dict = DictionaryObject()
-        font_dict[NameObject("/Helv")] = writer._add_object(helv)
-        font_dict[NameObject("/HeBo")] = writer._add_object(helv_bold)
-
-        dr = DictionaryObject()
-        dr[NameObject("/Font")] = font_dict
-
-        acroform = DictionaryObject()
-        acroform[NameObject("/Fields")] = ArrayObject(all_fields)
-        acroform[NameObject("/DR")] = dr
-        acroform[NameObject("/DA")] = TextStringObject("/HeBo 10 Tf 0 0 0 rg")
-        acroform[NameObject("/NeedAppearances")] = NameObject("/true")
-        writer._root_object[NameObject("/AcroForm")] = acroform
+        _install_acroform(writer, all_fields)
 
     with open(output_path, "wb") as f:
         writer.write(f)
