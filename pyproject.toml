@@ -29,8 +29,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://addventure.dev"
-Documentation = "https://addventure.dev/getting-started/"
+Homepage = "https://smileychris.github.io/addventure"
+Documentation = "https://smileychris.github.io/addventure/getting-started/"
 Repository = "https://github.com/SmileyChris/addventure"
 
 [project.scripts]
