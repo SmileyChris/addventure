@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 # Build docs, example PDF, then overlay the custom landing page
 cd "$(dirname "$0")/.."
 zensical build -c "$@"

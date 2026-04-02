@@ -39,8 +39,7 @@ jobs:
 
       - name: Install Typst
         run: |
-          curl -fsSL https://typst.community/typst-install/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          curl -fsSL https://github.com/typst/typst/releases/latest/download/typst-x86_64-unknown-linux-musl.tar.xz | tar xJ --strip-components=1 -C /usr/local/bin
 
       - name: Build site
         run: ./site/build.sh
