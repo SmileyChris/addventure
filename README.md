@@ -17,7 +17,7 @@ The player's loop: pick a verb, pick a target, add the IDs, look up the sum. If 
 
 ## Quick Start
 
-Python 3.10+, no external dependencies. Uses [uv](https://docs.astral.sh/uv/) as the runner. PDF output requires [Typst](https://typst.app/) installed on your system.
+Python 3.10+. Uses [uv](https://docs.astral.sh/uv/) as the runner. PDF output requires [Typst](https://typst.app/) installed on your system.
 
 ```bash
 uv run adv run                     # compile example game to PDF (example.pdf)

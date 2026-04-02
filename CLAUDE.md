@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Addventure is a compiler and writer for paper-based text adventures where "addition IS the parser." Players solve games by adding numbers: Verb ID + Entity ID = Sum ID → Ledger Entry. Python 3.10+ required, zero external dependencies.
+Addventure is a compiler and writer for paper-based text adventures where "addition IS the parser." Players solve games by adding numbers: Verb ID + Entity ID = Sum ID → Ledger Entry. Python 3.10+ required. pypdf for fillable PDF fields, Typst for PDF generation.
 
 ## Running
 

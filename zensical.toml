@@ -2,9 +2,20 @@
 site_name = "Addventure"
 site_description = "A compiler for paper-based text adventures where addition is the parser"
 site_url = "https://addventure.dev"
+site_dir = "site/build"
+extra_css = ["stylesheets/extra.css"]
 
 [project.theme]
 variant = "modern"
+font = false
+custom_dir = "overrides"
+logo = "assets/images/logo.png"
+favicon = "assets/images/favicon.png"
+
+[project.theme.palette]
+scheme = "slate"
+primary = "custom"
+accent = "custom"
 
 [[project.nav]]
 "Home" = "index.md"

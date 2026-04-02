@@ -10,7 +10,7 @@ This guide walks you through creating and compiling your first Addventure game.
 
 ## Install Addventure
 
-Clone the repository and you're ready to go — no external dependencies:
+Clone the repository and you're ready to go:
 
 ```bash
 git clone https://github.com/user/addventure.git
