@@ -1,5 +1,5 @@
 from .models import GameData, ResolvedInteraction
-from .compiler import get_entity_id
+from .compiler import cue_targets_room_name, get_entity_id
 
 
 def _display_name(name: str) -> str:
@@ -203,7 +203,7 @@ class GameWriter:
                 if a.destination == "room" and ix.room == room_name:
                     discovered_names.add(a.subject)
         for cue in self.game.cues:
-            if cue.target_room == room_name:
+            if cue_targets_room_name(cue.target_room, room_name):
                 for a in cue.arrows:
                     if a.destination == "room":
                         discovered_names.add(a.subject)

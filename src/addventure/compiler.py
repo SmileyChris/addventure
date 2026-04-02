@@ -214,6 +214,15 @@ def _cue_target_rooms(cue: Cue, game: GameData) -> list[str]:
     return names
 
 
+def cue_targets_room_name(target: str, room_name: str) -> bool:
+    """Return whether a cue target string resolves against a specific room name."""
+    if target.endswith("__"):
+        return room_name == target[:-2]
+    if "__" in target:
+        return room_name == target
+    return room_name == target or room_name.startswith(target + "__")
+
+
 def resolve_cues(game: GameData):
     """Create ResolvedInteractions for each cue.
 
@@ -251,8 +260,10 @@ def get_entity_id(name: str, game: GameData, room: str) -> int | None:
     key = f"{room}::{name}"
     if key in game.nouns:
         return game.nouns[key].id
-    for k, n in game.nouns.items():
-        if n.name == name:
+    base_room = room.split("__", 1)[0]
+    for n in game.nouns.values():
+        noun_base_room = n.room.split("__", 1)[0]
+        if n.name == name and noun_base_room == base_room:
             return n.id
     if name in game.items:
         return game.items[name].id
@@ -278,6 +289,8 @@ def duplicate_item_interactions(game: GameData):
 
     new_resolved = []
     for ri in game.resolved:
+        if ri.verb == "TAKE":
+            continue
         # Check if any target in this interaction is an auto-item noun
         for target in ri.targets:
             noun_id = get_entity_id(target, game, ri.room)
@@ -458,6 +471,9 @@ def compile_game(global_source: str, room_sources: list[str],
     Tries 3-digit entity IDs first, falls back to 4-digit for large games.
     Returns a validated GameData ready for the writer.
     """
+    if max_retries < 1:
+        raise ValueError("max_retries must be >= 1")
+
     game = parse_global(global_source)
     for src in room_sources:
         parse_room_file(src, game)
@@ -470,10 +486,8 @@ def compile_game(global_source: str, room_sources: list[str],
         # Fall back to 4-digit entity IDs for larger games
         _reset_mutable(game)
         if not _try_compile_pass(game, max_retries, four_digit=True):
-            print(
-                f"⚠ No collision-free allocation in "
-                f"{max_retries * 2} attempts.",
-                file=__import__('sys').stderr,
+            raise RuntimeError(
+                f"No collision-free allocation in {max_retries * 2} attempts."
             )
 
     resolve_cues(game)

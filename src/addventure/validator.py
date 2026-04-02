@@ -1,10 +1,10 @@
 """Reachability validator — walks the game state space to find unreachable interactions."""
 
-import sys
-from dataclasses import dataclass, field
+from collections import deque
+from dataclasses import dataclass
 
-from .models import GameData, Arrow
-from .compiler import get_entity_id
+from .compiler import cue_targets_room_name
+from .models import Arrow, GameData
 
 
 @dataclass(frozen=True)
@@ -51,7 +51,9 @@ def validate_reachability(game: GameData) -> list[str]:
     for cue in game.cues:
         for a in cue.arrows:
             if a.destination == "room":
-                discovered_names.setdefault(cue.target_room, set()).add(a.subject)
+                for noun in game.nouns.values():
+                    if cue_targets_room_name(cue.target_room, noun.room):
+                        discovered_names.setdefault(noun.room, set()).add(a.subject)
 
     initial_objects = set()
     for key, n in game.nouns.items():
@@ -73,11 +75,11 @@ def validate_reachability(game: GameData) -> list[str]:
     )
 
     visited = set()
-    queue = [start]
+    queue = deque([start])
     triggered = set()  # (verb, tuple(targets), room) of interactions that fired
 
     while queue:
-        state = queue.pop(0)  # BFS for more thorough exploration
+        state = queue.popleft()  # BFS for more thorough exploration
         if state in visited:
             continue
         visited.add(state)
@@ -251,37 +253,35 @@ def _resolve_cues(state: GameState, game: GameData) -> GameState:
     if not state.cues:
         return state
 
-    objects = set(state.room_objects)
-    cues = set(state.cues)
+    resolved_state = state
     changed = False
 
     for cue in game.cues:
-        if cue.id not in cues:
+        if cue.id not in resolved_state.cues:
             continue
         # Check if cue resolves in the room the player is currently in
-        for base, sname in state.room_states:
-            if base != state.room and sname != state.room:
+        for base, sname in resolved_state.room_states:
+            if base != resolved_state.room and sname != resolved_state.room:
                 continue
-            if cue.target_room in (base, sname):
-                # Apply cue arrows
-                for a in cue.arrows:
-                    if a.destination == "room":
-                        objects.add((state.room, a.subject))
+            if cue_targets_room_name(cue.target_room, sname):
+                next_state = _apply_arrows(resolved_state, cue.arrows, resolved_state.room, game)
+                cues = set(next_state.cues)
                 cues.discard(cue.id)
+                resolved_state = GameState(
+                    room=next_state.room,
+                    inventory=next_state.inventory,
+                    verbs=next_state.verbs,
+                    room_objects=next_state.room_objects,
+                    room_states=next_state.room_states,
+                    cues=frozenset(cues),
+                )
                 changed = True
                 break
 
     if not changed:
         return state
 
-    return GameState(
-        room=state.room,
-        inventory=state.inventory,
-        verbs=state.verbs,
-        room_objects=frozenset(objects),
-        room_states=state.room_states,
-        cues=frozenset(cues),
-    )
+    return resolved_state
 
 
 def _target_combos(target_groups: list[list[str]]) -> list[list[str]]:

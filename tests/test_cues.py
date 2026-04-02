@@ -5,6 +5,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from addventure.models import Cue, Arrow, GameData
 from addventure.compiler import compile_game
+from addventure.md_writer import generate_markdown
+from addventure.pdf_writer import serialize_game_data
 from addventure.writer import GameWriter
 
 
@@ -243,10 +245,9 @@ LEVER
 LOOK: B.
 """
     game = compile_game(global_src, [room_src])
-    writer = GameWriter(game)
-    inv = writer.write_inventory_sheet()
-    assert "CUE CHECKS" in inv
-    assert "Cue Checks" in inv or "cue" in inv.lower()
+    md = generate_markdown(game)
+    assert "### Cue Checks" in md
+    assert "Cue Checks" in md
 
 
 def test_inventory_sheet_no_cue_checks_without_cues():
@@ -263,12 +264,8 @@ BOX
   - KEY -> trash
 """
     game = compile_game(global_src, [room_src])
-    writer = GameWriter(game)
-    inv = writer.write_inventory_sheet()
-    assert "CUE" not in inv
-
-
-from addventure.pdf_writer import serialize_game_data
+    md = generate_markdown(game)
+    assert "### Cue Checks" not in md
 
 
 def test_serialize_includes_cue_slots():
@@ -458,8 +455,7 @@ BUTTON
 LOOK: Water everywhere.
 """
     game = compile_game(global_src, [room_src])
-    writer = GameWriter(game)
-    ledger = writer.write_story_ledger()
+    ledger = generate_markdown(game)
     # "Something changed." should appear exactly once in the ledger
     assert ledger.count("Something changed.") == 1
 
@@ -481,10 +477,101 @@ LEVER
 LOOK: B.
 """
     game = compile_game(global_src, [room_src])
-    writer = GameWriter(game)
-    sheet = writer.write_room_sheet("Room A")
+    sheet = generate_markdown(game)
     assert "Alert" not in sheet
     assert "alert" not in sheet
+
+
+def test_unknown_target_does_not_resolve_from_another_room():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A.
+
+KEY
++ LOOK: A key.
+
+# Room B
+LOOK: B.
+
+DOOR
++ USE + KEY:
+  It unlocks.
+"""
+    try:
+        compile_game(global_src, [room_src])
+        assert False, "Should have raised for KEY missing from Room B"
+    except Exception as e:
+        assert "Unknown target: KEY" in str(e)
+
+
+def test_compile_requires_positive_retry_budget():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = "# Room\nLOOK: A.\n"
+    try:
+        compile_game(global_src, [room_src], max_retries=0)
+        assert False, "Should reject zero allocation attempts"
+    except ValueError as e:
+        assert "max_retries" in str(e)
+
+
+def test_reachability_applies_verb_reveals_from_cues():
+    from addventure.validator import validate_reachability
+
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A.
+
+LEVER
++ USE:
+  Pull.
+  - ? -> "Room B"
+    Unlocking a new verb.
+    -  -> TAKE
+
+DOOR
++ USE:
+  Enter B.
+  - player -> "Room B"
+
+# Room B
+LOOK: B.
+CHEST
++ TAKE:
+  You take it somehow.
+"""
+    game = compile_game(global_src, [room_src])
+    warnings = validate_reachability(game)
+    assert not any("TAKE + CHEST" in warning for warning in warnings)
+
+
+def test_base_state_cue_objects_are_not_rendered_as_initial_objects():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room A
+LOOK: A.
+
+LEVER
++ USE:
+  Pull.
+  - ? -> "Room B__"
+    A gate appears.
+    - GATE -> room
+
+DOOR
++ USE:
+  Enter B.
+  - player -> "Room B"
+
+# Room B
+LOOK: B.
+GATE
++ LOOK: The gate is here.
+"""
+    game = compile_game(global_src, [room_src])
+    markdown = generate_markdown(game)
+    room_b = next(r for r in serialize_game_data(game, GameWriter(game))["rooms"] if r["name"] == "Room B")
+
+    assert "| GATE |" not in markdown
+    assert room_b["objects"] == []
 
 
 def test_auto_register_item_from_player_arrow():
@@ -638,6 +725,23 @@ KEY
     assert len(inv_look) == 1
 
 
+def test_take_interaction_is_not_duplicated_for_inventory_id():
+    """TAKE should only resolve against the room noun, not the inventory copy."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A brass key.
++ TAKE:
+  You pick up the key.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    take_entries = [ri for ri in game.resolved if ri.verb == "TAKE" and ri.targets == ["KEY"]]
+    assert len(take_entries) == 1
+
+
 def test_multi_target_duplicated_for_inventory_id():
     """USE + DOOR + KEY should work with both noun and inventory KEY IDs."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
@@ -685,7 +789,6 @@ KEY
 """
     game = compile_game(global_src, [room_src])
     writer = GameWriter(game)
-    key_item = game.items["KEY"]
     key_noun = game.nouns["Room::KEY"]
 
     # Find the TAKE + KEY resolved interaction (using noun ID, not inventory ID)
@@ -695,8 +798,9 @@ KEY
     assert len(take_ri) == 1
     instructions = writer._generate_instructions(take_ri[0])
 
-    # Should mention crossing out noun ID on room sheet
-    assert any(str(key_noun.id) in inst and "room sheet" in inst for inst in instructions)
+    # Direct TAKE pickup should not restate the already-computed noun ID
+    assert any("Cross out KEY on this room sheet." in inst for inst in instructions)
+    assert not any(str(key_noun.id) in inst for inst in instructions)
     # Should mention writing to Inventory
     assert any("Inventory" in inst for inst in instructions)
 

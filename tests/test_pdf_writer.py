@@ -64,6 +64,15 @@ def test_serialize_ledger():
         assert isinstance(entry["instructions"], list)
 
 
+def test_serialize_copies_metadata():
+    game = _make_game()
+    game.metadata["image"] = "cover.png"
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    data["metadata"]["image"] = "resolved/path/cover.png"
+    assert game.metadata["image"] == "cover.png"
+
+
 def test_find_typst():
     result = find_typst()
     assert result is None or Path(result).name.startswith("typst")

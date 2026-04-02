@@ -6,7 +6,6 @@ from shutil import which
 
 from .models import GameData
 from .writer import GameWriter
-from .compiler import get_entity_id, check_authored_collisions, check_potential_collisions
 
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -40,21 +39,9 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             continue
 
         # Initial visible objects (not discovered via arrows or cues)
-        discovered_names = set()
-        for ix in game.interactions:
-            for a in ix.arrows:
-                if a.destination == "room" and ix.room == room_name:
-                    discovered_names.add(a.subject)
-        for cue in game.cues:
-            if cue.target_room == room_name:
-                for a in cue.arrows:
-                    if a.destination == "room":
-                        discovered_names.add(a.subject)
-
         objects = [
             {"name": n.name, "id": n.id}
-            for n in game.nouns.values()
-            if n.room == room_name and n.state is None and n.name not in discovered_names
+            for n in writer._initial_objects(room_name)
         ]
 
         disc_count = sum(
@@ -108,7 +95,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         room["is_start"] = room["name"] == start_room
 
     return {
-        "metadata": game.metadata,
+        "metadata": dict(game.metadata),
         "start_room": start_room,
         "entry_prefix": entry_prefix,
         "blind": blind,

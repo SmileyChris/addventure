@@ -80,21 +80,7 @@ def _room_section(
             lines.append(f"\n{look_entry.narrative}")
 
     # Objects
-    discovered_names = set()
-    for ix in game.interactions:
-        for a in ix.arrows:
-            if a.destination == "room" and ix.room == room_name:
-                discovered_names.add(a.subject)
-    for cue in game.cues:
-        if cue.target_room == room_name:
-            for a in cue.arrows:
-                if a.destination == "room":
-                    discovered_names.add(a.subject)
-
-    initial = [
-        n for n in game.nouns.values()
-        if n.room == room_name and n.state is None and n.name not in discovered_names
-    ]
+    initial = writer._initial_objects(room_name)
 
     if blind:
         total_slots = len(initial) + max_disc
