@@ -238,6 +238,43 @@ LOOK: A clearing.
     assert "You head north." in md
 
 
+def test_arrow_room_context_after_player_transition():
+    """Arrows after player -> 'Room' should resolve against the destination room."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+BRIDGE
++ LOOK: A rickety bridge.
++ USE:
+  You cross the bridge. A fountain appears!
+  - BRIDGE -> trash
+  - player -> "Clearing"
+  - FOUNTAIN -> room
+
+# Clearing
+LOOK: A clearing.
+
+FOUNTAIN
++ LOOK: A sparkling fountain.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    ri = next(ri for ri in game.resolved if ri.verb == "USE" and "BRIDGE" in ri.targets)
+    instructions = writer._generate_instructions(ri)
+    # BRIDGE -> trash should reference Forest (exit room)
+    bridge_inst = next(i for i in instructions if "BRIDGE" in i)
+    assert "room sheet" in bridge_inst
+    # FOUNTAIN -> room should reference Clearing (entry room)
+    fountain_inst = next(i for i in instructions if "FOUNTAIN" in i)
+    assert "room sheet" in fountain_inst
+
+    # The fountain ID should be from the Clearing room, not Forest
+    clearing_fountain = game.nouns.get("Clearing::FOUNTAIN")
+    assert clearing_fountain is not None
+    assert str(clearing_fountain.id) in fountain_inst
+
+
 def test_pdf_serialization_includes_actions():
     global_src = "# Verbs\nLOOK\n\n# Items\n"
     room_src = """# Forest

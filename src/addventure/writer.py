@@ -31,6 +31,7 @@ class GameWriter:
         """Convert arrows into human-readable player instructions."""
         instructions = []
         dn = _display_name
+        current_room = ri.room
 
         for arrow in ri.arrows:
             subj = arrow.subject
@@ -54,6 +55,7 @@ class GameWriter:
                     else:
                         room_ref = f"the {room_name} room sheet"
                     instructions.append(f"Switch to {room_ref}.")
+                    current_room = room_name
 
             # THING -> trash
             elif dest == "trash":
@@ -64,7 +66,7 @@ class GameWriter:
                     )
                 else:
                     # Check if subject is an action in this room
-                    action_key = f"{ri.room}::{subj}"
+                    action_key = f"{current_room}::{subj}"
                     action = self.game.actions.get(action_key)
                     if action:
                         prefix = self.entry_prefix
@@ -73,14 +75,14 @@ class GameWriter:
                         )
                     else:
                         sheet, entity_id = self._locate_entity(
-                            subj, ri.room, ri.from_inventory)
+                            subj, current_room, ri.from_inventory)
                         instructions.append(
                             f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
                         )
 
             # THING -> player
             elif dest == "player":
-                entity_id = self._get_id(subj, ri.room)
+                entity_id = self._get_id(subj, current_room)
                 # Check for item by exact name, then by base name
                 # (FUSE__FLOOR -> player registers item as FUSE)
                 base_name = subj.split("__")[0] if "__" in subj else subj
@@ -106,7 +108,7 @@ class GameWriter:
             # THING -> room (reveal in current room)
             # But room__STATE -> room is a state revert, not a reveal
             elif dest == "room" and not subj.startswith("room__"):
-                entity_id = self._get_id(subj, ri.room)
+                entity_id = self._get_id(subj, current_room)
                 instructions.append(
                     f"Write {dn(subj)} ({entity_id}) in a discovery slot "
                     f"on this room sheet."
@@ -130,11 +132,11 @@ class GameWriter:
             elif "__" in dest or dest.startswith("@") or (
                     "__" in subj and subj not in self.game.verbs):
                 # Resolve "room" / "room__STATE" shorthands
-                base_room = ri.room.split("__")[0]
+                base_room = current_room.split("__")[0]
                 resolved_subj = subj.replace("room", f"@{base_room}", 1) if subj.startswith("room") and not subj.startswith("@") else subj
                 resolved_dest = f"@{base_room}" if dest == "room" else dest.replace("room", f"@{base_room}", 1) if dest.startswith("room") and not dest.startswith("@") else dest
-                old_id = self._get_id(resolved_subj, ri.room)
-                new_id = self._get_id(resolved_dest, ri.room)
+                old_id = self._get_id(resolved_subj, current_room)
+                new_id = self._get_id(resolved_dest, current_room)
                 # Check if it's a verb transform
                 clean_subj = resolved_subj.lstrip("@")
                 subj_display = dn(clean_subj)
