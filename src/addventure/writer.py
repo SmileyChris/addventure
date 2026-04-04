@@ -25,6 +25,7 @@ class GameWriter:
         self.game = game
         self.blind = blind
         self.entry_prefix = game.metadata.get("entry_prefix", "A")
+        self.warnings: list[str] = []
 
     def _generate_instructions(self, ri: ResolvedInteraction) -> list[str]:
         """Convert arrows into human-readable player instructions."""
@@ -123,19 +124,18 @@ class GameWriter:
             elif "__" in dest or dest.startswith("@"):
                 old_id = self._get_id(subj, ri.room)
                 new_id = self._get_id(dest, ri.room)
-                if old_id and new_id:
-                    # Check if it's a verb transform
-                    clean_subj = subj.lstrip("@")
-                    subj_display = dn(clean_subj)
-                    dest_display = dn(dest.lstrip("@"))
-                    if clean_subj in self.game.verbs or subj in self.game.verbs:
-                        instructions.append(
-                            f"Change {subj_display} to {new_id} on your Verb Sheet."
-                        )
-                    else:
-                        instructions.append(
-                            f"Change {subj_display} to {new_id} on this room sheet."
-                        )
+                # Check if it's a verb transform
+                clean_subj = subj.lstrip("@")
+                subj_display = dn(clean_subj)
+                dest_display = dn(dest.lstrip("@"))
+                if clean_subj in self.game.verbs or subj in self.game.verbs:
+                    instructions.append(
+                        f"Change {subj_display} to {new_id} on your Verb Sheet."
+                    )
+                else:
+                    instructions.append(
+                        f"Change {subj_display} to {new_id} on this room sheet."
+                    )
 
             # Verb state restore: USE__RESTRAINED -> USE
             elif subj != dest and not dest.startswith('"'):
@@ -146,6 +146,19 @@ class GameWriter:
                     instructions.append(
                         f"Change {dest_display} to {new_id} on your Verb Sheet."
                     )
+                else:
+                    self.warnings.append(
+                        f"Line {arrow.source_line}: No instruction generated "
+                        f"for arrow: {subj} -> {dest}"
+                    )
+
+            else:
+                # Unhandled arrow type — e.g. cross-room placement (NOUN -> "Room")
+                # is a potential future feature
+                self.warnings.append(
+                    f"Line {arrow.source_line}: No instruction generated "
+                    f"for arrow: {subj} -> {dest}"
+                )
 
         # Cue resolution: append "Cross out N from your Cue Checks"
         if ri.verb == "CUE":

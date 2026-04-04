@@ -81,7 +81,7 @@ def test_find_typst():
 def test_generate_pdf(tmp_path):
     game = _make_game()
     output = tmp_path / "test-output.pdf"
-    result = generate_pdf(game, output)
+    result, _warnings = generate_pdf(game, output)
     if find_typst() is None:
         assert result is False
     else:
@@ -113,7 +113,8 @@ def test_end_to_end_example_game(tmp_path):
     game = compile_game(gs, rs)
 
     output = tmp_path / "example.pdf"
-    assert generate_pdf(game, output, game_dir=gd) is True
+    success, _warnings = generate_pdf(game, output, game_dir=gd)
+    assert success is True
     assert output.exists()
     # PDF should have reasonable size (at least a few KB for multiple pages)
     assert output.stat().st_size > 1000

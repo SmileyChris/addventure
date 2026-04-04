@@ -17,8 +17,11 @@ def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
     return rows
 
 
-def generate_markdown(game: GameData, blind: bool = False) -> str:
-    """Generate a complete markdown document from compiled GameData."""
+def generate_markdown(game: GameData, blind: bool = False) -> tuple[str, list[str]]:
+    """Generate a complete markdown document from compiled GameData.
+
+    Returns (markdown_text, warnings).
+    """
     writer = GameWriter(game, blind=blind)
     entry_prefix = game.metadata.get("entry_prefix", "A")
     sections = []
@@ -38,7 +41,7 @@ def generate_markdown(game: GameData, blind: bool = False) -> str:
 
     sections.append(_ledger_section(game, writer, entry_prefix))
 
-    return "\n\n---\n\n".join(sections) + "\n"
+    return "\n\n---\n\n".join(sections) + "\n", writer.warnings
 
 
 def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:

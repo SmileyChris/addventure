@@ -268,7 +268,7 @@ LEVER
 LOOK: B.
 """
     game = compile_game(global_src, [room_src])
-    md = generate_markdown(game)
+    md, _warnings = generate_markdown(game)
     assert "### Cue Checks" in md
     assert "Cue Checks" in md
 
@@ -287,7 +287,7 @@ BOX
   - KEY -> trash
 """
     game = compile_game(global_src, [room_src])
-    md = generate_markdown(game)
+    md, _warnings = generate_markdown(game)
     assert "### Cue Checks" not in md
 
 
@@ -304,7 +304,7 @@ BOX
 )
 def test_cue_checks_table_scales_cleanly(cue_count, expected_placeholders, expected_rows):
     game = _make_game_with_cues(cue_count)
-    md = generate_markdown(game)
+    md, _warnings = generate_markdown(game)
 
     cue_section = md.split("### Cue Checks", 1)[1].split("### Master Potentials List", 1)[0]
     table_lines = [line for line in cue_section.splitlines() if line.startswith("|")]
@@ -507,7 +507,7 @@ BUTTON
 LOOK: Water everywhere.
 """
     game = compile_game(global_src, [room_src])
-    ledger = generate_markdown(game)
+    ledger, _warnings = generate_markdown(game)
     # "Something changed." should appear exactly once in the ledger
     assert ledger.count("Something changed.") == 1
 
@@ -529,7 +529,7 @@ LEVER
 LOOK: B.
 """
     game = compile_game(global_src, [room_src])
-    sheet = generate_markdown(game)
+    sheet, _warnings = generate_markdown(game)
     assert "Alert" not in sheet
     assert "alert" not in sheet
 
@@ -619,7 +619,7 @@ GATE
 + LOOK: The gate is here.
 """
     game = compile_game(global_src, [room_src])
-    markdown = generate_markdown(game)
+    markdown, _warnings = generate_markdown(game)
     room_b = next(r for r in serialize_game_data(game, GameWriter(game))["rooms"] if r["name"] == "Room B")
 
     assert "| GATE |" not in markdown

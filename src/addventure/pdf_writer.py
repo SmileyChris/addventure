@@ -121,11 +121,11 @@ def generate_pdf(
     paper: str | None = None,
     blind: bool = False,
     cover: bool = False,
-) -> bool:
-    """Generate a PDF from GameData. Returns True on success, False if typst not found."""
+) -> tuple[bool, list[str]]:
+    """Generate a PDF from GameData. Returns (success, warnings)."""
     typst_bin = find_typst()
     if typst_bin is None:
-        return False
+        return False, []
 
     theme_dir = TEMPLATES_DIR / theme
     if not theme_dir.exists():
@@ -175,7 +175,7 @@ def generate_pdf(
         )
         from .fillable import make_fillable
         make_fillable(output_path)
-        return True
+        return True, writer.warnings
     except subprocess.CalledProcessError as e:
         print(f"Typst error:\n{e.stderr}", file=__import__('sys').stderr)
         raise

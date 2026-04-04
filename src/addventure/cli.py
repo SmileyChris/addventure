@@ -63,8 +63,9 @@ def cmd_build(args: list[str]):
     for warning in validate_reachability(game):
         print(f"⚠ {warning}", file=sys.stderr)
 
+    writer_warnings = []
     if parsed.markdown:
-        md = generate_markdown(game, blind=parsed.blind)
+        md, writer_warnings = generate_markdown(game, blind=parsed.blind)
         if parsed.output:
             Path(parsed.output).write_text(md)
             print(f"Markdown written to {parsed.output}", file=sys.stderr)
@@ -84,8 +85,12 @@ def cmd_build(args: list[str]):
         else:
             name = game.metadata.get("title") or game_dir.resolve().name
             output_path = Path(f"{_slugify(name)}.pdf")
-        if generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=not parsed.no_cover):
+        success, writer_warnings = generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=not parsed.no_cover)
+        if success:
             print(f"PDF written to {output_path}", file=sys.stderr)
+
+    for warning in writer_warnings:
+        print(f"⚠ {warning}", file=sys.stderr)
 
     print_build_summary(game)
 
