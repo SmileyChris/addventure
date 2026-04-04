@@ -2,6 +2,7 @@ from addventure.models import Action, Arrow, GameData, ResolvedInteraction
 from addventure.compiler import compile_game
 from addventure.writer import GameWriter, _display_name
 from addventure.pdf_writer import serialize_game_data
+from addventure.md_writer import generate_markdown
 
 
 def test_action_dataclass():
@@ -327,3 +328,96 @@ LOOK: A clearing.
     assert forest["actions"][0]["entry"] > 0
     action_entry = game.actions["Forest::GO_NORTH"].ledger_id
     assert any(e["entry"] == action_entry for e in data["ledger"])
+
+
+def test_full_action_game():
+    """End-to-end test: game with pre-printed actions, discoverable actions, and action removal."""
+    global_src = """---
+title: Action Test
+start: Village
+---
+# Verbs
+LOOK
+USE
+
+# Items
+"""
+    room_src = """# Village
+LOOK: A quiet village.
+
+> GO_NORTH
+  You walk north to the forest.
+  - player -> "Forest"
+
+> GO_EAST
+  You head east to the river.
+  - player -> "River"
+
+# Forest
+LOOK: A dense forest.
+
+> GO_SOUTH
+  You return to the village.
+  - player -> "Village"
+
+OLD_TREE
++ LOOK: A massive oak tree.
++ USE:
+  You push the tree aside revealing a hidden trail.
+  - OLD_TREE -> trash
+  > HIDDEN_TRAIL
+    - player -> "Glade"
+
+# River
+LOOK: A rushing river.
+
+> GO_WEST
+  You head back to the village.
+  - player -> "Village"
+
+BRIDGE
++ LOOK: A rope bridge.
++ USE:
+  The bridge snaps behind you!
+  - GO_WEST -> trash
+  - player -> "Island"
+
+# Glade
+LOOK: A peaceful glade.
+
+# Island
+LOOK: A small island.
+"""
+    game = compile_game(global_src, [room_src])
+
+    # Check all actions parsed
+    assert "Village::GO_NORTH" in game.actions
+    assert "Village::GO_EAST" in game.actions
+    assert "Forest::GO_SOUTH" in game.actions
+    assert "Forest::HIDDEN_TRAIL" in game.actions
+    assert "River::GO_WEST" in game.actions
+
+    # Check pre-printed vs discovered
+    assert game.actions["Village::GO_NORTH"].discovered is False
+    assert game.actions["Forest::HIDDEN_TRAIL"].discovered is True
+
+    # All actions have ledger IDs
+    for action in game.actions.values():
+        assert action.ledger_id > 0
+
+    # Actions should NOT appear in the potentials list
+    action_ledger_ids = {a.ledger_id for a in game.actions.values()}
+    for ri in game.resolved:
+        assert ri.entry_number not in action_ledger_ids or ri.verb == "ACTION"
+
+    # Markdown output succeeds
+    md, warnings = generate_markdown(game)
+    assert "GO NORTH" in md
+    assert "GO EAST" in md
+    assert "GO SOUTH" in md
+    assert "GO WEST" in md
+
+    # Ledger entries exist for actions
+    entry_prefix = game.metadata.get("entry_prefix", "A")
+    for action in game.actions.values():
+        assert f"{entry_prefix}-{action.ledger_id}" in md
