@@ -1,5 +1,6 @@
-from addventure.models import Action, Arrow, GameData
+from addventure.models import Action, Arrow, GameData, ResolvedInteraction
 from addventure.compiler import compile_game
+from addventure.writer import GameWriter, _display_name
 
 
 def test_action_dataclass():
@@ -118,3 +119,75 @@ LOOK: A village.
     village_action = game.actions["Village::GO_SOUTH"]
     assert clearing_action.ledger_id == village_action.ledger_id
     assert clearing_action.narrative == "You walk south to the forest."
+
+
+def test_action_trash_instruction():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You cross the bridge.
+  - player -> "Clearing"
+
+LEVER
++ LOOK: A rusty lever.
++ USE:
+  You pull the lever. The bridge collapses!
+  - GO_NORTH -> trash
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    ri = next(ri for ri in game.resolved if ri.verb == "USE" and "LEVER" in ri.targets)
+    instructions = writer._generate_instructions(ri)
+    assert any("Cross out" in inst and "GO NORTH" in inst for inst in instructions)
+
+
+def test_action_ledger_entry_instructions():
+    """Actions generate ledger entries with instructions like regular interactions."""
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    action = game.actions["Forest::GO_NORTH"]
+    writer = GameWriter(game)
+    ri = ResolvedInteraction(
+        verb="ACTION", targets=[], sum_id=0,
+        narrative=action.narrative, arrows=action.arrows,
+        source_line=0, room=action.room, parent_label=action.name,
+    )
+    instructions = writer._generate_instructions(ri)
+    assert any("Switch to" in inst and "Clearing" in inst for inst in instructions)
+
+
+def test_discoverable_action_counts_toward_discovery_slots():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+OLD_TREE
++ LOOK: A tree.
++ USE:
+  You push the tree.
+  - OLD_TREE -> trash
+  > HIDDEN_PATH
+    A path revealed.
+    - player -> "Cave"
+
+# Cave
+LOOK: A cave.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    assert writer._max_discovery_slots() >= 1

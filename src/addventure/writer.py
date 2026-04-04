@@ -63,11 +63,20 @@ class GameWriter:
                         f"Cross out {dn(subj)} ({verb.id}) on your Verb Sheet."
                     )
                 else:
-                    sheet, entity_id = self._locate_entity(
-                        subj, ri.room, ri.from_inventory)
-                    instructions.append(
-                        f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
-                    )
+                    # Check if subject is an action in this room
+                    action_key = f"{ri.room}::{subj}"
+                    action = self.game.actions.get(action_key)
+                    if action:
+                        prefix = self.entry_prefix
+                        instructions.append(
+                            f"Cross out {dn(subj)} ({prefix}-{action.ledger_id}) on this room sheet."
+                        )
+                    else:
+                        sheet, entity_id = self._locate_entity(
+                            subj, ri.room, ri.from_inventory)
+                        instructions.append(
+                            f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
+                        )
 
             # THING -> player
             elif dest == "player":
@@ -249,6 +258,9 @@ class GameWriter:
             ) + sum(
                 1 for cue in self.game.cues if cue.target_room == room_name
                 for a in cue.arrows if a.destination == "room"
+            ) + sum(
+                1 for a in self.game.actions.values()
+                if a.room == room_name and a.discovered
             )
             if count > max_count:
                 max_count = count
