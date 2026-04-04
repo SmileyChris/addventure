@@ -45,3 +45,29 @@ LOOK: A sunlit clearing.
     assert len(action.arrows) == 1
     assert action.arrows[0].subject == "player"
     assert action.arrows[0].destination == '"Clearing"'
+
+
+def test_parse_discoverable_action():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+OLD_TREE
++ LOOK: A gnarled oak.
++ USE:
+  You push the tree aside.
+  - OLD_TREE -> trash
+  > HIDDEN_PATH
+    A path is revealed.
+    - player -> "Cave"
+
+# Cave
+LOOK: A dark cave.
+"""
+    game = compile_game(global_src, [room_src])
+    assert "Forest::HIDDEN_PATH" in game.actions
+    action = game.actions["Forest::HIDDEN_PATH"]
+    assert action.discovered is True
+    assert action.narrative == "A path is revealed."
+    assert len(action.arrows) == 1
+    assert action.arrows[0].destination == '"Cave"'

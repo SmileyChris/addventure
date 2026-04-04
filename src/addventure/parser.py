@@ -270,6 +270,9 @@ def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent):
             else:
                 i += 1
         else:
+            if _is_action(stripped):
+                i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=entity_indent)
+                continue
             # No marker — could be a bare entity name at deeper indent
             if not _is_narrative(stripped) and ind > entity_indent:
                 noun_name = stripped
@@ -336,6 +339,8 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             # A + line inside an interaction is a child of a prior arrow's state
             # This shouldn't happen at this level — break out
             break
+        elif _is_action(bstripped):
+            i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=current_indent)
         elif _is_narrative(bstripped) and not narrative:
             narrative = bstripped
             i += 1
@@ -617,6 +622,8 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                     i = _parse_arrow_children(lines, i, game, room_name, a, arr_indent + 1, propagated_arrows=arrows)
                 elif bmarker == "+":
                     break
+                elif _is_action(bs):
+                    i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=0)
                 elif _is_narrative(bs) and not narrative:
                     narrative = bs
                     i += 1
