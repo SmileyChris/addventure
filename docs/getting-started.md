@@ -101,10 +101,10 @@ Compile to PDF:
 uv run adv build games/sunken-library
 ```
 
-Or plain text if you don't have Typst:
+Or markdown if you don't have Typst:
 
 ```bash
-uv run adv build games/sunken-library --text
+uv run adv build games/sunken-library --md
 ```
 
 You can also build from inside the game directory:

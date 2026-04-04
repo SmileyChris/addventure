@@ -153,7 +153,7 @@ KEYCARD
   - KEYCARD -> player
 ```
 
-All interactions on the noun (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried items.
+Most interactions on the noun (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried items. The exception is acquisition interactions — those where the only arrow is `-> player` (the sole purpose is picking the item up). These aren't duplicated since re-acquiring from inventory is meaningless.
 
 The `# Items` section in `index.md` is only needed for items that **never exist as room nouns**:
 

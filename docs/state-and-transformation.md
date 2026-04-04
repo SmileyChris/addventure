@@ -55,7 +55,7 @@ The entity appears on the current room sheet. Use this to reveal hidden objects 
 - player -> "Basement"
 ```
 
-Sends the player to a different room. The room name must match a `#` header exactly and be wrapped in quotes. The story entry tells the player to flip to that room sheet.
+Sends the player to a different room. The room name must match a `#` header exactly and be wrapped in quotes. The story entry tells the player to switch to that room sheet. The player can then LOOK to read the room description.
 
 To affect another room *without* moving the player there, use [cue checks](advanced.md#cue-checks-cross-room-effects) (`? -> "Room Name"`).
 
@@ -66,6 +66,12 @@ To affect another room *without* moving the player there, use [cue checks](advan
 ```
 
 The entity changes state. On paper, the player crosses out the old ID and writes in a new one. The new state can have its own interactions (see below).
+
+You can also revert to the base state:
+
+```markdown
+- CRATE__OPEN -> CRATE
+```
 
 ### Verb state — transform a verb
 

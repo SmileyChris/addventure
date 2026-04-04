@@ -12,7 +12,7 @@ Addventure is a compiler and writer for paper-based text adventures where "addit
 uv run adv                       # Show help
 uv run adv build                 # Build game in cwd (or example if not in a game dir)
 uv run adv build games/example   # Explicit game directory
-uv run adv build --text          # Plain text output instead of PDF
+uv run adv build --md             # Markdown output instead of PDF
 uv run adv new                   # Scaffold a new game (interactive)
 uv run adv new "My Game"         # Scaffold with defaults (oneshot)
 ```

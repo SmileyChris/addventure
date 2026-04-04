@@ -155,7 +155,7 @@ IDs are re-randomized on each build.
 
 ```bash
 uv run adv build [dir]           # Compile to PDF (default)
-uv run adv build [dir] --text    # Compile to plain text
+uv run adv build [dir] --md      # Compile to markdown
 uv run adv build [dir] -o FILE   # Custom output path
 uv run adv new [name]            # Scaffold a new game
 ```

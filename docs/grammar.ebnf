@@ -119,6 +119,7 @@ destination     = "trash"                     (* destroy entity or verb *)
                 | "room"                      (* reveal in current room *)
                 | quoted-room                 (* move to / reveal in named room *)
                 | entity-state-ref            (* transform: ENTITY__STATE *)
+                | ENTITY-NAME                 (* revert: ENTITY__STATE -> ENTITY *)
                 | room-state-ref ;            (* transform: room__STATE or @Room__STATE *)
 
 quoted-room     = '"' , room-name , '"' ;
