@@ -71,7 +71,8 @@ class GameWriter:
                         f"Cross out {dn(subj)} ({verb.id}) on your Verb Sheet."
                     )
                 else:
-                    sheet, entity_id = self._locate_entity(subj, ri.room)
+                    sheet, entity_id = self._locate_entity(
+                        subj, ri.room, ri.from_inventory)
                     instructions.append(
                         f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
                     )
@@ -259,16 +260,28 @@ class GameWriter:
                 return ri
         return None
 
-    def _locate_entity(self, name: str, room: str) -> tuple[str, int]:
-        """Return (sheet_name, id) for an entity."""
-        if name in self.game.items:
+    def _locate_entity(
+        self, name: str, room: str,
+        from_inventory: frozenset[str] = frozenset(),
+    ) -> tuple[str, int]:
+        """Return (sheet_name, id) for an entity.
+
+        For inventory-duplicate interactions, entities in from_inventory
+        are always located on the Inventory. Otherwise, room nouns are
+        checked first so that -> trash generates the correct sheet reference.
+        """
+        if name in from_inventory and name in self.game.items:
             return "Inventory", self.game.items[name].id
         key = f"{room}::{name}"
         if key in self.game.nouns:
             return "room sheet", self.game.nouns[key].id
-        for k, n in self.game.nouns.items():
-            if n.name == name:
+        base_room = room.split("__", 1)[0]
+        for n in self.game.nouns.values():
+            noun_base_room = n.room.split("__", 1)[0]
+            if n.name == name and noun_base_room == base_room:
                 return "room sheet", n.id
+        if name in self.game.items:
+            return "Inventory", self.game.items[name].id
         return "sheet", 0
 
     def _get_id(self, name: str, room: str) -> int | None:

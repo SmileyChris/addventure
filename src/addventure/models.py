@@ -61,6 +61,7 @@ class ResolvedInteraction:
     room: str
     parent_label: str
     entry_number: int = 0
+    from_inventory: frozenset[str] = frozenset()
 
 @dataclass
 class Cue:

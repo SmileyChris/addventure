@@ -311,19 +311,21 @@ def duplicate_item_interactions(game: GameData):
             noun_id = get_entity_id(target, game, ri.room)
             if noun_id and noun_id in id_map:
                 inv_id, item_name = id_map[noun_id]
-                # Skip acquisition interactions (those with -> player for this item)
-                if any(a.subject == item_name and a.destination == "player"
-                       for a in ri.arrows):
-                    continue
-                # Skip verbs already explicitly defined for this item
-                if (ri.verb, item_name) in existing:
-                    continue
-                new_sum = ri.sum_id - noun_id + inv_id
                 # Strip "item -> player" arrows — item is already in inventory
                 inv_arrows = [
                     a for a in ri.arrows
                     if not (a.subject == item_name and a.destination == "player")
                 ]
+                # Skip acquisition interactions: those where removing the
+                # -> player arrow leaves no other arrows (the interaction's
+                # sole purpose is acquiring the item)
+                had_player_arrow = len(inv_arrows) < len(ri.arrows)
+                if had_player_arrow and not inv_arrows:
+                    continue
+                # Skip verbs already explicitly defined for this item
+                if (ri.verb, item_name) in existing:
+                    continue
+                new_sum = ri.sum_id - noun_id + inv_id
                 new_resolved.append(ResolvedInteraction(
                     verb=ri.verb,
                     targets=ri.targets,
@@ -333,6 +335,7 @@ def duplicate_item_interactions(game: GameData):
                     source_line=ri.source_line,
                     room=ri.room,
                     parent_label=ri.parent_label,
+                    from_inventory=frozenset({item_name}),
                 ))
 
     game.resolved.extend(new_resolved)
@@ -539,7 +542,15 @@ def compile_game(global_source: str, room_sources: list[str],
                 cue_primary_entry[cue_id] = entry_num
         else:
             arrows_key = tuple((a.subject, a.destination) for a in ri.arrows)
-            key = (ri.narrative, arrows_key)
+            # Include from_inventory in the dedup key only when it
+            # would produce different instructions — i.e. when an arrow
+            # trashes an entity that differs between noun/inventory.
+            inv_key = frozenset(
+                name for name in ri.from_inventory
+                if any(a.subject == name and a.destination == "trash"
+                       for a in ri.arrows)
+            )
+            key = (ri.narrative, arrows_key, inv_key)
             if key in content_entry:
                 ri.entry_number = content_entry[key]
             else:
