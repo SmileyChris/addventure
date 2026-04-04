@@ -394,7 +394,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
                     game.nouns[key] = Noun(subj, base, state, noun_room)
         return i
 
-    if dest in ("trash", "player"):
+    if dest == "trash":
         while i < len(lines):
             stripped = lines[i].strip()
             if not stripped or _is_comment(stripped):
@@ -404,6 +404,10 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
                 break
             i += 1
         return i
+
+    if dest == "player":
+        subject = arrow.subject
+        return _parse_entity_block(lines, i, game, room_name="", entity_name=subject, entity_indent=child_indent - 1)
 
     if dest.startswith('"') and dest.endswith('"'):
         target_room = dest[1:-1]
