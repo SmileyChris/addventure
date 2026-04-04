@@ -1,51 +1,28 @@
 # Control Room
 LOOK: Fluorescent lights buzz. Banks of dead equipment line the walls.
-  A crate sits near your feet. Something glints underneath it.
+  A crate sits near your feet. Something glints underneath it. A metal hatch is set into the floor.
 
 TERMINAL
 + LOOK: A dusty CRT. A keycard slot sits beside it.
 + USE: ACCESS DENIED flashes on the screen.
 + USE + KEYCARD:
-  You slide the keycard. The screen floods with data — including an emergency override code. The room shudders as something powers up.
+  You slide the keycard. The screen floods with data — including an emergency override code. Deep below, something rumbles.
   - TERMINAL -> TERMINAL__UNLOCKED
     + LOOK: Scrolling text. A map shows the facility layout — Control Room, Basement, Hallway. An exit is marked at the far end of the hallway.
   - KEYCARD -> trash
   - -> OVERRIDE
   - ? -> "Basement"
-    The power surge triggers the fuse box. A hidden compartment clicks open behind it.
+    A power surge ripples through the basement. The fuse box shudders and a hidden compartment clicks open behind it.
     - COMPARTMENT -> room
-  - room -> room__POWERED
-    + LOOK: The room hums with energy. A hatch has opened in the floor.
-    - HATCH -> room
-      + LOOK: A dark opening leading down. You can hear water dripping below.
-      + USE:
-        You lower yourself into the darkness.
-        - player -> "Basement"
+
+HATCH
++ LOOK: A metal hatch set into the floor. A ladder descends into darkness.
++ USE:
+  You lower yourself through the hatch and climb down the ladder.
+  - player -> "Basement"
 
 CRATE
-+ LOOK: A heavy wooden crate, nailed shut. Something metallic catches the light underneath.
-+ USE + CROWBAR:
-  You pry the lid off. A keycard glints inside.
-  - CRATE -> CRATE__OPEN
-    + LOOK: A splintered crate, lid hanging off.
-  - KEYCARD -> room
-    + LOOK: A small keycard with a red stripe.
-    + TAKE:
-      You pocket the keycard.
-      - KEYCARD -> player
-  - CROWBAR -> trash
-
-WALL_PANEL
-+ LOOK: A steel panel bolted to the wall. One corner is bent outward slightly.
-+ USE:
-  You work the bent corner back and forth until it snaps free, revealing a crawlspace behind it.
-  - WALL_PANEL -> WALL_PANEL__OPEN
-    + LOOK: A gap in the wall. A crowbar lies wedged behind the panel.
-  - CROWBAR -> room
-    + LOOK: A heavy iron crowbar. Could pry just about anything open.
-    + TAKE:
-      You grab the crowbar.
-      - CROWBAR -> player
++ LOOK: A heavy wooden crate. Something metallic catches the light underneath.
 
 BINDINGS
 + LOOK: Thick rope bindings around your wrists.
@@ -64,6 +41,10 @@ KNIFE
 + TAKE:
   You stretch your bound hands down and just manage to close your fingers around the handle.
   - KNIFE -> player
++ USE__RESTRAINED:
+  What do you want to use the knife with?
+
+  *Hint: you can USE + KNIFE + (another thing)*
 
 USE__RESTRAINED + KNIFE + BINDINGS:
   You saw through the rope. Your hands are free.
