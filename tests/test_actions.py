@@ -71,3 +71,50 @@ LOOK: A dark cave.
     assert action.narrative == "A path is revealed."
     assert len(action.arrows) == 1
     assert action.arrows[0].destination == '"Cave"'
+
+
+def test_action_gets_ledger_id():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    action = game.actions["Forest::GO_NORTH"]
+    assert action.ledger_id > 0
+
+
+def test_action_deduplication():
+    """Actions with identical arrows and compatible narratives share ledger IDs."""
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You head to the clearing.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+
+> GO_SOUTH
+  - player -> "Forest"
+
+# Village
+LOOK: A village.
+
+> GO_SOUTH
+  You walk south to the forest.
+  - player -> "Forest"
+"""
+    game = compile_game(global_src, [room_src])
+    clearing_action = game.actions["Clearing::GO_SOUTH"]
+    village_action = game.actions["Village::GO_SOUTH"]
+    assert clearing_action.ledger_id == village_action.ledger_id
+    assert clearing_action.narrative == "You walk south to the forest."

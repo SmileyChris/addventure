@@ -2,7 +2,7 @@ import random
 from itertools import combinations, product as cart_product
 
 from .models import (
-    GameData, Verb, Noun, Item, Interaction, ResolvedInteraction, Cue,
+    GameData, Verb, Noun, Item, Interaction, ResolvedInteraction, Cue, Action,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
 
@@ -564,6 +564,29 @@ def compile_game(global_source: str, room_sources: list[str],
                 entry_num += 1
                 ri.entry_number = entry_num
                 content_entry[key] = entry_num
+    # Assign ledger entry numbers to actions, deduplicating by arrows + narrative
+    action_content = {}  # arrows_key -> (entry_number, action_with_narrative)
+    for action in game.actions.values():
+        arrows_key = tuple((a.subject, a.destination) for a in action.arrows)
+        if arrows_key in action_content:
+            existing_entry, existing_action = action_content[arrows_key]
+            # Check narrative compatibility
+            if action.narrative and existing_action.narrative and action.narrative != existing_action.narrative:
+                # Different narratives — unique entry
+                entry_num += 1
+                action.ledger_id = entry_num
+            else:
+                # Share entry; inherit narrative if needed
+                action.ledger_id = existing_entry
+                if not action.narrative and existing_action.narrative:
+                    action.narrative = existing_action.narrative
+                elif action.narrative and not existing_action.narrative:
+                    existing_action.narrative = action.narrative
+        else:
+            entry_num += 1
+            action.ledger_id = entry_num
+            action_content[arrows_key] = (entry_num, action)
+
     # Shuffle entry numbers so ledger order doesn't reveal game structure.
     # Deterministic: seeded by random.seed(attempt) in the allocation loop.
     unique_entries = list(range(1, entry_num + 1))
@@ -571,6 +594,8 @@ def compile_game(global_source: str, room_sources: list[str],
     remap = {old: new for old, new in zip(range(1, entry_num + 1), unique_entries)}
     for ri in game.resolved:
         ri.entry_number = remap[ri.entry_number]
+    for action in game.actions.values():
+        action.ledger_id = remap[action.ledger_id]
     cue_primary_entry = {k: remap[v] for k, v in cue_primary_entry.items()}
 
     # Copy entry numbers back to cue objects
