@@ -49,19 +49,11 @@ class GameWriter:
                 room_name = dest[1:-1]
                 rm = self.game.rooms.get(room_name)
                 if rm:
-                    # Find the room's LOOK entry
-                    look_entry = self._find_entry("LOOK", f"@{room_name}", room_name)
                     if self.blind:
                         room_ref = f"room sheet {rm.id}"
                     else:
                         room_ref = f"the {room_name} room sheet"
-                    if look_entry:
-                        instructions.append(
-                            f"Switch to {room_ref}. "
-                            f"Read Ledger {self.entry_prefix}-{look_entry.entry_number}."
-                        )
-                    else:
-                        instructions.append(f"Switch to {room_ref}.")
+                    instructions.append(f"Switch to {room_ref}.")
 
             # THING -> trash
             elif dest == "trash":

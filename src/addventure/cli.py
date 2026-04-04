@@ -63,6 +63,21 @@ def cmd_build(args: list[str]):
     for warning in validate_reachability(game):
         print(f"⚠ {warning}", file=sys.stderr)
 
+    # Blind mode: warn if room state changes could cause stale ID references
+    if parsed.blind:
+        rooms_with_states = set()
+        for name, rm in game.rooms.items():
+            if rm.state is not None:
+                rooms_with_states.add(rm.base)
+        if rooms_with_states:
+            names = ", ".join(sorted(rooms_with_states))
+            print(
+                f"⚠ Room state changes ({names}): blind mode movement "
+                f"instructions reference room IDs that become stale "
+                f"after state transforms",
+                file=sys.stderr,
+            )
+
     writer_warnings = []
     if parsed.markdown:
         md, writer_warnings = generate_markdown(game, blind=parsed.blind)
