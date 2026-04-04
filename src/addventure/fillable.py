@@ -158,7 +158,6 @@ def _install_acroform(writer: PdfWriter, all_fields) -> None:
     acroform[NameObject("/DR")] = dr
     acroform[NameObject("/DA")] = TextStringObject("/HeBo 10 Tf 0 0 0 rg")
     writer.root_object[NameObject("/AcroForm")] = acroform
-    writer.set_need_appearances_writer(True)
 
 
 def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:

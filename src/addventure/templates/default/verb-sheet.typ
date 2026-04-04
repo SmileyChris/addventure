@@ -1,5 +1,5 @@
 // verb-sheet.typ — Game intro, description, and verb reference
-#import "style.typ": sheet-title, section-title, write-slot, id-box
+#import "style.typ": sheet-title, section-title, write-slot, id-box, strike-text
 
 #let verb-sheet(data, game-title, start-room) = {
   sheet-title(game-title)
@@ -59,7 +59,7 @@
         columns: (1fr, auto),
         gutter: 0.5em,
         align(left + horizon)[
-          #text(font: "Liberation Sans", size: 11pt, weight: "bold")[#verb.name]
+          #strike-text(text(font: "Liberation Sans", size: 11pt, weight: "bold")[#verb.name])
         ],
         align(right + horizon)[
           #id-box(str(verb.id), crossable: true) #id-box(hide[00])
