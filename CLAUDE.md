@@ -86,3 +86,14 @@ Game scripts use markdown-based syntax:
 - `? -> "RoomName"` — cue (deferred cross-room effect, resolved when player enters target room)
 - `*` wildcard — matches all entities in room
 - Indentation (2-space) defines hierarchy within `+`/`-` blocks
+
+## Releasing
+
+To create a new release:
+
+1. Bump `version` in `pyproject.toml`
+2. `uv lock` to update the lockfile
+3. Commit: `bump version to X.Y.Z`
+4. Push to main
+5. Create a GitHub release with `gh release create vX.Y.Z --generate-notes` — add a human-written summary of changes above the auto-generated notes
+6. The PyPI publish workflow triggers automatically on GitHub release
