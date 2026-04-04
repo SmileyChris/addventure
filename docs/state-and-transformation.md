@@ -182,6 +182,45 @@ This single interaction:
 
 The story entry generated for this interaction contains all the instructions the player needs to update their sheets.
 
+## Item interactions
+
+When a noun is picked up (`-> player`), its interactions are automatically duplicated for the inventory version. You can override specific interactions by defining them under `-> player`:
+
+````markdown
+KNIFE
++ LOOK: A rusty blade on the ground.
++ TAKE:
+  You pick up the knife.
+  - KNIFE -> player
+    + LOOK: Strange markings near the hilt.
+````
+
+The inventory KNIFE gets the custom LOOK ("Strange markings..."), while the room KNIFE keeps its original LOOK ("A rusty blade..."). Any verbs not overridden (like USE) are still auto-duplicated from the room noun.
+
+### Suppressing inherited interactions
+
+To prevent an interaction from being duplicated to inventory without adding a new one, use an empty interaction:
+
+````markdown
+  - KNIFE -> player
+    + USE:
+````
+
+This prevents USE from being auto-duplicated, without creating a ledger entry.
+
+### Pre-equipped items
+
+Items defined in `# Items` can have their own interaction blocks:
+
+````markdown
+# Items
+
+COMPASS
+  + LOOK: A brass compass, needle spinning wildly.
+  + USE:
+    The compass settles, pointing north.
+````
+
 ## A complete example
 
 Here's a room that uses multiple arrow types:

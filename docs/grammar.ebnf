@@ -44,7 +44,7 @@ global-section  = verbs-section | items-section ;
 
 verbs-section   = "# Verbs" , newline , { ENTITY-NAME , newline } ;
 
-items-section   = "# Items" , newline , { ENTITY-NAME , newline } ;
+items-section   = "# Items" , newline , { ENTITY-NAME , newline , [ entity-block(0) ] } ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -145,7 +145,7 @@ arrow-children-verb-reveal = (* empty — -> VERB has no children *) ;
 arrow-children-verb-trash  = (* empty — VERB -> trash has no children *) ;
 
 arrow-children-trash    = { INDENT(>arrow) , any-line } ;   (* consumed and ignored *)
-arrow-children-player   = { INDENT(>arrow) , any-line } ;   (* consumed and ignored *)
+arrow-children-player   = entity-block ;                     (* optional + interactions override/suppress inventory duplicates *)
 arrow-children-movement = (* empty — player -> "Room" has no children *) ;
 
 arrow-children-reveal   = entity-block ;      (* defines subject in current room *)
