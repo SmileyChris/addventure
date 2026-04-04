@@ -130,8 +130,12 @@ def parse_global(source: str) -> GameData:
                 while i < len(lines) and not _is_header(lines[i]):
                     w = lines[i].strip()
                     if w and not _is_comment(lines[i]):
+                        item_indent = _indent(lines[i])
                         game.items[w] = Item(w)
-                    i += 1
+                        i += 1
+                        i = _parse_entity_block(lines, i, game, room_name="", entity_name=w, entity_indent=item_indent)
+                    else:
+                        i += 1
             else:
                 raise ParseError(i, f"Unknown global section: {sec}")
         else:

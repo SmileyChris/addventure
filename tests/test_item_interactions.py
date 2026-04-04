@@ -55,3 +55,45 @@ KNIFE
     assert len(inv_use) == 1
     assert "gem" in inv_use[0].narrative.lower()
     assert any(a.destination == "room" for a in inv_use[0].arrows)
+
+
+def test_items_section_parses_interactions():
+    """# Items with indented + lines should create item interactions."""
+    global_src = """# Verbs
+USE
+TAKE
+LOOK
+
+# Items
+
+COMPASS
+  + LOOK: A brass compass, needle spinning wildly.
+  + USE:
+    The compass settles, pointing north.
+"""
+    room_src = """# Room
+LOOK: A room.
+"""
+    game = compile_game(global_src, [room_src])
+    compass = game.items["COMPASS"]
+    look_id = game.verbs["LOOK"].id
+    use_id = game.verbs["USE"].id
+
+    look_ri = [ri for ri in game.resolved if ri.sum_id == look_id + compass.id]
+    assert len(look_ri) == 1
+    assert look_ri[0].narrative == "A brass compass, needle spinning wildly."
+
+    use_ri = [ri for ri in game.resolved if ri.sum_id == use_id + compass.id]
+    assert len(use_ri) == 1
+    assert "north" in use_ri[0].narrative.lower()
+
+
+def test_items_section_plain_names_still_work():
+    """# Items with just names (no interactions) should still work."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\nCOMPASS\nROPE\n"
+    room_src = """# Room
+LOOK: A room.
+"""
+    game = compile_game(global_src, [room_src])
+    assert "COMPASS" in game.items
+    assert "ROPE" in game.items
