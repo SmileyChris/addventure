@@ -275,6 +275,9 @@ def duplicate_item_interactions(game: GameData):
 
     For every resolved interaction that references an auto-item noun,
     create a copy with the noun ID swapped for the inventory ID in the sum.
+    Skips:
+    - Acquisition interactions (those with -> player arrow for the item)
+    - Verbs already explicitly defined for the item (room="")
     """
     if not game.auto_items:
         return
@@ -287,15 +290,34 @@ def duplicate_item_interactions(game: GameData):
             if noun.name == name:
                 id_map[noun.id] = (item.id, name)
 
+    # Collect verbs already explicitly defined for each item
+    existing: set[tuple[str, str]] = set()  # (verb, item_name)
+    for ri in game.resolved:
+        if ri.room == "":
+            for target in ri.targets:
+                if target in game.auto_items:
+                    existing.add((ri.verb, target))
+    for ix in game.suppressed_interactions:
+        if ix.room == "":
+            for group in ix.target_groups:
+                for target in group:
+                    if target in game.auto_items:
+                        existing.add((ix.verb, target))
+
     new_resolved = []
     for ri in game.resolved:
-        if ri.verb == "TAKE":
-            continue
         # Check if any target in this interaction is an auto-item noun
         for target in ri.targets:
             noun_id = get_entity_id(target, game, ri.room)
             if noun_id and noun_id in id_map:
                 inv_id, item_name = id_map[noun_id]
+                # Skip acquisition interactions (those with -> player for this item)
+                if any(a.subject == item_name and a.destination == "player"
+                       for a in ri.arrows):
+                    continue
+                # Skip verbs already explicitly defined for this item
+                if (ri.verb, item_name) in existing:
+                    continue
                 new_sum = ri.sum_id - noun_id + inv_id
                 # Strip "item -> player" arrows — item is already in inventory
                 inv_arrows = [
@@ -318,10 +340,16 @@ def duplicate_item_interactions(game: GameData):
 
 def resolve_interactions(game: GameData):
     game.resolved = []
+    game.suppressed_interactions = []
     for ix in game.interactions:
         vid = game.verbs.get(ix.verb)
         if not vid:
             raise ParseError(ix.source_line, f"Unknown verb: {ix.verb}")
+
+        # Empty interaction (no narrative, no arrows) — suppress, don't resolve
+        if not ix.narrative and not ix.arrows:
+            game.suppressed_interactions.append(ix)
+            continue
 
         if ix.target_groups == [["*"]]:
             # Collect entities that have explicit interactions with this verb

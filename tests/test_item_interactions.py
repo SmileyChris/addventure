@@ -97,3 +97,81 @@ LOOK: A room.
     game = compile_game(global_src, [room_src])
     assert "COMPASS" in game.items
     assert "ROPE" in game.items
+
+
+def test_acquisition_interaction_not_duplicated():
+    """An interaction with -> player arrow should not be duplicated to inventory."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KNIFE
++ LOOK: A blade.
++ USE:
+  You grab the knife from the wall mount.
+  - KNIFE -> player
+"""
+    game = compile_game(global_src, [room_src])
+    use_id = game.verbs["USE"].id
+    knife_item = game.items["KNIFE"]
+
+    # USE should not be duplicated for inventory — it's the acquisition action
+    inv_use = [ri for ri in game.resolved
+               if ri.verb == "USE" and ri.sum_id == use_id + knife_item.id]
+    assert len(inv_use) == 0
+
+
+def test_explicit_item_interaction_overrides_duplication():
+    """An inline LOOK under -> player should replace the auto-duplicated one."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KNIFE
++ LOOK: A rusty blade on the ground.
++ TAKE:
+  You pick it up.
+  - KNIFE -> player
+    + LOOK: Strange markings near the hilt.
+"""
+    game = compile_game(global_src, [room_src])
+    knife_item = game.items["KNIFE"]
+    look_id = game.verbs["LOOK"].id
+
+    inv_looks = [ri for ri in game.resolved
+                 if ri.sum_id == look_id + knife_item.id]
+    assert len(inv_looks) == 1
+    assert inv_looks[0].narrative == "Strange markings near the hilt."
+
+
+def test_partial_override_still_duplicates_other_verbs():
+    """Defining LOOK under -> player should not prevent USE from being duplicated."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KNIFE
++ LOOK: A blade.
++ USE:
+  You wave the knife around.
++ TAKE:
+  You pick it up.
+  - KNIFE -> player
+    + LOOK: Blade with markings.
+"""
+    game = compile_game(global_src, [room_src])
+    knife_item = game.items["KNIFE"]
+    use_id = game.verbs["USE"].id
+    look_id = game.verbs["LOOK"].id
+
+    # LOOK should be the explicit one
+    inv_looks = [ri for ri in game.resolved
+                 if ri.sum_id == look_id + knife_item.id]
+    assert len(inv_looks) == 1
+    assert inv_looks[0].narrative == "Blade with markings."
+
+    # USE should still be duplicated (not overridden)
+    inv_use = [ri for ri in game.resolved
+               if ri.sum_id == use_id + knife_item.id]
+    assert len(inv_use) == 1
+    assert inv_use[0].narrative == "You wave the knife around."
