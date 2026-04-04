@@ -49,6 +49,9 @@ The entity is gone. The story entry tells the player to cross it out permanently
 
 The entity appears on the current room sheet. Use this to reveal hidden objects or drop items from interactions.
 
+!!! tip "Mention what appears"
+    The story entry instructs the player to write the new entity on their room sheet, but it doesn't explain *what* it is — the narrative does. Make sure your narrative text describes what the player found, or the instruction to "Write KEYCARD" comes out of nowhere.
+
 ### `"Room Name"` — move the player
 
 ```markdown

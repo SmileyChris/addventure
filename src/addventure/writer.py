@@ -92,7 +92,8 @@ class GameWriter:
                     )
 
             # THING -> room (reveal in current room)
-            elif dest == "room":
+            # But THING__STATE -> room is a state revert, not a reveal
+            elif dest == "room" and "__" not in subj:
                 entity_id = self._get_id(subj, ri.room)
                 instructions.append(
                     f"Write {dn(subj)} ({entity_id}) in a discovery slot "
@@ -116,12 +117,16 @@ class GameWriter:
             # THING -> THING__STATE or THING__STATE -> THING (transform)
             elif "__" in dest or dest.startswith("@") or (
                     "__" in subj and subj not in self.game.verbs):
-                old_id = self._get_id(subj, ri.room)
-                new_id = self._get_id(dest, ri.room)
+                # Resolve "room" / "room__STATE" shorthands
+                base_room = ri.room.split("__")[0]
+                resolved_subj = subj.replace("room", f"@{base_room}", 1) if subj.startswith("room") and not subj.startswith("@") else subj
+                resolved_dest = f"@{base_room}" if dest == "room" else dest.replace("room", f"@{base_room}", 1) if dest.startswith("room") and not dest.startswith("@") else dest
+                old_id = self._get_id(resolved_subj, ri.room)
+                new_id = self._get_id(resolved_dest, ri.room)
                 # Check if it's a verb transform
-                clean_subj = subj.lstrip("@")
+                clean_subj = resolved_subj.lstrip("@")
                 subj_display = dn(clean_subj)
-                dest_display = dn(dest.lstrip("@"))
+                dest_display = dn(resolved_dest.lstrip("@"))
                 if clean_subj in self.game.verbs or subj in self.game.verbs:
                     instructions.append(
                         f"Change {subj_display} to {new_id} on your Verb Sheet."

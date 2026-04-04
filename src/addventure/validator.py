@@ -202,7 +202,7 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
             objects.discard((room, subj))
             inventory.add(subj)
 
-        elif dest == "room":
+        elif dest == "room" and "__" not in subj:
             # Reveal in current room
             objects.add((room, subj))
 
@@ -222,11 +222,20 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
             verbs.discard(subj)
             verbs.add(dest)
 
-        elif "__" in dest and not dest.startswith('"'):
-            # Entity or room state transform
+        elif ("__" in dest and not dest.startswith('"')) or (
+                "__" in subj and subj not in game.verbs
+                and dest not in ("trash", "player")
+                and not dest.startswith('"')):
+            # Entity or room state transform (forward or revert)
             clean_subj = subj.lstrip("@")
             clean_dest = dest.lstrip("@")
-            if dest.startswith("@") or clean_dest in game.rooms:
+            # Resolve "room" shorthand to current room name
+            if clean_dest == "room":
+                clean_dest = room.split("__")[0]
+            if clean_subj.startswith("room__"):
+                clean_subj = room.split("__")[0] + clean_subj[4:]
+            is_room = dest.startswith("@") or clean_dest in game.rooms
+            if is_room:
                 # Room state change
                 base = clean_dest.split("__")[0]
                 room_states = {

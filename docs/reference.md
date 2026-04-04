@@ -125,7 +125,6 @@ Nested under the arrow that creates the state.
 | Syntax | Meaning |
 |---|---|
 | `ENTITY__STATE` | Double-underscore separates base name from state |
-| `@room` | Reference to the current room entity |
 | `*` | Wildcard — matches all entities in the room |
 | `//` | Comment — ignored by the compiler |
 | `# Interactions` | Section for standalone interactions in a room file |

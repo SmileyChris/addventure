@@ -82,8 +82,7 @@ Game scripts use markdown-based syntax:
 - `//` — comments
 - `ENTITY__STATE` — double-underscore separates base name from state
 - `VERB + TARGET:` — multi-entity interactions
-- Arrow destinations: `player`, `trash`, `"RoomName"`, `room` (current room), `ENTITY__STATE`
+- Arrow destinations: `player`, `trash`, `"RoomName"`, `room` (current room), `ENTITY__STATE`, `room__STATE`
 - `? -> "RoomName"` — cue (deferred cross-room effect, resolved when player enters target room)
-- `@room` — reference to current room entity
 - `*` wildcard — matches all entities in room
 - Indentation (2-space) defines hierarchy within `+`/`-` blocks

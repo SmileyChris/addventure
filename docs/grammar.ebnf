@@ -61,7 +61,7 @@ room-level-line = room-interaction          (* LOOK: desc  or  VERB + TARGET: *)
                 | room-arrow                (* subject -> dest *)
                 | entity-declaration ;      (* ENTITY-NAME at indent 0 *)
 
-room-interaction = interaction-header ;     (* context entity = @room *)
+room-interaction = interaction-header ;     (* context entity = current room *)
 
 room-arrow      = arrow ;
 
@@ -109,18 +109,18 @@ arrow-line      = "-" , " " , arrow , newline , [ arrow-children ] ;
 arrow           = subject , " -> " , destination
                 | " -> " , VERB-NAME ;        (* verb reveal: no subject *)
 
-subject         = entity-ref                  (* ENTITY, @room *)
+subject         = entity-ref                  (* ENTITY, ENTITY__STATE *)
                 | "player"
                 | "room"
                 | "?" ;                       (* cue trigger *)
 
 destination     = "trash"                     (* destroy entity or verb *)
                 | "player"                    (* move to inventory *)
-                | "room"                      (* reveal in current room *)
+                | "room"                      (* reveal in current room, or revert room state *)
                 | quoted-room                 (* move to / reveal in named room *)
                 | entity-state-ref            (* transform: ENTITY__STATE *)
                 | ENTITY-NAME                 (* revert: ENTITY__STATE -> ENTITY *)
-                | room-state-ref ;            (* transform: room__STATE or @Room__STATE *)
+                | room-state-ref ;            (* transform: room__STATE *)
 
 quoted-room     = '"' , room-name , '"' ;
 
@@ -215,13 +215,11 @@ freeform-header = VERB-NAME , "+" , target-group , { "+" , target-group } , ":" 
 
 entity-ref      = ENTITY-NAME                 (* e.g. TERMINAL, CRATE *)
                 | entity-state-ref            (* e.g. TERMINAL__UNLOCKED *)
-                | "@" , room-name             (* current room entity *)
                 | "*" ;                       (* wildcard: all entities in room *)
 
 entity-state-ref = ENTITY-NAME , "__" , STATE-NAME ;
 
-room-state-ref  = "room__" , STATE-NAME       (* shorthand for @CurrentRoom__STATE *)
-                | "@" , room-name , "__" , STATE-NAME ;
+room-state-ref  = "room__" , STATE-NAME ;     (* current room state transform *)
 
 
 (* ══════════════════════════════════════════════════════════ *)

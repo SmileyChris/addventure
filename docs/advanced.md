@@ -125,16 +125,6 @@ USE__RESTRAINED + *:
 
 This creates an interaction for every entity the player could target. It's useful for verb states that should block all normal actions, or for generic responses before a puzzle is solved.
 
-## The `@room` reference
-
-Use `@room` to reference the current room as an entity in interactions:
-
-```markdown
-+ LOOK: ...
-```
-
-When written at the room level (not under a noun), `LOOK` already targets the room. But `@room` is useful when you need to explicitly reference the room entity in arrows or other contexts.
-
 ## Items vs. nouns
 
 **Nouns** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
