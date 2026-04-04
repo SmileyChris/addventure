@@ -105,6 +105,18 @@ class GameWriter:
                         f"Write {dn(subj)} ({entity_id}) on your Inventory."
                     )
 
+            # Action discovery: >ACTION_NAME -> room
+            elif dest == "room" and subj.startswith(">"):
+                action_name = subj[1:]
+                action_key = f"{current_room}::{action_name}"
+                action = self.game.actions.get(action_key)
+                if action:
+                    prefix = self.entry_prefix
+                    instructions.append(
+                        f"Write {dn(action_name)} ({prefix}-{action.ledger_id}) "
+                        f"in a discovery slot on this room sheet."
+                    )
+
             # THING -> room (reveal in current room)
             # But room__STATE -> room is a state revert, not a reveal
             elif dest == "room" and not subj.startswith("room__"):

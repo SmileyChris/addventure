@@ -340,7 +340,9 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             # This shouldn't happen at this level — break out
             break
         elif _is_action(bstripped):
+            action_name = bstripped[2:].strip()
             i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=current_indent)
+            arrows.append(Arrow(f">{action_name}", "room", i))
         elif _is_narrative(bstripped) and not narrative:
             narrative = bstripped
             i += 1
@@ -623,7 +625,9 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                 elif bmarker == "+":
                     break
                 elif _is_action(bs):
+                    action_name = bs[2:].strip()
                     i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=0)
+                    arrows.append(Arrow(f">{action_name}", "room", i))
                 elif _is_narrative(bs) and not narrative:
                     narrative = bs
                     i += 1

@@ -275,6 +275,36 @@ FOUNTAIN
     assert str(clearing_fountain.id) in fountain_inst
 
 
+def test_discoverable_action_instruction():
+    """When an interaction reveals an action, the instruction says to write it on the room sheet."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+OLD_TREE
++ LOOK: A gnarled oak.
++ USE:
+  You push the tree aside.
+  - OLD_TREE -> trash
+  > HIDDEN_PATH
+    A path is revealed.
+    - player -> "Cave"
+
+# Cave
+LOOK: A cave.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    ri = next(ri for ri in game.resolved if ri.verb == "USE" and "OLD_TREE" in ri.targets)
+    instructions = writer._generate_instructions(ri)
+    action = game.actions["Forest::HIDDEN_PATH"]
+    prefix = game.metadata.get("entry_prefix", "A")
+    assert any(
+        "HIDDEN PATH" in inst and f"{prefix}-{action.ledger_id}" in inst and "discovery" in inst.lower()
+        for inst in instructions
+    )
+
+
 def test_pdf_serialization_includes_actions():
     global_src = "# Verbs\nLOOK\n\n# Items\n"
     room_src = """# Forest
