@@ -198,11 +198,12 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
                 objects.discard((room, subj))
 
         elif dest == "player":
-            # Move to inventory
+            # Move to inventory — use base name for stated nouns
             objects.discard((room, subj))
-            inventory.add(subj)
+            base = subj.split("__")[0] if "__" in subj else subj
+            inventory.add(base)
 
-        elif dest == "room" and "__" not in subj:
+        elif dest == "room" and not subj.startswith("room__"):
             # Reveal in current room
             objects.add((room, subj))
 

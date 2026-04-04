@@ -72,7 +72,10 @@ class GameWriter:
             # THING -> player
             elif dest == "player":
                 entity_id = self._get_id(subj, ri.room)
-                item = self.game.items.get(subj)
+                # Check for item by exact name, then by base name
+                # (FUSE__FLOOR -> player registers item as FUSE)
+                base_name = subj.split("__")[0] if "__" in subj else subj
+                item = self.game.items.get(subj) or self.game.items.get(base_name)
                 if item:
                     # Auto-item picked up via TAKE: player already computed the sum
                     if ri.verb == "TAKE" and subj in self.game.auto_items:
@@ -92,8 +95,8 @@ class GameWriter:
                     )
 
             # THING -> room (reveal in current room)
-            # But THING__STATE -> room is a state revert, not a reveal
-            elif dest == "room" and "__" not in subj:
+            # But room__STATE -> room is a state revert, not a reveal
+            elif dest == "room" and not subj.startswith("room__"):
                 entity_id = self._get_id(subj, ri.room)
                 instructions.append(
                     f"Write {dn(subj)} ({entity_id}) in a discovery slot "

@@ -8,13 +8,13 @@ HATCH
   - player -> "Control Room"
 
 WORKBENCH
-+ LOOK: A rusted workbench. A keycard with a red stripe lies among the scattered tools.
++ LOOK: A rusted workbench. Tools are scattered across it, mostly broken. A crowbar lies among them.
 
-KEYCARD
-+ LOOK: A small keycard with a red stripe.
+CROWBAR
++ LOOK: A heavy iron crowbar. Could pry just about anything open.
 + TAKE:
-  You pocket the keycard.
-  - KEYCARD -> player
+  You grab the crowbar.
+  - CROWBAR -> player
 
 STEEL_DOOR
 + LOOK: A heavy steel door. There's no handle — it must be powered.
@@ -36,14 +36,14 @@ FUSE_BOX
 COMPARTMENT
 + LOOK: A small compartment behind the fuse box. Something is wedged inside.
 + USE:
-  You reach in and pull out an old fuse, still intact.
+  You pry the compartment open. An old fuse tumbles out, hits the floor, and rolls under the workbench.
   - COMPARTMENT -> COMPARTMENT__EMPTY
     + LOOK: An empty compartment behind the fuse box.
-  - FUSE -> room
-    + LOOK: A glass fuse. It looks like it might still work.
+  - FUSE__FLOOR -> room
+    + LOOK: A glass fuse, just visible under the workbench.
     + TAKE:
-      You pocket the fuse.
-      - FUSE -> player
+      You get on your hands and knees and scramble under the bench. Your fingers close around the fuse — still intact.
+      - FUSE__FLOOR -> player
 
 AIR_DUCT
 + LOOK: A ventilation duct runs along the ceiling. One panel hangs open — big enough to crawl through. But it's too high to reach alone.

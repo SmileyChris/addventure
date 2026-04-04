@@ -22,7 +22,17 @@ HATCH
   - player -> "Basement"
 
 CRATE
-+ LOOK: A heavy wooden crate. Something metallic catches the light underneath.
++ LOOK: A heavy wooden crate, nailed shut. Something metallic catches the light underneath.
++ USE + CROWBAR:
+  You pry the lid off. A keycard glints inside.
+  - CRATE -> CRATE__OPEN
+    + LOOK: A splintered crate, lid hanging off.
+  - KEYCARD -> room
+    + LOOK: A small keycard with a red stripe.
+    + TAKE:
+      You pocket the keycard.
+      - KEYCARD -> player
+  - CROWBAR -> trash
 
 BINDINGS
 + LOOK: Thick rope bindings around your wrists.

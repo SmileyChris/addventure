@@ -51,12 +51,18 @@ def _try_allocate(game: GameData, four_digit=False):
             it.id = entity_pool.pop()
 
     # Derive auto-item IDs: TAKE + base noun ID
+    # If no base noun exists, fall back to a stated noun with matching base
     if take:
         for name in game.auto_items:
             for key, noun in game.nouns.items():
                 if noun.name == name and noun.state is None:
                     game.items[name].id = take.id + noun.id
                     break
+            else:
+                for key, noun in game.nouns.items():
+                    if noun.base == name:
+                        game.items[name].id = take.id + noun.id
+                        break
 
     for cue in game.cues:
         cue.id = entity_pool.pop()
