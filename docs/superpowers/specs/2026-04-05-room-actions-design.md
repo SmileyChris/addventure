@@ -89,6 +89,20 @@ Actions with identical arrows (and compatible narratives) share a ledger ID:
 
 Actions don't participate in the verb+noun sum system, so they can't collide with interactions.
 
+## Arrow Room Context (applies to all interactions and actions)
+
+Arrow order is significant when a `player -> "RoomName"` transition is present. Arrows before the player transition resolve against the **exit room** (current room); arrows after resolve against the **entry room** (destination). This applies uniformly to both regular interactions and actions.
+
+```markdown
+> GO NORTH
+  You cross the rickety bridge.
+  - BRIDGE -> trash          // affects Forest (exit room)
+  - player -> "Clearing"    // movement happens here
+  - FOUNTAIN -> room         // reveals FOUNTAIN in Clearing (entry room)
+```
+
+This is a change to the existing writer arrow processing, which currently resolves all arrows against `ri.room` regardless of player transitions.
+
 ## Writer Changes
 
 ### Room Sheets
