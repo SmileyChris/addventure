@@ -132,6 +132,34 @@
     }
   }
 
+  // Actions section (direct ledger references)
+  let prefix = if "entry_prefix" in room { room.entry_prefix } else { "A" }
+  let room-actions = if "actions" in room { room.actions } else { () }
+  if room-actions.len() > 0 {
+    v(1em)
+    section-title("Actions")
+    v(0.3em)
+
+    for act in room-actions {
+      block(
+        width: 100%,
+        below: 0.4em,
+      )[
+        #grid(
+          columns: (1fr, auto),
+          gutter: 0.5em,
+          align(left + horizon)[
+            #strike-text(text(font: "Liberation Sans", size: 10pt)[#act.name.replace("_", " ")])
+          ],
+          align(right + horizon)[
+            #text(font: "Liberation Sans", size: 10pt, weight: "bold")[#prefix\-#str(act.entry)]
+          ],
+        )
+      ]
+      line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+    }
+  }
+
   // Discovery slots (non-blind, or blind start room)
   if (not blind or is-start) and room.discovery_slots > 0 {
     v(1em)
