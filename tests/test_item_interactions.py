@@ -175,3 +175,26 @@ KNIFE
                if ri.sum_id == use_id + knife_item.id]
     assert len(inv_use) == 1
     assert inv_use[0].narrative == "You wave the knife around."
+
+
+def test_empty_interaction_suppresses_duplication():
+    """+ LOOK: with no text should prevent LOOK from being duplicated."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KNIFE
++ LOOK: A blade on the ground.
++ TAKE:
+  You pick it up.
+  - KNIFE -> player
+    + LOOK:
+"""
+    game = compile_game(global_src, [room_src])
+    knife_item = game.items["KNIFE"]
+    look_id = game.verbs["LOOK"].id
+
+    # No inventory LOOK should exist — suppressed by empty interaction
+    inv_looks = [ri for ri in game.resolved
+                 if ri.sum_id == look_id + knife_item.id]
+    assert len(inv_looks) == 0
