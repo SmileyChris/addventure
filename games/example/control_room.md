@@ -8,7 +8,7 @@ TERMINAL
 + USE + KEYCARD:
   You slide the keycard. The screen floods with data — including an emergency override code. Deep below, something rumbles.
   - TERMINAL -> TERMINAL__UNLOCKED
-    + LOOK: Scrolling text. A map shows the facility layout — Control Room, Basement, Hallway. An exit is marked at the far end of the hallway.
+    + LOOK: Scrolling text. A map shows the facility layout — Control Room, Basement, Cell Block. Dozens of holding cells are marked along the cell block corridor. An exit is marked at the far end.
   - KEYCARD -> trash
   - -> OVERRIDE
   - ? -> "Basement"

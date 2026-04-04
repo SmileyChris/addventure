@@ -1,11 +1,15 @@
-# Hallway
-LOOK: A long corridor. Pipes run along the ceiling. Emergency lighting casts a dim red glow. Thin red laser beams crisscross the passage. At the far end, a door marked EXIT.
+# Cell Block
+LOOK: A long corridor lined with steel doors. Small windows set into each one, faces pressed against the glass. Eyes follow you as you pass. Thin red laser beams crisscross the far end of the passage. Beyond them, a door marked EXIT.
 
 PASSAGE
 + LOOK: The open doorway back to the basement.
 + USE:
   You head back through the passage.
   - player -> "Basement"
+
+CELLS
++ LOOK: Dozens of holding cells, each sealed with an electronic lock. The people inside are gaunt but alive. One of them mouths something at you through the glass — *please*.
++ USE: The locks are electronic. You can't force them open by hand.
 
 LASER_GRID
 + LOOK: A security grid. Thin red beams slice the corridor from floor to ceiling.
@@ -16,10 +20,10 @@ LASER_GRID
   - KNIFE -> trash
 
 SECURITY_CONSOLE
-+ LOOK: A monitor showing camera feeds — holding cells, rows of them. People are alive in there.
++ LOOK: A console mounted on the wall. A row of cell lock indicators glow red. A keypad blinks beneath the screen.
 + USE: The console needs some kind of override code.
 + OVERRIDE:
-  You punch the override code into the console. Every cell door in the facility clicks open at once. Alarms blare. On the monitors, figures stumble into corridors, blinking in the light.
+  You punch the override code into the console. Every cell lock indicator flips to green. Bolts slam back in unison. Doors swing open down the length of the corridor. People stumble out, blinking, clutching each other.
 
   The code is spent — but these people are free.
   - OVERRIDE -> trash

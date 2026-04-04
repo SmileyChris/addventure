@@ -1,5 +1,5 @@
 # Basement
-LOOK: Damp concrete walls. Water drips from a cracked pipe overhead. Metal ducts run along the ceiling. A steel door is set into the far wall.
+LOOK: Damp concrete walls. Water drips from a cracked pipe overhead. Metal ducts run along the ceiling. A steel door is set into the far wall. From somewhere beyond it, you can hear muffled voices and the occasional clang of metal on metal.
 
 HATCH
 + LOOK: A metal hatch in the ceiling. The ladder leads back up to the control room.
@@ -30,8 +30,8 @@ FUSE_BOX
   - STEEL_DOOR -> STEEL_DOOR__OPEN
     + LOOK: The door stands open. A long hallway stretches beyond it.
     + USE:
-      You step through the doorway into the hallway.
-      - player -> "Hallway"
+      You step through the doorway into the cell block.
+      - player -> "Cell Block"
 
 COMPARTMENT
 + LOOK: A small compartment behind the fuse box. Something is wedged inside.
