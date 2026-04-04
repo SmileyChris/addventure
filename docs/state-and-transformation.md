@@ -127,9 +127,11 @@ After the player pries open the crate:
 
 ### State inheritance
 
-When an entity changes state, the new state **inherits** all interactions from the base entity that aren't explicitly overridden. In the example above, `CRATE__OPEN` gets a new LOOK response, but if the base `CRATE` also had a `+ USE:` interaction, `CRATE__OPEN` would inherit it automatically.
+When an entity changes state, the new state **inherits observations** (arrow-free interactions like LOOK) from the base entity that aren't explicitly overridden. In the example above, if `CRATE__OPEN` didn't define its own LOOK, it would inherit the base `CRATE`'s LOOK text.
 
-This means you only need to define what's *different* about the new state.
+Actions — interactions that have arrows (state changes, movement, destruction) — are **not** inherited. This prevents game-altering mechanics from silently carrying over to states where they may not make sense.
+
+This means you only need to define what's *different* about the new state's observations, but any actions must be explicitly defined on each state that needs them.
 
 ## Room states
 
@@ -153,7 +155,7 @@ When the room changes state:
 - New nouns can appear (HATCH, in this example)
 - The room's LOOK description changes
 
-Room states work just like entity states — new nouns and interactions nest under the arrow, and anything not overridden is inherited.
+Room states work just like entity states — new nouns and interactions nest under the arrow, and observations not overridden are inherited (actions are not).
 
 ## Chaining arrows
 
