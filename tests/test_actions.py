@@ -1,4 +1,5 @@
 from addventure.models import Action, Arrow, GameData
+from addventure.compiler import compile_game
 
 
 def test_action_dataclass():
@@ -20,3 +21,27 @@ def test_action_dataclass():
 def test_gamedata_has_actions():
     game = GameData()
     assert game.actions == {}
+
+
+def test_parse_room_level_action():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A dense forest.
+
+> GO_NORTH
+  You head north through the trees.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A sunlit clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    assert "Forest::GO_NORTH" in game.actions
+    action = game.actions["Forest::GO_NORTH"]
+    assert action.name == "GO_NORTH"
+    assert action.room == "Forest"
+    assert action.narrative == "You head north through the trees."
+    assert action.discovered is False
+    assert len(action.arrows) == 1
+    assert action.arrows[0].subject == "player"
+    assert action.arrows[0].destination == '"Clearing"'
