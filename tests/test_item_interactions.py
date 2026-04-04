@@ -1,5 +1,6 @@
 from addventure.models import GameData
 from addventure.compiler import compile_game
+from addventure import GameWriter
 
 
 def test_gamedata_has_suppressed_interactions():
@@ -198,3 +199,74 @@ KNIFE
     inv_looks = [ri for ri in game.resolved
                  if ri.sum_id == look_id + knife_item.id]
     assert len(inv_looks) == 0
+
+
+def test_stated_noun_to_player_registers_base_item():
+    """KEY__HIDDEN -> player should register item as KEY, not KEY__HIDDEN."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
++ LOOK: A brass key.
+
+KEY__HIDDEN
++ LOOK: Something glints in the shadows.
++ USE:
+  You reach in and grab it.
+  - KEY__HIDDEN -> trash
+  - KEY -> room
+    + TAKE:
+      You pocket the key.
+      - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    assert "KEY" in game.items
+    assert "KEY__HIDDEN" not in game.items
+    assert "KEY" in game.auto_items
+
+
+def test_stated_noun_direct_to_player_registers_base_item():
+    """GEM__ROUGH -> player should register item as GEM."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+GEM
++ LOOK: A gem.
+
+GEM__ROUGH
++ LOOK: An uncut gem.
++ TAKE:
+  You pocket the rough gem.
+  - GEM__ROUGH -> player
+"""
+    game = compile_game(global_src, [room_src])
+    assert "GEM" in game.items
+    assert "GEM__ROUGH" not in game.items
+
+
+def test_state_revert_generates_transform_instruction():
+    """DOOR__LOCKED -> DOOR should generate a 'Change' instruction."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\nKEY\n"
+    room_src = """# Room
+LOOK: A room.
+
+DOOR
++ LOOK: A wooden door.
+
+DOOR__LOCKED
++ LOOK: A locked door.
++ USE + KEY:
+  You unlock the door.
+  - DOOR__LOCKED -> DOOR
+  - KEY -> trash
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+
+    door_base = game.nouns["Room::DOOR"]
+    ri = next(ri for ri in game.resolved
+              if ri.narrative == "You unlock the door.")
+    instructions = writer._generate_instructions(ri)
+    assert any("Change" in i and str(door_base.id) in i for i in instructions)

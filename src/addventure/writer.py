@@ -121,8 +121,9 @@ class GameWriter:
                         f"Write {cue.id} in your Cue Checks."
                     )
 
-            # THING -> THING__STATE (transform)
-            elif "__" in dest or dest.startswith("@"):
+            # THING -> THING__STATE or THING__STATE -> THING (transform)
+            elif "__" in dest or dest.startswith("@") or (
+                    "__" in subj and subj not in self.game.verbs):
                 old_id = self._get_id(subj, ri.room)
                 new_id = self._get_id(dest, ri.room)
                 # Check if it's a verb transform

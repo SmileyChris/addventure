@@ -147,14 +147,15 @@ def auto_register_verbs(game: GameData):
 
 def auto_register_items(game: GameData):
     """Auto-create Items for nouns that have -> player arrows."""
-    pickup_nouns: dict[str, list[tuple[str, int]]] = {}  # name -> [(room, line)]
+    pickup_nouns: dict[str, list[tuple[str, int]]] = {}  # base_name -> [(room, line)]
     for ix in game.interactions:
         for a in ix.arrows:
             if a.destination == "player" and a.subject != "player":
-                name = a.subject
-                if name not in pickup_nouns:
-                    pickup_nouns[name] = []
-                pickup_nouns[name].append((ix.room, a.source_line))
+                # Use base name: KEY__UNREACHABLE -> player registers as KEY
+                base, _ = _split_name(a.subject)
+                if base not in pickup_nouns:
+                    pickup_nouns[base] = []
+                pickup_nouns[base].append((ix.room, a.source_line))
 
     if not pickup_nouns:
         return
