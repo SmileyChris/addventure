@@ -20,7 +20,7 @@ New `Action` dataclass in `models.py`:
 ```python
 @dataclass
 class Action:
-    name: str              # e.g., "GO NORTH", "HIDDEN_PATH"
+    name: str              # e.g., "GO_NORTH", "HIDDEN_PATH"
     room: str              # room it belongs to
     narrative: str         # text the player reads
     arrows: list[Arrow]    # same Arrow type interactions use
@@ -40,11 +40,11 @@ The `>` marker denotes actions in room scripts:
 # Forest
 
 // Pre-printed actions (top-level in room)
-> GO NORTH
+> GO_NORTH
   You head north through the trees.
   - player -> "Clearing"
 
-> GO SOUTH
+> GO_SOUTH
   - player -> "Village"
 
 // Regular nouns and interactions
@@ -56,15 +56,23 @@ OLD_TREE
   > HIDDEN_PATH
     A path is revealed behind the fallen tree.
     - player -> "Cave"
+
+// Removing an action from another interaction
+LEVER
++ USE:
+  - GO_NORTH -> trash
 ```
 
 Rules:
-- `>` at room indentation level = pre-printed on room sheet
-- `>` nested under an interaction = discoverable (parent interaction's ledger entry says "Write HIDDEN_PATH ... A-XX in a discovery slot")
-- Narrative text indented under `>` line, arrows with `-` prefix (same as interactions)
+- Action names follow the same naming rules as nouns (uppercase, underscores, single token). `>` is the declaration marker only — not part of the name.
+- Display names are prettified the same way as nouns: `GO_NORTH` → "GO NORTH" on the room sheet.
+- `>` at room indentation level = pre-printed on room sheet.
+- `>` nested under an interaction = discoverable (parent interaction's ledger entry says "Write GO NORTH ... A-XX in a discovery slot").
+- Narrative text indented under `>` line, arrows with `-` prefix (same as interactions).
 - Actions can contain arrows, which can reveal nouns. Those nouns can have `+` interactions, which can reveal further actions.
 - Actions **cannot** be `+` targets (no verb interactions on actions).
 - Actions **cannot** nest directly under actions.
+- Actions can be removed via `- ACTION_NAME -> trash` in any interaction or action. The compiler resolves action names by checking the room's actions when no matching noun is found. The instruction is "Cross out ACTION NAME on this room sheet."
 
 ## Compiler Changes
 
@@ -94,7 +102,7 @@ Actions don't participate in the verb+noun sum system, so they can't collide wit
 Arrow order is significant when a `player -> "RoomName"` transition is present. Arrows before the player transition resolve against the **exit room** (current room); arrows after resolve against the **entry room** (destination). This applies uniformly to both regular interactions and actions.
 
 ```markdown
-> GO NORTH
+> GO_NORTH
   You cross the rickety bridge.
   - BRIDGE -> trash          // affects Forest (exit room)
   - player -> "Clearing"    // movement happens here
