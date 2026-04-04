@@ -41,6 +41,17 @@ def _make_text_field(rect: list[float], name: str, font_size: int = 10, bold: bo
     return field
 
 
+def _make_appearance_stream(w: float, h: float, content: bytes) -> DecodedStreamObject:
+    """Create a Form XObject appearance stream with proper metadata."""
+    stream = DecodedStreamObject()
+    stream.set_data(content)
+    stream[NameObject("/Type")] = NameObject("/XObject")
+    stream[NameObject("/Subtype")] = NameObject("/Form")
+    stream[NameObject("/BBox")] = ArrayObject([FloatObject(0), FloatObject(0), FloatObject(w), FloatObject(h)])
+    stream[NameObject("/Length")] = NumberObject(len(content))
+    return stream
+
+
 def _make_cross_checkbox(rect: list[float], name: str) -> DictionaryObject:
     """Create a checkbox that draws an X across the box when checked."""
     x1, y1, x2, y2 = rect
@@ -61,22 +72,13 @@ def _make_cross_checkbox(rect: list[float], name: str) -> DictionaryObject:
     )
 
     # Custom appearance: diagonal X lines when checked, nothing when off
-    on_stream = DecodedStreamObject()
-    # Draw two diagonal lines across the box
-    on_stream.set_data(
+    on_data = (
         f"q 1.5 w 0.4 0.4 0.4 RG "
         f"0 0 m {w:.1f} {h:.1f} l S "
-        f"0 {h:.1f} m {w:.1f} 0 l S Q".encode()
-    )
-    on_stream[NameObject("/Type")] = NameObject("/XObject")
-    on_stream[NameObject("/Subtype")] = NameObject("/Form")
-    on_stream[NameObject("/BBox")] = ArrayObject([FloatObject(0), FloatObject(0), FloatObject(w), FloatObject(h)])
-
-    off_stream = DecodedStreamObject()
-    off_stream.set_data(b"")
-    off_stream[NameObject("/Type")] = NameObject("/XObject")
-    off_stream[NameObject("/Subtype")] = NameObject("/Form")
-    off_stream[NameObject("/BBox")] = ArrayObject([FloatObject(0), FloatObject(0), FloatObject(w), FloatObject(h)])
+        f"0 {h:.1f} m {w:.1f} 0 l S Q"
+    ).encode()
+    on_stream = _make_appearance_stream(w, h, on_data)
+    off_stream = _make_appearance_stream(w, h, b"")
 
     n_dict = DictionaryObject()
     n_dict[NameObject("/Yes")] = on_stream
@@ -112,20 +114,12 @@ def _make_strike_checkbox(rect: list[float], name: str) -> DictionaryObject:
 
     # Custom appearance: horizontal line through the middle when checked
     mid_y = h / 2
-    on_stream = DecodedStreamObject()
-    on_stream.set_data(
+    on_data = (
         f"q 1.5 w 0.4 0.4 0.4 RG "
-        f"0 {mid_y:.1f} m {w:.1f} {mid_y:.1f} l S Q".encode()
-    )
-    on_stream[NameObject("/Type")] = NameObject("/XObject")
-    on_stream[NameObject("/Subtype")] = NameObject("/Form")
-    on_stream[NameObject("/BBox")] = ArrayObject([FloatObject(0), FloatObject(0), FloatObject(w), FloatObject(h)])
-
-    off_stream = DecodedStreamObject()
-    off_stream.set_data(b"")
-    off_stream[NameObject("/Type")] = NameObject("/XObject")
-    off_stream[NameObject("/Subtype")] = NameObject("/Form")
-    off_stream[NameObject("/BBox")] = ArrayObject([FloatObject(0), FloatObject(0), FloatObject(w), FloatObject(h)])
+        f"0 {mid_y:.1f} m {w:.1f} {mid_y:.1f} l S Q"
+    ).encode()
+    on_stream = _make_appearance_stream(w, h, on_data)
+    off_stream = _make_appearance_stream(w, h, b"")
 
     n_dict = DictionaryObject()
     n_dict[NameObject("/Yes")] = on_stream
@@ -213,6 +207,17 @@ def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
                         field = _make_text_field(rect, name, font_size=10)
                     else:
                         field = _make_text_field(rect, name, font_size=10, uppercase=True)
+
+                    # Register appearance streams as indirect objects so
+                    # they get proper Length/stream headers in the output PDF
+                    if "/AP" in field:
+                        ap = field["/AP"]
+                        if "/N" in ap:
+                            n = ap["/N"]
+                            for key in list(n.keys()):
+                                stream_obj = n[key]
+                                if isinstance(stream_obj, DecodedStreamObject):
+                                    n[NameObject(key)] = writer._add_object(stream_obj)
 
                     writer.add_annotation(page_num, field)
                     ref = page["/Annots"][-1]
