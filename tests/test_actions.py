@@ -191,3 +191,47 @@ LOOK: A cave.
     game = compile_game(global_src, [room_src])
     writer = GameWriter(game)
     assert writer._max_discovery_slots() >= 1
+
+
+def test_markdown_room_shows_actions():
+    from addventure.md_writer import generate_markdown
+
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    md, warnings = generate_markdown(game)
+    assert "GO NORTH" in md
+    entry_prefix = game.metadata.get("entry_prefix", "A")
+    action = game.actions["Forest::GO_NORTH"]
+    assert f"{entry_prefix}-{action.ledger_id}" in md
+
+
+def test_markdown_ledger_includes_action_entries():
+    from addventure.md_writer import generate_markdown
+
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    md, warnings = generate_markdown(game)
+    action = game.actions["Forest::GO_NORTH"]
+    entry_prefix = game.metadata.get("entry_prefix", "A")
+    assert f"{entry_prefix}-{action.ledger_id}" in md
+    assert "You head north." in md

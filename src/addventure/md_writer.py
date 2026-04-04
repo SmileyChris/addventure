@@ -124,6 +124,19 @@ def _room_section(
             for _ in range(max_disc):
                 lines.append("- ______________ `[____]`")
 
+    # Actions (pre-printed)
+    room_actions = [
+        a for a in game.actions.values()
+        if a.room == room_name and not a.discovered
+    ]
+    if room_actions:
+        lines.append("\n### Actions\n")
+        lines.append("| Action | Entry |")
+        lines.append("|--------|------:|")
+        entry_prefix_local = game.metadata.get("entry_prefix", "A")
+        for a in room_actions:
+            lines.append(f"| {_display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
+
     return "\n".join(lines)
 
 
@@ -185,20 +198,40 @@ def _ledger_section(
 ) -> str:
     lines = [
         "## Story Ledger",
-        "\n*Only read an entry when directed to by the Potentials List."
+        "\n*Only read an entry when directed to by the Potentials List or a room sheet."
         " Read the narrative aloud, then follow any instructions.*",
     ]
 
+    # Collect all entries: resolved interactions + actions
+    all_entries = []
+
     seen_entries = set()
-    sorted_resolved = sorted(game.resolved, key=lambda r: r.entry_number)
-    for ri in sorted_resolved:
+    for ri in game.resolved:
         if ri.entry_number in seen_entries:
             continue
         seen_entries.add(ri.entry_number)
-
-        lines.append(f"\n{entry_prefix}-{ri.entry_number}")
-        body = ri.narrative
         instructions = writer._generate_instructions(ri)
+        all_entries.append((ri.entry_number, ri.narrative, instructions))
+
+    seen_action_entries = set()
+    for action in game.actions.values():
+        if action.ledger_id in seen_entries or action.ledger_id in seen_action_entries:
+            continue
+        seen_action_entries.add(action.ledger_id)
+        from .models import ResolvedInteraction
+        ri = ResolvedInteraction(
+            verb="ACTION", targets=[], sum_id=0,
+            narrative=action.narrative, arrows=action.arrows,
+            source_line=0, room=action.room, parent_label=action.name,
+        )
+        instructions = writer._generate_instructions(ri)
+        all_entries.append((action.ledger_id, action.narrative, instructions))
+
+    all_entries.sort(key=lambda e: e[0])
+
+    for entry_num, narrative, instructions in all_entries:
+        lines.append(f"\n{entry_prefix}-{entry_num}")
+        body = narrative
         if instructions:
             body += "\n\n" + "\n".join(f"- *{inst}*" for inst in instructions)
         lines.append(indent(body, ": ", lambda line: True))
