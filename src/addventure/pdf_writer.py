@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from shutil import which
 
-from .models import GameData
+from .models import GameData, ResolvedInteraction
 from .writer import GameWriter
 
 
@@ -106,13 +106,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         if action.ledger_id in seen_entries or action.ledger_id in seen_action_entries:
             continue
         seen_action_entries.add(action.ledger_id)
-        from .models import ResolvedInteraction
-        ri = ResolvedInteraction(
-            verb="ACTION", targets=[], sum_id=0,
-            narrative=action.narrative, arrows=action.arrows,
-            source_line=0, room=action.room, parent_label=action.name,
-        )
-        instructions = writer._generate_instructions(ri)
+        instructions = writer._action_instructions(action)
         ledger.append({
             "entry": action.ledger_id,
             "narrative": action.narrative,

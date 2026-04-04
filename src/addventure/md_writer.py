@@ -2,7 +2,7 @@
 
 from textwrap import indent
 
-from .models import GameData
+from .models import GameData, ResolvedInteraction
 from .writer import GameWriter, _display_name
 
 
@@ -218,13 +218,7 @@ def _ledger_section(
         if action.ledger_id in seen_entries or action.ledger_id in seen_action_entries:
             continue
         seen_action_entries.add(action.ledger_id)
-        from .models import ResolvedInteraction
-        ri = ResolvedInteraction(
-            verb="ACTION", targets=[], sum_id=0,
-            narrative=action.narrative, arrows=action.arrows,
-            source_line=0, room=action.room, parent_label=action.name,
-        )
-        instructions = writer._generate_instructions(ri)
+        instructions = writer._action_instructions(action)
         all_entries.append((action.ledger_id, action.narrative, instructions))
 
     all_entries.sort(key=lambda e: e[0])

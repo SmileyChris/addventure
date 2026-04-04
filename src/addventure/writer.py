@@ -315,6 +315,15 @@ class GameWriter:
         """Get the ID for any entity."""
         return get_entity_id(name, self.game, room)
 
+    def _action_instructions(self, action) -> list[str]:
+        """Generate instructions for an action's ledger entry."""
+        ri = ResolvedInteraction(
+            verb="ACTION", targets=[], sum_id=0,
+            narrative=action.narrative, arrows=action.arrows,
+            source_line=0, room=action.room, parent_label=action.name,
+        )
+        return self._generate_instructions(ri)
+
 
 # ── Build Summary ──────────────────────────────────────────────────────────
 

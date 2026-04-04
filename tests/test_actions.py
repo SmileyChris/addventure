@@ -123,6 +123,36 @@ LOOK: A village.
     assert clearing_action.narrative == "You walk south to the forest."
 
 
+def test_action_dedup_different_narratives():
+    """Actions with same arrows but different narratives get separate ledger IDs."""
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You walk through towering pines.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+
+> GO_SOUTH
+  You retrace your steps through wildflowers.
+  - player -> "Forest"
+
+# Village
+LOOK: A village.
+
+> GO_SOUTH
+  You follow a dirt road south.
+  - player -> "Forest"
+"""
+    game = compile_game(global_src, [room_src])
+    clearing_action = game.actions["Clearing::GO_SOUTH"]
+    village_action = game.actions["Village::GO_SOUTH"]
+    assert clearing_action.ledger_id != village_action.ledger_id
+
+
 def test_action_trash_instruction():
     global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
     room_src = """# Forest
