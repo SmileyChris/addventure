@@ -1,6 +1,7 @@
 from addventure.models import Action, Arrow, GameData, ResolvedInteraction
 from addventure.compiler import compile_game
 from addventure.writer import GameWriter, _display_name
+from addventure.pdf_writer import serialize_game_data
 
 
 def test_action_dataclass():
@@ -235,3 +236,27 @@ LOOK: A clearing.
     entry_prefix = game.metadata.get("entry_prefix", "A")
     assert f"{entry_prefix}-{action.ledger_id}" in md
     assert "You head north." in md
+
+
+def test_pdf_serialization_includes_actions():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    forest = next(r for r in data["rooms"] if r["name"] == "Forest")
+    assert "actions" in forest
+    assert len(forest["actions"]) == 1
+    assert forest["actions"][0]["name"] == "GO_NORTH"
+    assert forest["actions"][0]["entry"] > 0
+    action_entry = game.actions["Forest::GO_NORTH"].ledger_id
+    assert any(e["entry"] == action_entry for e in data["ledger"])
