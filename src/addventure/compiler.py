@@ -442,6 +442,7 @@ def ensure_room_looks(game: GameData):
 def _reset_mutable(game: GameData):
     """Reset state that changes between allocation attempts."""
     game.resolved = []
+    game.suppressed_interactions = []
     for cue in game.cues:
         cue.id = 0
         cue.sum_id = 0

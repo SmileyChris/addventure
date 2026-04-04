@@ -85,3 +85,4 @@ class GameData:
     cues: list[Cue] = field(default_factory=list)
     auto_items: set[str] = field(default_factory=set)
     auto_verbs: set[str] = field(default_factory=set)
+    suppressed_interactions: list[Interaction] = field(default_factory=list)
