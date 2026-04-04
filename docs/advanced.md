@@ -253,13 +253,27 @@ The compiler tries 3-digit IDs first (200 attempts). If no collision-free alloca
 
 **The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ nouns per room stays well under 80 total.
 
+## Ledger entry deduplication
+
+The compiler merges interactions that produce identical ledger entries into a single entry. This happens most often with:
+
+- **Wildcard expansions** — `USE__RESTRAINED + *:` creates one interaction per entity, but they all share the same narrative and arrows, so they share one entry.
+- **Item duplication** — when a noun interaction is duplicated for the inventory version and nothing in the arrows references the item differently (no `-> trash` of the item), the noun and inventory versions share one entry.
+
+Each version still has its own sum in the Potentials List, but they all point to the same entry number. This keeps the ledger compact.
+
+Entries are **not** merged when:
+
+- The arrows differ (e.g. the inventory version strips `item -> player`)
+- An `item -> trash` arrow would generate different instructions ("Cross out on room sheet" vs "Cross out on Inventory")
+
 ## Design tips
 
 **Start small.** A good first game has 2-3 rooms with a few puzzles. The example game (`games/example/`) is a good template.
 
 **Name things clearly.** `RUSTY_KEY` is better than `KEY2`. Players see these names on their sheets.
 
-**Test by building often.** Run `uv run adv build --text` frequently as you write. The compiler catches errors (undefined entities, bad arrows) and reports them with line numbers.
+**Test by building often.** Run `uv run adv build --md` frequently as you write. The compiler catches errors (undefined entities, bad arrows) and reports them with line numbers.
 
 **Think about the paper experience.** Every state change means the player has to cross something out and write something new. Complex chains of arrows create complex instructions — keep it manageable.
 
