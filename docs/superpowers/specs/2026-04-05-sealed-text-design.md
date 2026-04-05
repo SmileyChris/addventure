@@ -7,7 +7,7 @@ Sealed texts are content blocks hidden from the player until a ledger entry dire
 Two output modes are available, selected at build time:
 
 - **Extended ledger** (default) — sealed content renders as a separate section at the back of the story ledger, after all normal entries. Simple, no prep work, relies on player discipline not to read ahead.
-- **Jigsaw** (`--jigsaw` flag) — sealed content is sliced into grid squares, shuffled, and interleaved with squares from other sealed texts on shared cut pages. The player cuts out the squares and assembles them by position number to reveal the content. True physical concealment — the scrambling itself prevents accidental reading.
+- **Jigsaw** (`--jigsaw` flag) — sealed content is sliced into rectangular grid pieces, shuffled, and interleaved with pieces from other sealed texts on shared cut pages. Random 180° rotation on individual pieces. No position labels — the player assembles by matching text flow across edges, like a real jigsaw. True physical concealment.
 
 ## Authoring Syntax
 
@@ -32,7 +32,7 @@ Sealed text is authored inline within an interaction block using `:::` fencing:
 
 - The `:::` fence must appear inside an interaction block (under a `+` line), at narrative indentation level (2-space indent, same as narrative text and arrows).
 - Content outside the fence becomes the normal ledger entry narrative. Content inside the fence becomes the sealed content.
-- If there is no narrative outside the fence, the ledger entry contains only the auto-generated "Assemble Sealed Text X-N" instruction (plus any arrow-generated instructions).
+- If there is no narrative outside the fence, the ledger entry contains only the auto-generated sealed text instruction (plus any arrow-generated instructions).
 - Arrows (`-` lines) remain outside the fence and generate instructions in the normal ledger entry as usual.
 - Images can be referenced inside the fence using `![](filename.png)` — resolved relative to the game directory, same as the existing `image:` metadata field.
 - A single interaction can have at most one `:::` sealed block.
@@ -125,25 +125,9 @@ sealed_close = indent, ":::", newline ;
 When a `ResolvedInteraction` has an associated sealed text, append an instruction depending on output mode:
 
 - **Extended ledger:** `Turn to Sealed Text {ref}.`
-- **Jigsaw:** `Cut out and assemble the {ref} squares.`
+- **Jigsaw:** `Find and assemble the {ref} pieces.`
 
 This is appended after all arrow-generated instructions.
-
-### PDF Output (`pdf_writer.py`)
-
-Add sealed texts to the serialized data:
-
-```python
-"sealed_texts": [
-    {
-        "ref": "K-7",
-        "content": "The door groans open...",
-        "images": ["/absolute/path/to/cipher_wheel.png"],
-        "grid": 3,  # 3x3 grid
-    },
-    ...
-]
-```
 
 ### CLI (`cli.py`)
 
@@ -154,6 +138,23 @@ New flag on `adv build`:
 ```
 
 The `--jigsaw` flag is independent of `--md`. In markdown mode, sealed texts always render as a plaintext section (no jigsaw).
+
+### PDF Output (`pdf_writer.py`)
+
+Sealed text data is serialized for both modes:
+
+```python
+"sealed_texts": [
+    {
+        "ref": "K-7",
+        "content": "The door groans open...",
+        "images": ["/absolute/path/to/cipher_wheel.png"],
+    },
+    ...
+]
+```
+
+For jigsaw mode, additional grid data is computed by the two-pass pipeline (see below) and merged into the JSON.
 
 ### Markdown Output (`md_writer.py`)
 
@@ -176,50 +177,40 @@ Sealed texts render as a separate section after the main story ledger, titled "S
 
 ## Jigsaw Mode (PDF Layout, `--jigsaw`)
 
-### How It Works
+### Two-Pass Build Pipeline
 
-1. The compiler renders each sealed text (or image) as a rectangular block.
-2. The block is sliced into a grid (default 3×3 for short content, 4×4 for larger content).
-3. Each square is labeled with its reference and position: e.g. "K-7:1" through "K-7:9".
-4. All squares from all sealed texts are shuffled together and laid out on shared "cut pages" at the end of the PDF, with printed cut lines.
-5. When a ledger entry tells the player to assemble a sealed text, they find and cut out the relevant squares and arrange them in grid order to reveal the content.
+Jigsaw mode uses a two-pass approach to achieve accurate content measurement:
 
-### Grid Size Selection
+**Pass 1 — Measure:** Each sealed text is rendered via Typst as a standalone page with `height: auto` and fixed content width (printable page width minus margins). The resulting PDF page dimensions give the exact rendered content size. Python reads these dimensions via pypdf.
 
-The compiler auto-selects grid size based on content:
+**Python — Compute grid:** From the measured content dimensions, Python computes:
+- Grid columns (fixed at 4 for standard content width)
+- Grid rows (auto-computed so cells have roughly 2:1 aspect ratio)
+- Cell dimensions (content width / cols, content height / rows)
+- Shuffle order and random 180° flip assignments per piece
+- Interleaving of pieces from multiple sealed texts
+- The complete piece list is written as JSON data
 
-| Content size | Grid | Squares |
-|---|---|---|
-| Short text or small image | 3×3 | 9 |
-| Medium text or larger image | 4×4 | 16 |
+**Pass 2 — Slice:** The main Typst compilation receives the grid data as JSON input. For each piece, Typst uses `box(clip: true)` with `move(dx, dy)` to show only the piece's portion of the full content block. Flipped pieces are wrapped in `rotate(180deg)`. The `align(left + top)` rule must be set inside each clip box to prevent alignment inheritance.
 
-Authors can override via metadata if needed (future option).
+### Piece Layout
 
-### Square Layout on Cut Pages
-
-- Squares are arranged in a dense grid on each cut page, filling the printable area.
-- Cut lines are printed between squares.
-- Each square shows its content fragment on one side and its label (e.g. "K-7:5") in a small corner.
-- Squares from different sealed texts are interleaved — no grouping by reference. This means even after cutting, a casual glance at loose squares reveals nothing coherent.
+- Pieces are rectangular (wider than tall), matching the natural shape of text content.
+- All pieces from all sealed texts are shuffled together on shared cut pages with zero gaps — shared cut lines serve as both piece boundaries and cutting guides.
+- Random 180° rotation is applied per-piece, making upside-down fragments harder to casually read.
+- No position numbers or grid dimension hints — the player assembles by matching text flow, line continuations, and paragraph breaks across piece edges.
+- A small ref code (e.g. "K-7") appears in the corner of each piece for grouping only — so the player can sort pieces by sealed text before assembling.
+- Empty pieces (cells with no content) are skipped from the output.
 
 ### Assembly Instructions
 
 The verb sheet (or cover page) gains a note when the game contains sealed texts:
 
-> **Sealed Texts:** This game includes hidden content. When directed by a ledger entry, find the matching squares on the cut pages, cut them out, and arrange them by number in a grid to reveal the content.
-
-### Typst Template
-
-New template file: `sealed.typ`
-
-- Receives the list of sealed texts with their grid parameters.
-- Renders each sealed text's content into a full block, then slices it into grid squares.
-- Shuffles all squares across sealed texts.
-- Lays out the shuffled squares on pages with cut lines and corner labels.
+> **Sealed Texts:** This game includes hidden content on the cut pages. When directed by a ledger entry, find the matching pieces, cut them out, and assemble them to reveal the content.
 
 ## Scope and Non-Goals
 
-- No decoy/padding squares. The player can see the total count.
+- No decoy/padding pieces. The player can see the total count.
 - No new trigger mechanism. Sealed texts are triggered by normal interactions via the existing addition system.
 - No special handling for blind mode beyond ensuring sealed text refs work the same way.
 - No digital/QR code delivery — paper-only for the initial implementation. QR codes as an alternative delivery mechanism are a potential future enhancement.
