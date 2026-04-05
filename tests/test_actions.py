@@ -1,5 +1,8 @@
+import pytest
+
 from addventure.models import Action, Arrow, GameData, ResolvedInteraction
 from addventure.compiler import compile_game
+from addventure.parser import ParseError
 from addventure.writer import GameWriter, _display_name
 from addventure.pdf_writer import serialize_game_data
 from addventure.md_writer import generate_markdown
@@ -451,3 +454,19 @@ LOOK: A small island.
     entry_prefix = game.metadata.get("entry_prefix", "A")
     for action in game.actions.values():
         assert f"{entry_prefix}-{action.ledger_id}" in md
+
+
+def test_action_cannot_nest_under_action():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  > SECRET_PATH
+    - player -> "Cave"
+
+# Cave
+LOOK: A cave.
+"""
+    with pytest.raises(ParseError, match="cannot nest"):
+        compile_game(global_src, [room_src])

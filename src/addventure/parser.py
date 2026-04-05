@@ -563,6 +563,9 @@ def _parse_action(lines, i, game, room_name, discovered, parent_indent):
 
         bmarker, bcontent = _strip_marker(bstripped)
 
+        if _is_action(bstripped):
+            raise ParseError(i + 1, f"Actions cannot nest directly under actions: {bstripped}")
+
         if bmarker == "-" and _is_arrow(bcontent):
             arrow = _parse_arrow(bcontent, i + 1)
             if arrow.subject == "room":
