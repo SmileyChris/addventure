@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from shutil import which
 
-from .models import GameData
+from .models import GameData, ResolvedInteraction
 from .writer import GameWriter
 
 
@@ -33,6 +33,8 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
                 break
         verbs.append({"name": v.name, "id": start_id})
 
+    entry_prefix = game.metadata.get("entry_prefix", "A")
+
     rooms = []
     for room_name, rm in game.rooms.items():
         if rm.state is not None:
@@ -52,6 +54,20 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             for a in cue.arrows if a.destination == "room"
         )
 
+        # Actions for this room (pre-printed only)
+        room_actions = [
+            {"name": a.name, "entry": a.ledger_id}
+            for a in game.actions.values()
+            if a.room == room_name and not a.discovered
+        ]
+
+        # Count discoverable actions toward discovery slots
+        action_disc_count = sum(
+            1 for a in game.actions.values()
+            if a.room == room_name and a.discovered
+        )
+        disc_count += action_disc_count
+
         # Get room description from LOOK + @room interaction
         look_entry = writer._find_entry("LOOK", f"@{room_name}", room_name)
         description = look_entry.narrative if look_entry else ""
@@ -64,6 +80,8 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             "objects": objects,
             "discovery_slots": disc_count,
             "description": first_line,
+            "actions": room_actions,
+            "entry_prefix": entry_prefix,
         })
 
     potentials = sorted(
@@ -83,10 +101,20 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             "narrative": ri.narrative,
             "instructions": instructions,
         })
+    seen_action_entries = set()
+    for action in game.actions.values():
+        if action.ledger_id in seen_entries or action.ledger_id in seen_action_entries:
+            continue
+        seen_action_entries.add(action.ledger_id)
+        instructions = writer._action_instructions(action)
+        ledger.append({
+            "entry": action.ledger_id,
+            "narrative": action.narrative,
+            "instructions": instructions,
+        })
     ledger.sort(key=lambda e: e["entry"])
 
     start_room = writer._start_room()
-    entry_prefix = game.metadata.get("entry_prefix", "A")
 
     # Normalize discovery slots: all rooms get the max to avoid leaking info
     max_disc = max((r["discovery_slots"] for r in rooms), default=0)

@@ -59,7 +59,8 @@ room-body       = { room-level-line } ;
 
 room-level-line = room-interaction          (* LOOK: desc  or  VERB + TARGET: *)
                 | room-arrow                (* subject -> dest *)
-                | entity-declaration ;      (* ENTITY-NAME at indent 0 *)
+                | entity-declaration        (* ENTITY-NAME at indent 0 *)
+                | action-declaration ;      (* > ACTION-NAME *)
 
 room-interaction = interaction-header ;     (* context entity = current room *)
 
@@ -95,7 +96,7 @@ verb-target-spec = VERB-NAME , { "+" , target-group } ;
 
 target-group    = entity-ref , { "|" , entity-ref } ;
 
-interaction-body = { narrative-line | arrow-line } ;
+interaction-body = { narrative-line | arrow-line | action-declaration } ;
 
 narrative-line  = INDENT(>parent) , text ;    (* no marker, no arrow, not ALL_CAPS *)
 
@@ -194,6 +195,20 @@ room-state-interaction = "+" , " " , interaction-content ;
 room-state-noun = [ "+" , " " ] , ENTITY-NAME , newline , entity-block ;
 
 room-state-arrow = "-" , " " , arrow-line ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  Actions                                                  *)
+(* ══════════════════════════════════════════════════════════ *)
+
+(* Actions are direct ledger lookups — no verb+noun addition.  *)
+(* ">" declares an action. At room level = pre-printed.        *)
+(* Nested inside an interaction = discoverable.                *)
+
+action-declaration = ">" , " " , ENTITY-NAME , newline ,
+                     action-body ;
+
+action-body     = { INDENT(>parent) , ( narrative-line | arrow-line ) } ;
 
 
 (* ══════════════════════════════════════════════════════════ *)

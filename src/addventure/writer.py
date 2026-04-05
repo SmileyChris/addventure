@@ -31,6 +31,7 @@ class GameWriter:
         """Convert arrows into human-readable player instructions."""
         instructions = []
         dn = _display_name
+        current_room = ri.room
 
         for arrow in ri.arrows:
             subj = arrow.subject
@@ -54,6 +55,7 @@ class GameWriter:
                     else:
                         room_ref = f"the {room_name} room sheet"
                     instructions.append(f"Switch to {room_ref}.")
+                    current_room = room_name
 
             # THING -> trash
             elif dest == "trash":
@@ -63,15 +65,24 @@ class GameWriter:
                         f"Cross out {dn(subj)} ({verb.id}) on your Verb Sheet."
                     )
                 else:
-                    sheet, entity_id = self._locate_entity(
-                        subj, ri.room, ri.from_inventory)
-                    instructions.append(
-                        f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
-                    )
+                    # Check if subject is an action in this room
+                    action_key = f"{current_room}::{subj}"
+                    action = self.game.actions.get(action_key)
+                    if action:
+                        prefix = self.entry_prefix
+                        instructions.append(
+                            f"Cross out {dn(subj)} ({prefix}-{action.ledger_id}) on this room sheet."
+                        )
+                    else:
+                        sheet, entity_id = self._locate_entity(
+                            subj, current_room, ri.from_inventory)
+                        instructions.append(
+                            f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
+                        )
 
             # THING -> player
             elif dest == "player":
-                entity_id = self._get_id(subj, ri.room)
+                entity_id = self._get_id(subj, current_room)
                 # Check for item by exact name, then by base name
                 # (FUSE__FLOOR -> player registers item as FUSE)
                 base_name = subj.split("__")[0] if "__" in subj else subj
@@ -94,10 +105,22 @@ class GameWriter:
                         f"Write {dn(subj)} ({entity_id}) on your Inventory."
                     )
 
+            # Action discovery: >ACTION_NAME -> room
+            elif dest == "room" and subj.startswith(">"):
+                action_name = subj[1:]
+                action_key = f"{current_room}::{action_name}"
+                action = self.game.actions.get(action_key)
+                if action:
+                    prefix = self.entry_prefix
+                    instructions.append(
+                        f"Write {dn(action_name)} ({prefix}-{action.ledger_id}) "
+                        f"in a discovery slot on this room sheet."
+                    )
+
             # THING -> room (reveal in current room)
             # But room__STATE -> room is a state revert, not a reveal
             elif dest == "room" and not subj.startswith("room__"):
-                entity_id = self._get_id(subj, ri.room)
+                entity_id = self._get_id(subj, current_room)
                 instructions.append(
                     f"Write {dn(subj)} ({entity_id}) in a discovery slot "
                     f"on this room sheet."
@@ -121,11 +144,11 @@ class GameWriter:
             elif "__" in dest or dest.startswith("@") or (
                     "__" in subj and subj not in self.game.verbs):
                 # Resolve "room" / "room__STATE" shorthands
-                base_room = ri.room.split("__")[0]
+                base_room = current_room.split("__")[0]
                 resolved_subj = subj.replace("room", f"@{base_room}", 1) if subj.startswith("room") and not subj.startswith("@") else subj
                 resolved_dest = f"@{base_room}" if dest == "room" else dest.replace("room", f"@{base_room}", 1) if dest.startswith("room") and not dest.startswith("@") else dest
-                old_id = self._get_id(resolved_subj, ri.room)
-                new_id = self._get_id(resolved_dest, ri.room)
+                old_id = self._get_id(resolved_subj, current_room)
+                new_id = self._get_id(resolved_dest, current_room)
                 # Check if it's a verb transform
                 clean_subj = resolved_subj.lstrip("@")
                 subj_display = dn(clean_subj)
@@ -249,6 +272,9 @@ class GameWriter:
             ) + sum(
                 1 for cue in self.game.cues if cue.target_room == room_name
                 for a in cue.arrows if a.destination == "room"
+            ) + sum(
+                1 for a in self.game.actions.values()
+                if a.room == room_name and a.discovered
             )
             if count > max_count:
                 max_count = count
@@ -289,6 +315,15 @@ class GameWriter:
         """Get the ID for any entity."""
         return get_entity_id(name, self.game, room)
 
+    def _action_instructions(self, action) -> list[str]:
+        """Generate instructions for an action's ledger entry."""
+        ri = ResolvedInteraction(
+            verb="ACTION", targets=[], sum_id=0,
+            narrative=action.narrative, arrows=action.arrows,
+            source_line=0, room=action.room, parent_label=action.name,
+        )
+        return self._generate_instructions(ri)
+
 
 # ── Build Summary ──────────────────────────────────────────────────────────
 
@@ -300,12 +335,14 @@ def print_build_summary(game: GameData, file=None):
     def p(n, word):
         return f"{n} {word}" if n != 1 else f"{n} {word.rstrip('s')}"
 
+    action_count = len({a.ledger_id for a in game.actions.values()})
     parts = [
         p(len(game.verbs), "verbs"),
         p(len(game.rooms), "rooms"),
         p(len(game.nouns), "nouns"),
         p(len(game.items), "items"),
-        p(len(game.resolved), "entries"),
+        p(len(game.resolved) + action_count, "entries"),
         p(len(game.cues), "cues"),
+        p(len(game.actions), "actions"),
     ]
     print(f"✓ {', '.join(parts)}", file=file)

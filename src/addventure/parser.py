@@ -1,6 +1,6 @@
 import re
 from .models import (
-    GameData, Verb, Noun, Item, Room, Arrow, Interaction, Cue,
+    GameData, Verb, Noun, Item, Room, Arrow, Interaction, Cue, Action,
 )
 
 
@@ -57,6 +57,9 @@ def _strip_marker(s: str) -> tuple[str, str]:
 
 def _has_colon_header(s: str) -> bool:
     return ":" in s and not s.startswith("//")
+
+def _is_action(s: str) -> bool:
+    return s.startswith("> ")
 
 def _is_narrative(s: str) -> bool:
     """A line is narrative if it has no marker and no structural syntax."""
@@ -189,6 +192,10 @@ def _parse_room_body(lines, i, game, room_name):
         ind = _indent(line)
         marker, content = _strip_marker(stripped)
 
+        if _is_action(stripped):
+            i = _parse_action(lines, i, game, room_name, discovered=False, parent_indent=-1)
+            continue
+
         if ind == 0 and not marker:
             # Bare name at indent 0 = entity or room-level interaction
             if _has_colon_header(stripped) and not _is_arrow(stripped):
@@ -263,6 +270,9 @@ def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent):
             else:
                 i += 1
         else:
+            if _is_action(stripped):
+                i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=entity_indent)
+                continue
             # No marker — could be a bare entity name at deeper indent
             if not _is_narrative(stripped) and ind > entity_indent:
                 noun_name = stripped
@@ -329,6 +339,11 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             # A + line inside an interaction is a child of a prior arrow's state
             # This shouldn't happen at this level — break out
             break
+        elif _is_action(bstripped):
+            action_name = bstripped[2:].strip()
+            action_line = i + 1
+            i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=current_indent)
+            arrows.append(Arrow(f">{action_name}", "room", action_line))
         elif _is_narrative(bstripped) and not narrative:
             narrative = bstripped
             i += 1
@@ -525,6 +540,60 @@ def _register_interaction(game, interaction):
     game.interactions.append(interaction)
 
 
+def _parse_action(lines, i, game, room_name, discovered, parent_indent):
+    """Parse a > ACTION_NAME block. Returns next line index."""
+    line = lines[i]
+    stripped = line.strip()
+    action_name = stripped[2:].strip()  # strip "> "
+    source_line = i + 1
+    current_indent = _indent(line)
+    i += 1
+
+    narrative = ""
+    arrows = []
+
+    while i < len(lines):
+        bline = lines[i]
+        bstripped = bline.strip()
+        if not bstripped or _is_comment(bstripped):
+            i += 1
+            continue
+        if _indent(bline) <= current_indent or _is_header(bline):
+            break
+
+        bmarker, bcontent = _strip_marker(bstripped)
+
+        if _is_action(bstripped):
+            raise ParseError(i + 1, f"Actions cannot nest directly under actions: {bstripped}")
+
+        if bmarker == "-" and _is_arrow(bcontent):
+            arrow = _parse_arrow(bcontent, i + 1)
+            if arrow.subject == "room":
+                arrow.subject = f"@{room_name}"
+            arrows.append(arrow)
+            arr_indent = _indent(bline)
+            i += 1
+            i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=arrows)
+        elif _is_narrative(bstripped) and not narrative:
+            narrative = bstripped
+            i += 1
+        elif _is_narrative(bstripped) and narrative:
+            narrative += "\n\n" + bstripped
+            i += 1
+        else:
+            i += 1
+
+    key = f"{room_name}::{action_name}"
+    game.actions[key] = Action(
+        name=action_name,
+        room=room_name,
+        narrative=narrative,
+        arrows=arrows,
+        discovered=discovered,
+    )
+    return i
+
+
 def _parse_freeform_interactions(lines, i, game, room_name):
     while i < len(lines) and not _is_header(lines[i]):
         line = lines[i].strip()
@@ -559,6 +628,11 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                     i = _parse_arrow_children(lines, i, game, room_name, a, arr_indent + 1, propagated_arrows=arrows)
                 elif bmarker == "+":
                     break
+                elif _is_action(bs):
+                    action_name = bs[2:].strip()
+                    action_line = i + 1
+                    i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=0)
+                    arrows.append(Arrow(f">{action_name}", "room", action_line))
                 elif _is_narrative(bs) and not narrative:
                     narrative = bs
                     i += 1

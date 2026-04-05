@@ -75,6 +75,15 @@ class Cue:
     entry_number: int = 0
 
 @dataclass
+class Action:
+    name: str
+    room: str
+    narrative: str
+    arrows: list[Arrow]
+    discovered: bool
+    ledger_id: int = 0
+
+@dataclass
 class GameData:
     metadata: dict[str, str] = field(default_factory=dict)
     verbs: dict[str, Verb] = field(default_factory=dict)
@@ -87,3 +96,4 @@ class GameData:
     auto_items: set[str] = field(default_factory=set)
     auto_verbs: set[str] = field(default_factory=set)
     suppressed_interactions: list[Interaction] = field(default_factory=list)
+    actions: dict[str, Action] = field(default_factory=dict)
