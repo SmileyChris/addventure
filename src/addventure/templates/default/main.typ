@@ -6,6 +6,7 @@
 #import "inventory.typ": inventory-sheet
 #import "ledger.typ": story-ledger
 #import "sealed-ledger.typ": sealed-ledger
+#import "sealed-jigsaw.typ": sealed-jigsaw
 
 // Read JSON data from --input data=<path>
 #let data-path = sys.inputs.at("data")
@@ -105,4 +106,11 @@
   pagebreak(weak: true)
   section-label.update("Sealed Texts")
   sealed-ledger(data)
+}
+
+// 7. Sealed texts (jigsaw mode)
+#if data.at("jigsaw", default: false) and data.at("jigsaw_data", default: none) != none {
+  pagebreak(weak: true)
+  section-label.update("Cut Pages")
+  sealed-jigsaw(data)
 }

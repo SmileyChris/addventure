@@ -1,14 +1,18 @@
 import json
+import math
 import subprocess
 import tempfile
 from pathlib import Path
 from shutil import which
 
+from .jigsaw import checkerboard_flips, compute_grid, detect_empty_cells, interleave_pieces
 from .models import GameData, ResolvedInteraction
 from .writer import GameWriter
 
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+
+MEASURE_MARGIN_MM = 2
 
 # Friendly aliases for common paper sizes
 PAPER_ALIASES = {
@@ -151,6 +155,126 @@ def find_typst() -> str | None:
     return which("typst")
 
 
+def _jigsaw_pipeline(
+    game: GameData, writer: GameWriter, theme_dir: Path
+) -> dict:
+    """Two-pass pipeline: measure sealed texts, compute grid, return jigsaw data."""
+    if not game.sealed_texts:
+        return {}
+
+    typst_bin = find_typst()
+    measure_typ = theme_dir / "sealed-measure.typ"
+    content_w_mm = 160.0
+
+    # Pass 1: measure each sealed text AND detect empty cells
+    measurements = {}
+    all_grids = {}
+    non_empty_cells = {}
+
+    for st in game.sealed_texts:
+        measure_data = json.dumps({
+            "content_w": f"{content_w_mm}mm",
+            "content": st.content,
+        })
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write(measure_data)
+            measure_json = f.name
+
+        measure_pdf = tempfile.mktemp(suffix=".pdf")
+        measure_png = tempfile.mktemp(suffix=".png")
+        try:
+            # Compile to PDF for height measurement
+            subprocess.run(
+                [typst_bin, "compile", str(measure_typ), measure_pdf,
+                 "--root", "/",
+                 "--input", f"data={measure_json}"],
+                check=True, capture_output=True, text=True,
+            )
+            from pypdf import PdfReader
+            reader = PdfReader(measure_pdf)
+            page = reader.pages[0]
+            pt_to_mm = 25.4 / 72
+            page_h_mm = float(page.mediabox.height) * pt_to_mm
+            content_h_mm = page_h_mm - 2 * MEASURE_MARGIN_MM + 1
+            measurements[st.ref] = content_h_mm
+
+            # Compute grid for this text
+            grid = compute_grid(
+                content_w_mm + 2 * MEASURE_MARGIN_MM,
+                content_h_mm + 2 * MEASURE_MARGIN_MM,
+                cols=4, target_cell_h_mm=25.0,
+            )
+            all_grids[st.ref] = grid
+
+            # Compile to PNG for empty cell detection
+            subprocess.run(
+                [typst_bin, "compile", str(measure_typ), measure_png,
+                 "--root", "/",
+                 "--input", f"data={measure_json}",
+                 "--ppi", "72"],
+                check=True, capture_output=True, text=True,
+            )
+            non_empty = detect_empty_cells(
+                measure_png, grid["cols"], grid["rows"],
+            )
+            non_empty_cells[st.ref] = non_empty
+        finally:
+            Path(measure_json).unlink(missing_ok=True)
+            Path(measure_pdf).unlink(missing_ok=True)
+            Path(measure_png).unlink(missing_ok=True)
+
+    # Uniform cell height across all sealed texts
+    cell_h = max(g["cell_h_mm"] for g in all_grids.values())
+    cell_w = (content_w_mm + 2 * MEASURE_MARGIN_MM) / 4
+    for ref, h in measurements.items():
+        full_h = h + 2 * MEASURE_MARGIN_MM
+        all_grids[ref]["rows"] = max(2, math.ceil(full_h / cell_h))
+        all_grids[ref]["cell_h_mm"] = cell_h
+
+    # Build piece list from non-empty cells only
+    all_pieces = []
+    for st in game.sealed_texts:
+        cells = non_empty_cells.get(st.ref, [])
+        for r, c in cells:
+            all_pieces.append({
+                "ref": st.ref,
+                "row": r,
+                "col": c,
+            })
+
+    # Interleave and assign checkerboard flips
+    interleaved = interleave_pieces(all_pieces, 4)
+    cut_cols = 4
+    flips = checkerboard_flips(
+        math.ceil(len(interleaved) / cut_cols), cut_cols
+    )
+    for idx, piece in enumerate(interleaved):
+        fr = idx // cut_cols
+        fc = idx % cut_cols
+        piece["flip"] = flips[fr][fc] if fr < len(flips) else False
+
+    # Build per-sealed-text data for the template
+    sealed_data = []
+    for st in game.sealed_texts:
+        sealed_data.append({
+            "ref": st.ref,
+            "content": st.content,
+            "rows": all_grids[st.ref]["rows"],
+        })
+
+    return {
+        "jigsaw_data": {
+            "cols": 4,
+            "cell_w": f"{cell_w:.2f}mm",
+            "cell_h": f"{cell_h:.2f}mm",
+            "pad": f"{MEASURE_MARGIN_MM}mm",
+            "cut_cols": cut_cols,
+            "pieces": interleaved,
+        },
+        "sealed_texts_override": sealed_data,
+    }
+
+
 def generate_pdf(
     game: GameData,
     output_path: Path,
@@ -172,6 +296,14 @@ def generate_pdf(
 
     writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
     data = serialize_game_data(game, writer, blind=blind)
+
+    if jigsaw and game.sealed_texts:
+        jigsaw_result = _jigsaw_pipeline(game, writer, theme_dir)
+        data["jigsaw"] = True
+        if "jigsaw_data" in jigsaw_result:
+            data["jigsaw_data"] = jigsaw_result["jigsaw_data"]
+        if "sealed_texts_override" in jigsaw_result:
+            data["sealed_texts"] = jigsaw_result["sealed_texts_override"]
 
     # Resolve cover image path relative to game directory
     image_rel = game.metadata.get("image")
