@@ -92,3 +92,70 @@ KEY
 """
     with pytest.raises(ParseError):
         compile_game(global_src, [room_src])
+
+def test_sealed_text_created_with_ref():
+    global_src = "# Verbs\nUSE\n\n# Items\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  You turn the key.
+  - player -> "Exit"
+
+  ::: sealed
+  Secret chamber revealed.
+  :::
+
+# Exit
+"""
+    game = compile_game(global_src, [room_src])
+    assert len(game.sealed_texts) == 1
+    st = game.sealed_texts[0]
+    assert st.content == "Secret chamber revealed."
+    assert st.room == "Dungeon"
+    assert st.entry_number > 0
+    # Ref format: letter-digit(s)
+    assert len(st.ref) >= 3
+    assert st.ref[0].isalpha()
+    assert st.ref[1] == "-"
+    assert st.ref[2:].isdigit()
+
+def test_sealed_text_refs_unique():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  Text one.
+
+  ::: sealed
+  Sealed one.
+  :::
+
+CHEST
++ LOOK:
+  Text two.
+
+  ::: sealed
+  Sealed two.
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    assert len(game.sealed_texts) == 2
+    refs = {st.ref for st in game.sealed_texts}
+    assert len(refs) == 2  # unique
+
+def test_sealed_text_linked_to_entry():
+    global_src = "# Verbs\nUSE\n\n# Items\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  You turn the key.
+
+  ::: sealed
+  The hidden truth.
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    st = game.sealed_texts[0]
+    # Find the resolved interaction
+    ri = next(r for r in game.resolved if r.verb == "USE")
+    assert st.entry_number == ri.entry_number

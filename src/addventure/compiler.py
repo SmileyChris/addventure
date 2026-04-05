@@ -1,8 +1,9 @@
 import random
+import string
 from itertools import combinations, product as cart_product
 
 from .models import (
-    GameData, Verb, Noun, Item, Interaction, ResolvedInteraction, Cue, Action,
+    GameData, Verb, Noun, Item, Interaction, ResolvedInteraction, Cue, Action, SealedText,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
 
@@ -476,6 +477,26 @@ def ensure_room_looks(game: GameData):
             ))
 
 
+# ── Sealed Text Ref Generation ────────────────────────────────────────────
+
+# Letters that avoid visual ambiguity (no I, O, S, Z)
+_REF_LETTERS = [c for c in string.ascii_uppercase if c not in "IOSZ"]
+
+def _generate_sealed_refs(count: int) -> list[str]:
+    """Generate unique opaque reference codes for sealed texts."""
+    refs = set()
+    i = 0
+    while len(refs) < count:
+        letter = _REF_LETTERS[i % len(_REF_LETTERS)]
+        digit = (i // len(_REF_LETTERS)) + 1
+        ref = f"{letter}-{digit}"
+        refs.add(ref)
+        i += 1
+    result = list(refs)
+    random.shuffle(result)
+    return result
+
+
 # ── Compile Pipeline ───────────────────────────────────────────────────────
 
 def _reset_mutable(game: GameData):
@@ -602,5 +623,24 @@ def compile_game(global_source: str, room_sources: list[str],
     # Copy entry numbers back to cue objects
     for cue in game.cues:
         cue.entry_number = cue_primary_entry.get(cue.id, 0)
+
+    # Create SealedText objects from interactions with sealed_content
+    sealed_interactions = [
+        (ix, ri) for ix in game.interactions if ix.sealed_content
+        for ri in game.resolved
+        if ri.verb == ix.verb and ri.room == ix.room
+        and ri.source_line == ix.source_line
+    ]
+    if sealed_interactions:
+        refs = _generate_sealed_refs(len(sealed_interactions))
+        for (ix, ri), ref in zip(sealed_interactions, refs):
+            game.sealed_texts.append(SealedText(
+                ref=ref,
+                content=ix.sealed_content,
+                images=[],
+                source_line=ix.source_line,
+                room=ix.room,
+                entry_number=ri.entry_number,
+            ))
 
     return game
