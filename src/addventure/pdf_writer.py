@@ -148,6 +148,7 @@ def generate_pdf(
     paper: str | None = None,
     blind: bool = False,
     cover: bool = False,
+    jigsaw: bool = False,
 ) -> tuple[bool, list[str]]:
     """Generate a PDF from GameData. Returns (success, warnings)."""
     typst_bin = find_typst()
@@ -158,7 +159,7 @@ def generate_pdf(
     if not theme_dir.exists():
         raise FileNotFoundError(f"Theme not found: {theme} (looked in {theme_dir})")
 
-    writer = GameWriter(game, blind=blind)
+    writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
     data = serialize_game_data(game, writer, blind=blind)
 
     # Resolve cover image path relative to game directory
