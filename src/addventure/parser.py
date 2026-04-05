@@ -91,6 +91,10 @@ def _has_colon_header(s: str) -> bool:
 def _is_action(s: str) -> bool:
     return s.startswith("> ")
 
+def _is_sealed_fence(s: str) -> bool:
+    """Check if a line is a sealed block fence (opening or closing)."""
+    return s == ":::" or s == "::: sealed"
+
 def _is_narrative(s: str) -> bool:
     """A line is narrative if it has no marker and no structural syntax."""
     if s.startswith("+ ") or s.startswith("- "):
@@ -383,7 +387,9 @@ def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent, p
                 i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=entity_indent)
                 continue
             # No marker — could be a bare entity name at deeper indent
-            if not _is_narrative(stripped) and ind > entity_indent:
+            if _is_sealed_fence(stripped):
+                raise ParseError(i + 1, "Sealed blocks must be inside an interaction (+ block)")
+            elif not _is_narrative(stripped) and ind > entity_indent:
                 noun_name = stripped
                 _require_stated_name(noun_name, i + 1, "noun name")
                 base, state = _split_name(noun_name)
@@ -426,6 +432,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     narrative = after_colon if after_colon else ""
 
     arrows = []
+    sealed_content = None
 
     while i < len(lines):
         bline = lines[i]
@@ -450,6 +457,28 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             # A + line inside an interaction is a child of a prior arrow's state
             # This shouldn't happen at this level — break out
             raise ParseError(i + 1, f"Unexpected line in interaction body: {bstripped}")
+        elif _is_sealed_fence(bstripped):
+            if sealed_content is not None:
+                raise ParseError(i + 1, "Multiple sealed blocks in one interaction")
+            if bstripped != "::: sealed":
+                raise ParseError(i + 1, "Expected '::: sealed' to open a sealed block")
+            i += 1
+            sealed_lines = []
+            while i < len(lines):
+                sline = lines[i]
+                sstripped = sline.strip()
+                if sstripped == ":::":
+                    i += 1
+                    break
+                if _is_header(sline):
+                    raise ParseError(i + 1, "Unclosed sealed block (hit header)")
+                sealed_lines.append(sstripped)
+                i += 1
+            else:
+                raise ParseError(i, "Unclosed sealed block (hit end of file)")
+            # Each non-empty line is its own paragraph; blank lines are separators
+            paragraphs = [sl for sl in sealed_lines if sl]
+            sealed_content = "\n\n".join(paragraphs)
         elif _is_action(bstripped):
             action_name = bstripped[2:].strip()
             action_line = i + 1
@@ -469,6 +498,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
         verb=verb, target_groups=target_groups,
         narrative=narrative, arrows=arrows,
         source_line=source_line, room=room_name,
+        sealed_content=sealed_content,
     )
     _register_interaction(game, ix)
     return i
