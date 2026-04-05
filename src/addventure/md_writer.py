@@ -17,13 +17,13 @@ def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
     return rows
 
 
-def generate_markdown(game: GameData, blind: bool = False, sealed: str = "included") -> tuple[str, list[str]]:
+def generate_markdown(game: GameData, blind: bool = False, fragment: str = "included") -> tuple[str, list[str]]:
     """Generate a complete markdown document from compiled GameData.
 
     Returns (markdown_text, warnings).
-    sealed: "included" (default), "separate", or "jigsaw"
+    fragment: "included" (default), "separate", or "jigsaw"
     """
-    writer = GameWriter(game, blind=blind, jigsaw=(sealed == "jigsaw"))
+    writer = GameWriter(game, blind=blind, jigsaw=(fragment == "jigsaw"))
     entry_prefix = game.metadata.get("entry_prefix", "A")
     sections = []
 
@@ -42,9 +42,9 @@ def generate_markdown(game: GameData, blind: bool = False, sealed: str = "includ
 
     sections.append(_ledger_section(game, writer, entry_prefix))
 
-    sealed = _sealed_section(game)
-    if sealed:
-        sections.append(sealed)
+    fragments = _sealed_section(game)
+    if fragments:
+        sections.append(fragments)
 
     return "\n\n---\n\n".join(sections) + "\n", writer.warnings
 
@@ -203,11 +203,11 @@ def _sealed_section(game: GameData) -> str:
     if not game.sealed_texts:
         return ""
     lines = [
-        "## Sealed Texts",
-        "\n*Do not read ahead — turn to a sealed text only when directed by a ledger entry.*",
+        "## Fragments",
+        "\n*Do not read ahead — turn to a fragment only when directed by a ledger entry.*",
     ]
     for st in sorted(game.sealed_texts, key=lambda s: s.ref):
-        lines.append(f"\n### Sealed Text {st.ref}")
+        lines.append(f"\n### Fragment {st.ref}")
         lines.append(f"> ⚠ Do not read until directed.\n")
         lines.append(st.content)
     return "\n".join(lines)

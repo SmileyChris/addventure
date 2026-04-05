@@ -55,7 +55,7 @@ AIR_DUCT
 
   You made the right call.
 
-  ::: sealed
+  ::: fragment
   From the roof you can see all of it — the perimeter fence, the service road, the treeline beyond. People spilling out across the gravel in every direction.
 
   Your companion sits down beside you, breathing hard. "I didn't think anyone was coming," they say.

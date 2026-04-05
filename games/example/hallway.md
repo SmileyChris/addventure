@@ -39,7 +39,7 @@ EXIT_DOOR
 
   You don't look back.
 
-  ::: sealed
+  ::: fragment
   The light is wrong — too bright, too open after all that concrete.
 
   You walk. Then run. Down a service road, through a gap in the perimeter fence, into a stand of pines. You don't stop until the facility is out of sight.

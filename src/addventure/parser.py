@@ -92,8 +92,8 @@ def _is_action(s: str) -> bool:
     return s.startswith("> ")
 
 def _is_sealed_fence(s: str) -> bool:
-    """Check if a line is a sealed block fence (opening or closing)."""
-    return s == ":::" or s == "::: sealed"
+    """Check if a line is a fragment block fence (opening or closing)."""
+    return s == ":::" or s == "::: fragment"
 
 def _is_narrative(s: str) -> bool:
     """A line is narrative if it has no marker and no structural syntax."""
@@ -388,7 +388,7 @@ def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent, p
                 continue
             # No marker — could be a bare entity name at deeper indent
             if _is_sealed_fence(stripped):
-                raise ParseError(i + 1, "Sealed blocks must be inside an interaction (+ block)")
+                raise ParseError(i + 1, "Fragment blocks must be inside an interaction (+ block)")
             elif not _is_narrative(stripped) and ind > entity_indent:
                 noun_name = stripped
                 _require_stated_name(noun_name, i + 1, "noun name")
@@ -459,9 +459,9 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             raise ParseError(i + 1, f"Unexpected line in interaction body: {bstripped}")
         elif _is_sealed_fence(bstripped):
             if sealed_content is not None:
-                raise ParseError(i + 1, "Multiple sealed blocks in one interaction")
-            if bstripped != "::: sealed":
-                raise ParseError(i + 1, "Expected '::: sealed' to open a sealed block")
+                raise ParseError(i + 1, "Multiple fragment blocks in one interaction")
+            if bstripped != "::: fragment":
+                raise ParseError(i + 1, "Expected '::: fragment' to open a fragment block")
             i += 1
             sealed_lines = []
             while i < len(lines):
@@ -471,11 +471,11 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
                     i += 1
                     break
                 if _is_header(sline):
-                    raise ParseError(i + 1, "Unclosed sealed block (hit header)")
+                    raise ParseError(i + 1, "Unclosed fragment block (hit header)")
                 sealed_lines.append(sstripped)
                 i += 1
             else:
-                raise ParseError(i, "Unclosed sealed block (hit end of file)")
+                raise ParseError(i, "Unclosed fragment block (hit end of file)")
             # Each non-empty line is its own paragraph; blank lines are separators
             paragraphs = [sl for sl in sealed_lines if sl]
             sealed_content = "\n\n".join(paragraphs)

@@ -193,9 +193,9 @@ LEVER
 
 This generates "Cross out GO BACK on this room sheet."
 
-## Sealed text
+## Fragments
 
-A `::: sealed` block inside an interaction adds long-form hidden content — finale text, reveals, or anything players shouldn't read until directed. The content is kept separate from the main game flow.
+A `::: fragment` block inside an interaction adds long-form hidden content — finale text, reveals, or anything players shouldn't read until directed. The content is kept separate from the main game flow.
 
 ```markdown
 VAULT_DOOR
@@ -203,7 +203,7 @@ VAULT_DOOR
   The door swings open. You step inside.
   - player -> "Vault"
 
-  ::: sealed
+  ::: fragment
   Inside the vault you find the letter. You read it slowly.
 
   *My dear,*
@@ -212,9 +212,9 @@ VAULT_DOOR
   :::
 ```
 
-When this entry fires, the ledger instruction tells the player which sealed text to turn to (e.g. "Turn to Sealed Text K-7"). The sealed content is printed in a separate section at the back of the ledger, or as a separate document — see [CLI sealed text modes](reference.md#sealed-text-modes).
+When this entry fires, the ledger instruction tells the player which fragment to turn to (e.g. "Turn to Fragment Alpha"). Fragments are printed in a separate section at the back of the ledger, or as a separate document — see [Fragment modes](reference.md#fragment-modes).
 
-The content inside `::: sealed` is Typst markup. For most purposes, plain prose works as-is.
+The content inside `::: fragment` is Typst markup. For most purposes, plain prose works as-is.
 
 ## Putting it together
 

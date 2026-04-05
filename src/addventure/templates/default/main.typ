@@ -117,7 +117,7 @@
 // 6. Sealed texts (extended ledger or sealed-only mode)
 #if not data.at("jigsaw", default: false) and data.at("sealed_texts", default: ()).len() > 0 {
   if not sealed-only { pagebreak(weak: true) }
-  section-label.update("Sealed Texts")
+  section-label.update("Fragments")
   sealed-ledger(data)
 }
 

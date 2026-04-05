@@ -220,20 +220,20 @@ uv run adv build [dir] --md              # Compile to markdown
 uv run adv build [dir] -o FILE           # Custom output path
 uv run adv build [dir] --paper a4        # Paper size: a4 (default), letter, legal
 uv run adv build [dir] --blind           # Blind mode: room names/IDs hidden until discovered
-uv run adv build [dir] --sealed MODE     # Sealed text output mode (see below)
+uv run adv build [dir] --fragment MODE   # Fragment output mode (see below)
 uv run adv new [name]                    # Scaffold a new game
 ```
 
 If no directory is given, `adv build` looks for `index.md` in the current directory, then falls back to `games/example`.
 
-### Sealed text modes
+### Fragment modes
 
-The `--sealed` flag controls how `::: sealed` blocks are output:
+The `--fragment` flag controls how `::: fragment` blocks are output:
 
 | Mode | Effect |
 |------|--------|
-| `included` | Sealed texts appended at the back of the main PDF (default) |
-| `separate` | Sealed texts emitted as `<name>-sealed.pdf`; main PDF has none |
-| `jigsaw` | Sealed texts sliced into shuffled rectangular pieces across cut pages |
+| `included` | Fragments appended at the back of the main PDF (default) |
+| `separate` | Fragments emitted as `<name>-fragments.pdf`; main PDF has none |
+| `jigsaw` | Fragments sliced into shuffled rectangular pieces across cut pages |
 
-`--sealed separate` is useful when you want to print and distribute sealed texts as physical notes — cut them out and hand them to players in envelopes labelled with the ref code (e.g. `K-7`).
+`--fragment separate` is useful when you want to print and distribute fragments as physical notes — cut them out and hand them to players in envelopes labelled with the ref (e.g. `Alpha`).

@@ -314,12 +314,12 @@ def generate_pdf(
     paper: str | None = None,
     blind: bool = False,
     cover: bool = False,
-    sealed: str = "included",
+    fragment: str = "included",
 ) -> tuple[bool, list[str]]:
     """Generate a PDF from GameData. Returns (success, warnings).
 
-    sealed: "included" (default), "separate" (emit <name>-sealed.pdf alongside),
-            or "jigsaw" (cut pages).
+    fragment: "included" (default), "separate" (emit <name>-fragments.pdf alongside),
+              or "jigsaw" (cut pages).
     """
     typst_bin = find_typst()
     if typst_bin is None:
@@ -329,7 +329,7 @@ def generate_pdf(
     if not theme_dir.exists():
         raise FileNotFoundError(f"Theme not found: {theme} (looked in {theme_dir})")
 
-    jigsaw = sealed == "jigsaw"
+    jigsaw = fragment == "jigsaw"
     writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
     data = serialize_game_data(game, writer, blind=blind)
 
@@ -341,8 +341,8 @@ def generate_pdf(
         if "sealed_texts_override" in jigsaw_result:
             data["sealed_texts"] = jigsaw_result["sealed_texts_override"]
 
-    if sealed == "separate" and game.sealed_texts:
-        # For separate mode, strip sealed texts from the main PDF data
+    if fragment == "separate" and game.sealed_texts:
+        # For separate mode, strip fragments from the main PDF data
         data["sealed_texts"] = []
 
     # Resolve cover image path relative to game directory
@@ -370,9 +370,9 @@ def generate_pdf(
         from .fillable import make_fillable
         make_fillable(output_path)
 
-        if sealed == "separate" and game.sealed_texts:
-            # Emit a separate PDF containing only the sealed texts section
-            sealed_path = output_path.with_stem(output_path.stem + "-sealed")
+        if fragment == "separate" and game.sealed_texts:
+            # Emit a separate PDF containing only the fragments section
+            sealed_path = output_path.with_stem(output_path.stem + "-fragments")
             # Restore sealed texts in data for the second render
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".json", delete=False
@@ -388,7 +388,7 @@ def generate_pdf(
                            paper=normalized_paper, cover=False,
                            extra_inputs=["sealed_only=1"])
                 make_fillable(sealed_path)
-                print(f"Sealed PDF written to {sealed_path}", file=_sys.stderr)
+                print(f"Fragments PDF written to {sealed_path}", file=_sys.stderr)
             finally:
                 Path(sealed_json_path).unlink(missing_ok=True)
 

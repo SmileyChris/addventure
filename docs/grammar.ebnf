@@ -173,14 +173,14 @@ interaction-body-line(m) = narrative-line(m)
 
 narrative-line(m) = indent(m) , text , newline ;
 
-(* Sealed text blocks — long-form hidden content within an interaction *)
-sealed-block   = sealed-open , { sealed-line } , sealed-close ;
-sealed-open    = indent , "::: sealed" , newline ;
-sealed-close   = indent , ":::" , newline ;
-sealed-line    = indent , text-line ;
+(* Fragment blocks — long-form hidden content within an interaction *)
+fragment-block   = fragment-open , { fragment-line } , fragment-close ;
+fragment-open    = indent , "::: fragment" , newline ;
+fragment-close   = indent , ":::" , newline ;
+fragment-line    = indent , text-line ;
 
-(* interaction-body optionally ends with a sealed-block:
-   interaction-body(n) = ... , [ sealed-block ] *)
+(* interaction-body optionally ends with a fragment-block:
+   interaction-body(n) = ... , [ fragment-block ] *)
 
 
 (* ══════════════════════════════════════════════════════════ *)

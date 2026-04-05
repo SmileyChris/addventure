@@ -211,9 +211,9 @@ class GameWriter:
         )
         if sealed:
             if self.jigsaw:
-                instructions.append(f"Find and assemble the {sealed.ref} pieces.")
+                instructions.append(f"Assemble Fragment {sealed.ref}.")
             else:
-                instructions.append(f"Turn to Sealed Text {sealed.ref}.")
+                instructions.append(f"Turn to Fragment {sealed.ref}.")
 
         # Blind mode: append room reveal instructions for LOOK + @room
         if self.blind:
@@ -365,6 +365,6 @@ def print_build_summary(game: GameData, file=None):
         p(len(game.resolved) + action_count, "entries"),
         p(len(game.cues), "cues"),
         p(len(game.actions), "actions"),
-        p(sealed_count, "sealed texts"),
+        p(sealed_count, "fragments"),
     ]
     print(f"✓ {', '.join(parts)}", file=file)

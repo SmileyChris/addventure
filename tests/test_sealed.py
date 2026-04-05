@@ -37,7 +37,7 @@ KEY
   You turn the key.
   - player -> "Exit"
 
-  ::: sealed
+  ::: fragment
   The door opens to reveal a hidden chamber.
   Ancient treasures glitter in the torchlight.
   :::
@@ -57,7 +57,7 @@ KEY
 + USE:
   - player -> "Exit"
 
-  ::: sealed
+  ::: fragment
   Secret text only.
   :::
 """
@@ -71,7 +71,7 @@ def test_parse_sealed_fence_outside_interaction_rejected():
     room_src = """# Dungeon
 KEY
 
-::: sealed
+::: fragment
 This should fail.
 :::
 """
@@ -85,11 +85,11 @@ KEY
 + USE:
   Text.
 
-  ::: sealed
+  ::: fragment
   First block.
   :::
 
-  ::: sealed
+  ::: fragment
   Second block.
   :::
 """
@@ -104,7 +104,7 @@ KEY
   You turn the key.
   - player -> "Exit"
 
-  ::: sealed
+  ::: fragment
   Secret chamber revealed.
   :::
 
@@ -126,7 +126,7 @@ KEY
 + USE:
   Text one.
 
-  ::: sealed
+  ::: fragment
   Sealed one.
   :::
 
@@ -134,7 +134,7 @@ CHEST
 + LOOK:
   Text two.
 
-  ::: sealed
+  ::: fragment
   Sealed two.
   :::
 """
@@ -150,7 +150,7 @@ KEY
 + USE:
   You turn the key.
 
-  ::: sealed
+  ::: fragment
   The hidden truth.
   :::
 """
@@ -167,7 +167,7 @@ KEY
 + USE:
   You turn the key.
 
-  ::: sealed
+  ::: fragment
   Secret text.
   :::
 """
@@ -176,7 +176,7 @@ KEY
     ri = next(r for r in game.resolved if r.verb == "USE" and "KEY" in r.targets)
     instructions = writer._generate_instructions(ri)
     st = game.sealed_texts[0]
-    assert any(f"Turn to Sealed Text {st.ref}" in inst for inst in instructions)
+    assert any(f"Turn to Fragment {st.ref}" in inst for inst in instructions)
 
 def test_sealed_instruction_jigsaw():
     global_src = "# Verbs\nUSE\n\n# Items\n"
@@ -185,7 +185,7 @@ KEY
 + USE:
   You turn the key.
 
-  ::: sealed
+  ::: fragment
   Secret text.
   :::
 """
@@ -194,7 +194,7 @@ KEY
     ri = next(r for r in game.resolved if r.verb == "USE")
     instructions = writer._generate_instructions(ri)
     st = game.sealed_texts[0]
-    assert any(f"Find and assemble the {st.ref} pieces" in inst for inst in instructions)
+    assert any(f"Assemble Fragment {st.ref}" in inst for inst in instructions)
 
 def test_markdown_sealed_section():
     global_src = "# Verbs\nUSE\n\n# Items\n"
@@ -203,15 +203,15 @@ KEY
 + USE:
   You turn the key.
 
-  ::: sealed
+  ::: fragment
   The hidden chamber awaits.
   :::
 """
     game = compile_game(global_src, [room_src])
     md, _ = generate_markdown(game)
     st = game.sealed_texts[0]
-    assert f"## Sealed Texts" in md
-    assert f"### Sealed Text {st.ref}" in md
+    assert f"## Fragments" in md
+    assert f"### Fragment {st.ref}" in md
     assert "The hidden chamber awaits." in md
     assert "Do not read until directed" in md
 
@@ -223,7 +223,7 @@ KEY
 + USE:
   You turn the key.
 
-  ::: sealed
+  ::: fragment
   The hidden chamber.
   :::
 """
