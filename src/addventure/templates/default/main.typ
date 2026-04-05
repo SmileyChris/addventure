@@ -5,6 +5,7 @@
 #import "room-sheet.typ": room-sheet
 #import "inventory.typ": inventory-sheet
 #import "ledger.typ": story-ledger
+#import "sealed-ledger.typ": sealed-ledger
 
 // Read JSON data from --input data=<path>
 #let data-path = sys.inputs.at("data")
@@ -98,3 +99,10 @@
 #pagebreak()
 #section-label.update("Ledger")
 #story-ledger(data, game-title)
+
+// 6. Sealed texts (extended ledger mode)
+#if not data.at("jigsaw", default: false) and data.at("sealed_texts", default: ()).len() > 0 {
+  pagebreak(weak: true)
+  section-label.update("Sealed Texts")
+  sealed-ledger(data)
+}

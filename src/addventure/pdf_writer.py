@@ -121,17 +121,28 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         room["discovery_slots"] = max_disc
         room["is_start"] = room["name"] == start_room
 
+    sealed_texts = [
+        {
+            "ref": st.ref,
+            "content": st.content,
+            "entry_number": st.entry_number,
+        }
+        for st in sorted(game.sealed_texts, key=lambda s: s.ref)
+    ]
+
     return {
         "metadata": dict(game.metadata),
         "start_room": start_room,
         "entry_prefix": entry_prefix,
         "blind": blind,
+        "jigsaw": False,
         "verbs": verbs,
         "rooms": rooms,
         "inventory_slots": max(len(game.items) + 2, 6),
         "cue_slots": len(game.cues),
         "potentials": potentials,
         "ledger": ledger,
+        "sealed_texts": sealed_texts,
     }
 
 

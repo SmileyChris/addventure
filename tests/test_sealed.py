@@ -3,6 +3,7 @@ from addventure.compiler import compile_game
 from addventure.parser import ParseError
 from addventure.writer import GameWriter
 from addventure.md_writer import generate_markdown
+from addventure.pdf_writer import serialize_game_data
 import pytest
 
 def test_sealed_text_dataclass():
@@ -216,3 +217,23 @@ KEY
     assert f"### Sealed Text {st.ref}" in md
     assert "The hidden chamber awaits." in md
     assert "Do not read until directed" in md
+
+
+def test_serialize_sealed_texts():
+    global_src = "# Verbs\nUSE\n\n# Items\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  You turn the key.
+
+  ::: sealed
+  The hidden chamber.
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert "sealed_texts" in data
+    assert len(data["sealed_texts"]) == 1
+    assert data["sealed_texts"][0]["content"] == "The hidden chamber."
+    assert "ref" in data["sealed_texts"][0]
