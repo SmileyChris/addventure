@@ -2,6 +2,7 @@ from addventure.models import SealedText, Interaction, GameData
 from addventure.compiler import compile_game
 from addventure.parser import ParseError
 from addventure.writer import GameWriter
+from addventure.md_writer import generate_markdown
 import pytest
 
 def test_sealed_text_dataclass():
@@ -196,3 +197,22 @@ KEY
     instructions = writer._generate_instructions(ri)
     st = game.sealed_texts[0]
     assert any(f"Find and assemble the {st.ref} pieces" in inst for inst in instructions)
+
+def test_markdown_sealed_section():
+    global_src = "# Verbs\nUSE\n\n# Items\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  You turn the key.
+
+  ::: sealed
+  The hidden chamber awaits.
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    md, _ = generate_markdown(game)
+    st = game.sealed_texts[0]
+    assert f"## Sealed Texts" in md
+    assert f"### Sealed Text {st.ref}" in md
+    assert "The hidden chamber awaits." in md
+    assert "Do not read until directed" in md

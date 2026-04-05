@@ -17,12 +17,12 @@ def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
     return rows
 
 
-def generate_markdown(game: GameData, blind: bool = False) -> tuple[str, list[str]]:
+def generate_markdown(game: GameData, blind: bool = False, jigsaw: bool = False) -> tuple[str, list[str]]:
     """Generate a complete markdown document from compiled GameData.
 
     Returns (markdown_text, warnings).
     """
-    writer = GameWriter(game, blind=blind)
+    writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
     entry_prefix = game.metadata.get("entry_prefix", "A")
     sections = []
 
@@ -40,6 +40,10 @@ def generate_markdown(game: GameData, blind: bool = False) -> tuple[str, list[st
             sections.append(_room_section(game, writer, name, is_start=False, blind=blind))
 
     sections.append(_ledger_section(game, writer, entry_prefix))
+
+    sealed = _sealed_section(game)
+    if sealed:
+        sections.append(sealed)
 
     return "\n\n---\n\n".join(sections) + "\n", writer.warnings
 
@@ -190,6 +194,21 @@ def _inventory_section(
                 cells.append(" | ")
         lines.append(f"| {' | '.join(cells)} |")
 
+    return "\n".join(lines)
+
+
+def _sealed_section(game: GameData) -> str:
+    """Render sealed texts as a section at the end."""
+    if not game.sealed_texts:
+        return ""
+    lines = [
+        "## Sealed Texts",
+        "\n*Do not read ahead — turn to a sealed text only when directed by a ledger entry.*",
+    ]
+    for st in sorted(game.sealed_texts, key=lambda s: s.ref):
+        lines.append(f"\n### Sealed Text {st.ref}")
+        lines.append(f"> ⚠ Do not read until directed.\n")
+        lines.append(st.content)
     return "\n".join(lines)
 
 
