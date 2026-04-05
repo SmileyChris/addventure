@@ -43,6 +43,7 @@ class Interaction:
     arrows: list[Arrow] = field(default_factory=list)
     source_line: int = 0
     room: str = ""
+    sealed_content: str | None = None
 
     @property
     def label(self):
@@ -85,6 +86,15 @@ class Action:
     ledger_id: int = 0
 
 @dataclass
+class SealedText:
+    ref: str           # Opaque reference code, e.g. "K-7"
+    content: str       # The sealed text content (may contain markup/image refs)
+    images: list[str]  # Image filenames referenced in the content
+    source_line: int
+    room: str
+    entry_number: int = 0  # The ledger entry that triggers this
+
+@dataclass
 class GameData:
     metadata: dict[str, str] = field(default_factory=dict)
     verbs: dict[str, Verb] = field(default_factory=dict)
@@ -99,3 +109,4 @@ class GameData:
     suppressed_interactions: list[Interaction] = field(default_factory=list)
     actions: dict[str, Action] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    sealed_texts: list[SealedText] = field(default_factory=list)
