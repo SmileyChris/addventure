@@ -60,7 +60,7 @@ room-body       = { room-level-line } ;
 room-level-line = room-interaction          (* LOOK: desc  or  VERB + TARGET: *)
                 | room-arrow                (* subject -> dest *)
                 | entity-declaration        (* ENTITY-NAME at indent 0 *)
-                | action-declaration ;      (* > ACTION-NAME *)
+                | action-declaration ;      (* > GO NORTH *)
 
 room-interaction = interaction-header ;     (* context entity = current room *)
 
@@ -205,8 +205,10 @@ room-state-arrow = "-" , " " , arrow-line ;
 (* ">" declares an action. At room level = pre-printed.        *)
 (* Nested inside an interaction = discoverable.                *)
 
-action-declaration = ">" , " " , ENTITY-NAME , newline ,
+action-declaration = ">" , " " , action-name , newline ,
                      action-body ;
+
+action-name     = ? any non-empty text (spaces allowed) ? ;   (* e.g. GO NORTH, PULL LEVER *)
 
 action-body     = { INDENT(>parent) , ( narrative-line | arrow-line ) } ;
 
