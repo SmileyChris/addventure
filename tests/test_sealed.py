@@ -8,13 +8,13 @@ import pytest
 
 def test_sealed_text_dataclass():
     st = SealedText(
-        ref="K-7",
+        ref="Alpha",
         content="Secret finale text.",
         images=[],
         source_line=10,
         room="Dungeon",
     )
-    assert st.ref == "K-7"
+    assert st.ref == "Alpha"
     assert st.entry_number == 0
 
 def test_interaction_sealed_content_default():
@@ -116,11 +116,8 @@ KEY
     assert st.content == "Secret chamber revealed."
     assert st.room == "Dungeon"
     assert st.entry_number > 0
-    # Ref format: letter-digit(s)
-    assert len(st.ref) >= 3
-    assert st.ref[0].isalpha()
-    assert st.ref[1] == "-"
-    assert st.ref[2:].isdigit()
+    # Ref format: Greek letter name (e.g. "Alpha") or "Alpha-2" for overflow
+    assert st.ref == "Alpha"
 
 def test_sealed_text_refs_unique():
     global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"

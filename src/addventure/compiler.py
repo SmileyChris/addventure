@@ -1,5 +1,4 @@
 import random
-import string
 from itertools import combinations, product as cart_product
 
 from .models import (
@@ -480,21 +479,21 @@ def ensure_room_looks(game: GameData):
 # ── Sealed Text Ref Generation ────────────────────────────────────────────
 
 # Letters that avoid visual ambiguity (no I, O, S, Z)
-_REF_LETTERS = [c for c in string.ascii_uppercase if c not in "IOSZ"]
+_GREEK_LETTERS = [
+    "Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta",
+    "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho",
+    "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega",
+]
 
 def _generate_sealed_refs(count: int) -> list[str]:
-    """Generate unique opaque reference codes for sealed texts."""
-    refs = set()
-    i = 0
-    while len(refs) < count:
-        letter = _REF_LETTERS[i % len(_REF_LETTERS)]
-        digit = (i // len(_REF_LETTERS)) + 1
-        ref = f"{letter}-{digit}"
-        refs.add(ref)
-        i += 1
-    result = list(refs)
-    random.shuffle(result)
-    return result
+    """Generate sequential Greek letter reference codes for sealed texts."""
+    refs = []
+    for i in range(count):
+        letter = _GREEK_LETTERS[i % len(_GREEK_LETTERS)]
+        cycle = i // len(_GREEK_LETTERS)
+        ref = f"{letter}-{cycle + 1}" if cycle > 0 else letter
+        refs.append(ref)
+    return refs
 
 
 # ── Compile Pipeline ───────────────────────────────────────────────────────
