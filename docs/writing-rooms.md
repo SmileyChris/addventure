@@ -193,6 +193,29 @@ LEVER
 
 This generates "Cross out GO BACK on this room sheet."
 
+## Sealed text
+
+A `::: sealed` block inside an interaction adds long-form hidden content — finale text, reveals, or anything players shouldn't read until directed. The content is kept separate from the main game flow.
+
+```markdown
+VAULT_DOOR
++ OVERRIDE:
+  The door swings open. You step inside.
+  - player -> "Vault"
+
+  ::: sealed
+  Inside the vault you find the letter. You read it slowly.
+
+  *My dear,*
+
+  *By the time you find this, I'll be long gone...*
+  :::
+```
+
+When this entry fires, the ledger instruction tells the player which sealed text to turn to (e.g. "Turn to Sealed Text K-7"). The sealed content is printed in a separate section at the back of the ledger, or as a separate document — see [CLI sealed text modes](reference.md#sealed-text-modes).
+
+The content inside `::: sealed` is Typst markup. For most purposes, plain prose works as-is.
+
 ## Putting it together
 
 Here's a complete room with two interactive nouns:

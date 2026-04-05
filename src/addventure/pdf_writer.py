@@ -275,6 +275,37 @@ def _jigsaw_pipeline(
     }
 
 
+def _run_typst(
+    typst_bin: str,
+    main_typ: Path,
+    output_path: Path,
+    theme_dir: Path,
+    json_path: str,
+    paper: str | None = None,
+    cover: bool = False,
+    extra_inputs: list[str] | None = None,
+) -> None:
+    """Compile a Typst template to PDF."""
+    cmd = [
+        typst_bin, "compile",
+        str(main_typ),
+        str(output_path),
+        "--root", "/",
+        "--font-path", str(theme_dir / "fonts"),
+        "--input", f"data={json_path}",
+    ]
+    if paper:
+        cmd.extend(["--input", f"paper={paper}"])
+    if cover:
+        logo_path = str(Path(__file__).resolve().parent.parent.parent / "addventure.jpg")
+        cmd.extend(["--input", f"cover={logo_path}"])
+    cmd.extend(["--input", "fillable=1"])
+    if extra_inputs:
+        for inp in extra_inputs:
+            cmd.extend(["--input", inp])
+    subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+
 def generate_pdf(
     game: GameData,
     output_path: Path,
@@ -283,9 +314,13 @@ def generate_pdf(
     paper: str | None = None,
     blind: bool = False,
     cover: bool = False,
-    jigsaw: bool = False,
+    sealed: str = "included",
 ) -> tuple[bool, list[str]]:
-    """Generate a PDF from GameData. Returns (success, warnings)."""
+    """Generate a PDF from GameData. Returns (success, warnings).
+
+    sealed: "included" (default), "separate" (emit <name>-sealed.pdf alongside),
+            or "jigsaw" (cut pages).
+    """
     typst_bin = find_typst()
     if typst_bin is None:
         return False, []
@@ -294,6 +329,7 @@ def generate_pdf(
     if not theme_dir.exists():
         raise FileNotFoundError(f"Theme not found: {theme} (looked in {theme_dir})")
 
+    jigsaw = sealed == "jigsaw"
     writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
     data = serialize_game_data(game, writer, blind=blind)
 
@@ -304,6 +340,10 @@ def generate_pdf(
             data["jigsaw_data"] = jigsaw_result["jigsaw_data"]
         if "sealed_texts_override" in jigsaw_result:
             data["sealed_texts"] = jigsaw_result["sealed_texts_override"]
+
+    if sealed == "separate" and game.sealed_texts:
+        # For separate mode, strip sealed texts from the main PDF data
+        data["sealed_texts"] = []
 
     # Resolve cover image path relative to game directory
     image_rel = game.metadata.get("image")
@@ -321,31 +361,37 @@ def generate_pdf(
         json_path = f.name
 
     try:
+        import sys as _sys
         main_typ = theme_dir / "main.typ"
         output_path = Path(output_path)
-        cmd = [
-            typst_bin, "compile",
-            str(main_typ),
-            str(output_path),
-            "--root", "/",
-            "--font-path", str(theme_dir / "fonts"),
-            "--input", f"data={json_path}",
-        ]
-        if paper:
-            paper = PAPER_ALIASES.get(paper, paper)
-            cmd.extend(["--input", f"paper={paper}"])
-        if cover:
-            logo_path = str(Path(__file__).resolve().parent.parent.parent / "addventure.jpg")
-            cmd.extend(["--input", f"cover={logo_path}"])
-        cmd.extend(["--input", "fillable=1"])
-        subprocess.run(
-            cmd,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
+        normalized_paper = PAPER_ALIASES.get(paper, paper) if paper else None
+        _run_typst(typst_bin, main_typ, output_path, theme_dir, json_path,
+                   paper=normalized_paper, cover=cover)
         from .fillable import make_fillable
         make_fillable(output_path)
+
+        if sealed == "separate" and game.sealed_texts:
+            # Emit a separate PDF containing only the sealed texts section
+            sealed_path = output_path.with_stem(output_path.stem + "-sealed")
+            # Restore sealed texts in data for the second render
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".json", delete=False
+            ) as sf:
+                data["sealed_texts"] = [
+                    {"ref": st.ref, "content": st.content, "entry_number": st.entry_number}
+                    for st in sorted(game.sealed_texts, key=lambda s: s.ref)
+                ]
+                json.dump(data, sf)
+                sealed_json_path = sf.name
+            try:
+                _run_typst(typst_bin, main_typ, sealed_path, theme_dir, sealed_json_path,
+                           paper=normalized_paper, cover=False,
+                           extra_inputs=["sealed_only=1"])
+                make_fillable(sealed_path)
+                print(f"Sealed PDF written to {sealed_path}", file=_sys.stderr)
+            finally:
+                Path(sealed_json_path).unlink(missing_ok=True)
+
         return True, writer.warnings
     except subprocess.CalledProcessError as e:
         print(f"Typst error:\n{e.stderr}", file=__import__('sys').stderr)

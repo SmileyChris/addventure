@@ -17,12 +17,13 @@ def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
     return rows
 
 
-def generate_markdown(game: GameData, blind: bool = False, jigsaw: bool = False) -> tuple[str, list[str]]:
+def generate_markdown(game: GameData, blind: bool = False, sealed: str = "included") -> tuple[str, list[str]]:
     """Generate a complete markdown document from compiled GameData.
 
     Returns (markdown_text, warnings).
+    sealed: "included" (default), "separate", or "jigsaw"
     """
-    writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
+    writer = GameWriter(game, blind=blind, jigsaw=(sealed == "jigsaw"))
     entry_prefix = game.metadata.get("entry_prefix", "A")
     sections = []
 

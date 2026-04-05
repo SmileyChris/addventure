@@ -28,6 +28,9 @@
 // Counter for multi-page sections
 #let section-page = counter("section-page")
 
+// sealed_only=1: render only the sealed texts section (used for --sealed separate)
+#let sealed-only = sys.inputs.at("sealed_only", default: "0") == "1"
+
 // Page and text defaults
 #set page(
   paper: page-paper,
@@ -52,19 +55,23 @@
 #set par(leading: 0.65em)
 
 // 0. Optional cover page
-#let cover-logo = sys.inputs.at("cover", default: none)
-#if cover-logo != none {
-  let has-cues = data.at("cue_slots", default: 0) > 0
-  cover-page(game-title, cover-logo, has-cues: has-cues)
-  pagebreak()
+#if not sealed-only {
+  let cover-logo = sys.inputs.at("cover", default: none)
+  if cover-logo != none {
+    let has-cues = data.at("cue_slots", default: 0) > 0
+    cover-page(game-title, cover-logo, has-cues: has-cues)
+    pagebreak()
+  }
 }
 
 // 1. Verb sheet (with game description and start room instruction)
-#section-label.update("Verbs")
-#verb-sheet(data, game-title, start-room)
+#if not sealed-only {
+  section-label.update("Verbs")
+  verb-sheet(data, game-title, start-room)
+}
 
 // 2. Start room (first, so the player sees it right after verbs)
-#if start-room != none {
+#if not sealed-only and start-room != none {
   for room in data.rooms {
     if room.name == start-room {
       pagebreak()
@@ -79,37 +86,43 @@
 }
 
 // 3. Inventory & Potentials
-#pagebreak()
-#section-label.update("Inventory & Potentials")
-#inventory-sheet(data, game-title)
+#if not sealed-only {
+  pagebreak()
+  section-label.update("Inventory & Potentials")
+  inventory-sheet(data, game-title)
+}
 
 // 4. Remaining rooms (skip start room, already printed)
-#for room in data.rooms {
-  if room.name != start-room {
-    pagebreak()
-    if blind {
-      section-label.update("Room " + str(room.id))
-    } else {
-      section-label.update("Room: " + room.name)
+#if not sealed-only {
+  for room in data.rooms {
+    if room.name != start-room {
+      pagebreak()
+      if blind {
+        section-label.update("Room " + str(room.id))
+      } else {
+        section-label.update("Room: " + room.name)
+      }
+      room-sheet(room, is-start: false, blind: blind)
     }
-    room-sheet(room, is-start: false, blind: blind)
   }
 }
 
 // 5. Story Ledger (last — player references it during play)
-#pagebreak()
-#section-label.update("Ledger")
-#story-ledger(data, game-title)
+#if not sealed-only {
+  pagebreak()
+  section-label.update("Ledger")
+  story-ledger(data, game-title)
+}
 
-// 6. Sealed texts (extended ledger mode)
+// 6. Sealed texts (extended ledger or sealed-only mode)
 #if not data.at("jigsaw", default: false) and data.at("sealed_texts", default: ()).len() > 0 {
-  pagebreak(weak: true)
+  if not sealed-only { pagebreak(weak: true) }
   section-label.update("Sealed Texts")
   sealed-ledger(data)
 }
 
 // 7. Sealed texts (jigsaw mode)
-#if data.at("jigsaw", default: false) and data.at("jigsaw_data", default: none) != none {
+#if not sealed-only and data.at("jigsaw", default: false) and data.at("jigsaw_data", default: none) != none {
   pagebreak(weak: true)
   section-label.update("Cut Pages")
   sealed-jigsaw(data)

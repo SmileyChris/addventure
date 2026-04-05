@@ -43,8 +43,9 @@ def cmd_build(args: list[str]):
                         help="Blind mode: room sheets hide names/IDs until discovered via LOOK")
     parser.add_argument("--no-cover", action="store_true",
                         help="Omit the How to Play cover page")
-    parser.add_argument("--jigsaw", action="store_true",
-                        help="Output sealed texts as jigsaw cut pages (default: extended ledger)")
+    parser.add_argument("--sealed", choices=["included", "separate", "jigsaw"],
+                        default="included",
+                        help="Sealed text output mode: included (default), separate PDF, or jigsaw cut pages")
     parsed = parser.parse_args(args)
 
     if parsed.game_dir:
@@ -85,7 +86,7 @@ def cmd_build(args: list[str]):
 
     writer_warnings = []
     if parsed.markdown:
-        md, writer_warnings = generate_markdown(game, blind=parsed.blind, jigsaw=parsed.jigsaw)
+        md, writer_warnings = generate_markdown(game, blind=parsed.blind, sealed=parsed.sealed)
         if parsed.output:
             Path(parsed.output).write_text(md)
             print(f"Markdown written to {parsed.output}", file=sys.stderr)
@@ -105,7 +106,7 @@ def cmd_build(args: list[str]):
         else:
             name = game.metadata.get("title") or game_dir.resolve().name
             output_path = Path(f"{_slugify(name)}.pdf")
-        success, writer_warnings = generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=not parsed.no_cover, jigsaw=parsed.jigsaw)
+        success, writer_warnings = generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=not parsed.no_cover, sealed=parsed.sealed)
         if success:
             print(f"PDF written to {output_path}", file=sys.stderr)
 
@@ -236,7 +237,7 @@ USAGE = """\
 Usage: adv <command> [args]
 
 Commands:
-  build [dir] [--md] [-o FILE] [--theme NAME] [--paper SIZE] [--blind] [--no-cover] [--jigsaw]
+  build [dir] [--md] [-o FILE] [--theme NAME] [--paper SIZE] [--blind] [--no-cover] [--sealed MODE]
                      Compile game to PDF (default) or markdown
   new [name]         Scaffold a new game or chapter (interactive if no name given)\
 """
