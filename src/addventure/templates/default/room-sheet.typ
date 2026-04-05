@@ -68,91 +68,9 @@
   let room-actions = if "actions" in room { room.actions } else { () }
   let obj-count = room.objects.len()
   let act-count = room-actions.len()
-  let total-slots = if blind { obj-count + act-count + room.discovery_slots } else { obj-count }
 
-  if total-slots > 0 {
-    v(1em)
-    section-title("Objects in this Room")
-    v(0.3em)
-
-    if blind {
-      // Blind mode: all slots are blank write-ins (objects + discoveries merged)
-      if is-start {
-        // Start room: show names, blank ID slots (objects + actions)
-        for obj in room.objects {
-          block(
-            width: 100%,
-            below: 0.4em,
-          )[
-            #grid(
-              columns: (1fr, auto),
-              gutter: 0.5em,
-              align(left + horizon)[
-                #strike-text(text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")])
-              ],
-              align(right + horizon)[#id-box(hide[000])],
-            )
-          ]
-          line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
-        }
-        for act in room-actions {
-          block(
-            width: 100%,
-            below: 0.4em,
-          )[
-            #grid(
-              columns: (1fr, auto),
-              gutter: 0.5em,
-              align(left + horizon)[
-                #strike-text(text(font: "Liberation Sans", size: 10pt)[#act.name.replace("_", " ")])
-              ],
-              align(right + horizon)[#id-box(hide[000])],
-            )
-          ]
-          line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
-        }
-      } else {
-        // Non-start: all blank
-        for _ in range(total-slots) {
-          block(
-            width: 100%,
-            below: 0.8em,
-          )[
-            #grid(
-              columns: (1fr, auto),
-              gutter: 0.5em,
-              align(left + bottom)[#write-slot()],
-              align(right + horizon)[#id-box(hide[000])],
-            )
-          ]
-        }
-      }
-    } else {
-      // Normal mode: show names and IDs, with empty box for state changes
-      for obj in room.objects {
-        block(
-          width: 100%,
-          below: 0.4em,
-        )[
-          #grid(
-            columns: (1fr, auto, auto),
-            gutter: 0.5em,
-            align(left + horizon)[
-              #strike-text(text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")])
-            ],
-            align(right + horizon)[
-              #id-box(str(obj.id), crossable: true)
-            ],
-            align(right + horizon)[#id-box(hide[000])],
-          )
-        ]
-        line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
-      }
-    }
-  }
-
-  // Actions section (direct ledger references)
-  // In blind mode, actions are merged into the blank slot pool above.
+  // Actions section (direct ledger references) — before objects
+  // In blind mode, actions are merged into the blank slot pool below.
   if room-actions.len() > 0 and not blind {
     v(1em)
     section-title("Actions")
@@ -172,6 +90,93 @@
           align(right + horizon)[
             #text(font: "Liberation Sans", size: 10pt, weight: "bold")[#prefix\-#str(act.entry)]
           ],
+        )
+      ]
+      line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+    }
+  }
+
+  // Objects section
+  let total-slots = if blind { obj-count + act-count + room.discovery_slots } else { obj-count }
+
+  if blind {
+    // Blind mode: all slots are blank write-ins (actions + objects + discoveries merged)
+    if is-start and total-slots > 0 {
+      v(1em)
+      section-title("Objects in this Room")
+      v(0.3em)
+      // Start room: show names, blank ID slots (actions first, then objects)
+      for act in room-actions {
+        block(
+          width: 100%,
+          below: 0.4em,
+        )[
+          #grid(
+            columns: (1fr, auto),
+            gutter: 0.5em,
+            align(left + horizon)[
+              #strike-text(text(font: "Liberation Sans", size: 10pt)[#act.name.replace("_", " ")])
+            ],
+            align(right + horizon)[#id-box(hide[000])],
+          )
+        ]
+        line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+      }
+      for obj in room.objects {
+        block(
+          width: 100%,
+          below: 0.4em,
+        )[
+          #grid(
+            columns: (1fr, auto),
+            gutter: 0.5em,
+            align(left + horizon)[
+              #strike-text(text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")])
+            ],
+            align(right + horizon)[#id-box(hide[000])],
+          )
+        ]
+        line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+      }
+    } else if total-slots > 0 {
+      v(1em)
+      section-title("Objects in this Room")
+      v(0.3em)
+      // Non-start: all blank
+      for _ in range(total-slots) {
+        block(
+          width: 100%,
+          below: 0.8em,
+        )[
+          #grid(
+            columns: (1fr, auto),
+            gutter: 0.5em,
+            align(left + bottom)[#write-slot()],
+            align(right + horizon)[#id-box(hide[000])],
+          )
+        ]
+      }
+    }
+  } else if obj-count > 0 {
+    v(1em)
+    section-title("Objects in this Room")
+    v(0.3em)
+    // Normal mode: show names and IDs, with empty box for state changes
+    for obj in room.objects {
+      block(
+        width: 100%,
+        below: 0.4em,
+      )[
+        #grid(
+          columns: (1fr, auto, auto),
+          gutter: 0.5em,
+          align(left + horizon)[
+            #strike-text(text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")])
+          ],
+          align(right + horizon)[
+            #id-box(str(obj.id), crossable: true)
+          ],
+          align(right + horizon)[#id-box(hide[000])],
         )
       ]
       line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))

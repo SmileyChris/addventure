@@ -104,15 +104,24 @@ def _room_section(
             lines.append("\n### Objects\n")
             lines.append("| Object | ID |")
             lines.append("|--------|---:|")
-            for n in initial:
-                lines.append(f"| {n.name} | `____` |")
             for a in preprinted_actions:
                 lines.append(f"| {_display_name(a.name)} | `____` |")
+            for n in initial:
+                lines.append(f"| {n.name} | `____` |")
         elif total_slots > 0:
             lines.append("\n### Objects\n")
             for _ in range(total_slots):
                 lines.append("- ______________ `[____]`")
     else:
+        # Actions (pre-printed) — only in non-blind mode
+        if preprinted_actions:
+            lines.append("\n### Actions\n")
+            lines.append("| Action | Entry |")
+            lines.append("|--------|------:|")
+            entry_prefix_local = game.metadata.get("entry_prefix", "A")
+            for a in preprinted_actions:
+                lines.append(f"| {_display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
+
         if initial:
             lines.append("\n### Objects\n")
             lines.append("| Object | ID |")
@@ -127,15 +136,6 @@ def _room_section(
             )
             for _ in range(max_disc):
                 lines.append("- ______________ `[____]`")
-
-        # Actions (pre-printed) — only in non-blind mode
-        if preprinted_actions:
-            lines.append("\n### Actions\n")
-            lines.append("| Action | Entry |")
-            lines.append("|--------|------:|")
-            entry_prefix_local = game.metadata.get("entry_prefix", "A")
-            for a in preprinted_actions:
-                lines.append(f"| {_display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
 
     return "\n".join(lines)
 
