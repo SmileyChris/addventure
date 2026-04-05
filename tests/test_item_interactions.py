@@ -246,6 +246,45 @@ GEM__ROUGH
     assert "GEM__ROUGH" not in game.items
 
 
+def test_noun_revealed_under_entity_state_is_discovery():
+    """Nouns revealed via -> room under an entity state transform should not
+    appear as initial objects — they're discoveries."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
++ LOOK: A locked box.
++ USE:
+  You open the box.
+  - BOX -> BOX__OPEN
+    + LOOK: The box is open. A gem and a note lie inside.
+    - GEM -> room
+    - NOTE -> room
+
+GEM
++ LOOK: A sparkling gem.
+
+NOTE
++ LOOK: A crumpled note.
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    initial = writer._initial_objects("Room")
+    initial_names = [n.name for n in initial]
+    assert "BOX" in initial_names
+    assert "GEM" not in initial_names
+    assert "NOTE" not in initial_names
+    # GEM and NOTE should be marked discovered
+    assert game.nouns["Room::GEM"].discovered is True
+    assert game.nouns["Room::NOTE"].discovered is True
+    # The interaction should have the -> room arrows propagated
+    use_ix = next(ix for ix in game.interactions if ix.verb == "USE" and ix.room == "Room")
+    arrow_subjects = [a.subject for a in use_ix.arrows]
+    assert "GEM" in arrow_subjects
+    assert "NOTE" in arrow_subjects
+
+
 def test_state_revert_generates_transform_instruction():
     """DOOR__LOCKED -> DOOR should generate a 'Change' instruction."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\nKEY\n"
