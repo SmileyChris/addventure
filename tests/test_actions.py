@@ -456,6 +456,62 @@ LOOK: A small island.
         assert f"{entry_prefix}-{action.ledger_id}" in md
 
 
+def test_blind_mode_actions():
+    """Blind mode should still render action entries and room sheet references."""
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO_NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    md, warnings = generate_markdown(game, blind=True)
+    action = game.actions["Forest::GO_NORTH"]
+    entry_prefix = game.metadata.get("entry_prefix", "A")
+    # Action should appear on room sheet and in ledger even in blind mode
+    assert "GO NORTH" in md
+    assert f"{entry_prefix}-{action.ledger_id}" in md
+
+
+def test_freeform_interaction_with_action():
+    """Actions declared inside # Interactions freeform section."""
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+ROCK
++ LOOK: A big rock.
+
+# Interactions
+
+USE + ROCK:
+  You heave the rock aside.
+  - ROCK -> trash
+  > TUNNEL
+    A dark tunnel is revealed.
+    - player -> "Cave"
+
+# Cave
+LOOK: A cave.
+"""
+    game = compile_game(global_src, [room_src])
+    assert "Forest::TUNNEL" in game.actions
+    action = game.actions["Forest::TUNNEL"]
+    assert action.discovered is True
+    assert action.ledger_id > 0
+    # Parent interaction should have discovery instruction
+    writer = GameWriter(game)
+    ri = next(ri for ri in game.resolved if ri.verb == "USE" and "ROCK" in ri.targets)
+    instructions = writer._generate_instructions(ri)
+    prefix = game.metadata.get("entry_prefix", "A")
+    assert any("TUNNEL" in inst and f"{prefix}-{action.ledger_id}" in inst for inst in instructions)
+
+
 def test_action_cannot_nest_under_action():
     global_src = "# Verbs\nLOOK\n\n# Items\n"
     room_src = """# Forest
