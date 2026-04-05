@@ -185,9 +185,9 @@ Jigsaw mode uses a two-pass approach to achieve accurate content measurement:
 
 **Python — Compute grid:** From the measured content dimensions, Python computes:
 - Grid columns (fixed at 4 for standard content width)
-- Grid rows (auto-computed so cells have roughly 2:1 aspect ratio)
-- Cell dimensions (content width / cols, content height / rows)
-- Shuffle order and random 180° flip assignments per piece
+- A **fixed cell height** shared across all sealed texts in the game (target ~25mm). Each text gets as many rows as needed to cover its content height — shorter texts have fewer rows, longer texts have more, but all cells are the same dimensions. This allows pieces from different sealed texts to be interleaved on the same cut pages.
+- Grid rows per sealed text (content height / cell height, rounded up)
+- Deterministic shuffle and flip assignments (see below)
 - Interleaving of pieces from multiple sealed texts
 - The complete piece list is written as JSON data
 
@@ -198,11 +198,12 @@ Jigsaw mode uses a two-pass approach to achieve accurate content measurement:
 ### Piece Layout
 
 - Pieces are rectangular (wider than tall), matching the natural shape of text content.
-- All pieces from all sealed texts are shuffled together on shared cut pages with zero gaps — shared cut lines serve as both piece boundaries and cutting guides.
-- Random 180° rotation is applied per-piece, making upside-down fragments harder to casually read.
+- All pieces from all sealed texts are interleaved on shared cut pages with zero gaps.
+- **Deterministic shuffle:** Pieces are reordered using an every-3rd interleave pattern (e.g. positions 1,4,7,2,5,8,3,6) so that no originally-adjacent pieces end up next to each other on the cut page. When multiple sealed texts are present, their pieces are interleaved with each other, further separating original neighbors.
+- **Deterministic flips:** 180° rotation follows a checkerboard pattern on the cut page — alternating up/down per column, inverted each row. No randomness.
 - No position numbers or grid dimension hints — the player assembles by matching text flow, line continuations, and paragraph breaks across piece edges.
 - A small ref code (e.g. "K-7") appears in the corner of each piece for grouping only — so the player can sort pieces by sealed text before assembling.
-- Empty pieces (cells with no content) are skipped from the output.
+- Empty pieces (cells with no visible content) are skipped from the output.
 
 ### Assembly Instructions
 
