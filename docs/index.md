@@ -24,7 +24,7 @@ A compiled game produces four types of sheet:
 :   Lists every action (LOOK, USE, TAKE...) with its numeric ID. When the game changes a verb, players cross out the old ID and write in the new one.
 
 **Room Sheets**
-:   One per location. Lists the objects visible in that room and their IDs. Players flip between room sheets as they move through the game.
+:   One per location. Lists actions (direct ledger references like "GO NORTH → A-12") and objects with their IDs. Players flip between room sheets as they move through the game.
 
 **Inventory & Potentials List**
 :   Tracks carried items and their IDs. The potentials list maps every valid sum to a story entry number — this is the lookup table players use after adding.

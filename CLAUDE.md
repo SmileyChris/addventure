@@ -78,6 +78,7 @@ Game scripts use markdown-based syntax:
 - `---` fences — YAML frontmatter for metadata (title, author, etc.) at top of `index.md`
 - `+ line` — additions: interactions and behaviors on an entity
 - `- line` — state changes: arrows (movement, destruction, transformation)
+- `> line` — actions: direct ledger lookups (no addition), e.g. `> GO_NORTH`
 - Unquoted text — narrative text, no markers needed (just indented under an interaction)
 - `//` — comments
 - `ENTITY__STATE` — double-underscore separates base name from state

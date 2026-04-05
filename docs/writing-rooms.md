@@ -122,6 +122,60 @@ VALVE
 // + USE: You turn the valve. — disabled for now
 ```
 
+## Actions
+
+Actions are direct ledger lookups — things the player can do without addition. They're declared with the `>` marker:
+
+```markdown
+# Forest
+
+> GO_NORTH
+  You head north through the trees.
+  - player -> "Clearing"
+
+> GO_SOUTH
+  You retrace your steps to the village.
+  - player -> "Village"
+```
+
+Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). The player just flips to that entry — no verb, no arithmetic.
+
+Actions are ideal for directional navigation, but they can do anything an interaction does: narrative, arrows, state changes.
+
+### Naming
+
+Action names follow the same rules as nouns: `ALL_CAPS` with underscores. The display name is prettified (`GO_NORTH` → "GO NORTH").
+
+### Discoverable actions
+
+Nest an action under an interaction to make it discoverable. It won't appear on the room sheet until the parent interaction fires:
+
+```markdown
+HATCH
++ USE + CROWBAR:
+  You pry the hatch open.
+  - HATCH -> trash
+  - CROWBAR -> trash
+  > GO_DOWN
+    You descend into darkness.
+    - player -> "Basement"
+```
+
+When the player uses the crowbar on the hatch, the instructions include "Write GO DOWN (A-7) in a discovery slot."
+
+### Removing actions
+
+Actions can be removed with `-> trash`, just like nouns:
+
+```markdown
+LEVER
++ USE:
+  The bridge collapses behind you!
+  - GO_BACK -> trash
+```
+
+This generates "Cross out GO BACK on this room sheet."
+
 ## Putting it together
 
 Here's a complete room with two interactive nouns:

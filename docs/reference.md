@@ -89,6 +89,16 @@ Bare `ALL_CAPS` name on its own line. Declares an object in the room.
 
 Requires verb + entity + target (three IDs added).
 
+### Actions
+
+```markdown
+> ACTION_NAME
+  Narrative text.
+  - player -> "Room Name"
+```
+
+Direct ledger lookup — no addition needed. Printed on room sheet with entry reference. Nested under an interaction, the action becomes discoverable.
+
 ### Arrows
 
 ```markdown
@@ -119,11 +129,13 @@ Nested under the arrow that creates the state.
 | `-> VERB` | Reveal a new verb on the player's verb sheet (no subject) |
 | `VERB -> trash` | Remove a verb from the player's verb sheet |
 | `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
+| `ACTION_NAME -> trash` | Remove an action from the room sheet |
 
 ## Special syntax
 
 | Syntax | Meaning |
 |---|---|
+| `> ACTION_NAME` | Declare an action (direct ledger lookup, no addition) |
 | `ENTITY__STATE` | Double-underscore separates base name from state |
 | `*` | Wildcard — matches all entities in the room |
 | `//` | Comment — ignored by the compiler |
