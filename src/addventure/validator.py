@@ -59,6 +59,10 @@ def validate_reachability(game: GameData) -> list[str]:
     for key, n in game.nouns.items():
         if n.state is None and n.name not in discovered_names.get(n.room, set()):
             initial_objects.add((n.room, n.name))
+    # Pre-printed actions tracked with > prefix
+    for key, action in game.actions.items():
+        if not action.discovered:
+            initial_objects.add((action.room, f">{action.name}"))
 
     initial_room_states = set()
     for name, rm in game.rooms.items():
@@ -89,6 +93,28 @@ def validate_reachability(game: GameData) -> list[str]:
         if resolved != state:
             queue.append(resolved)
             continue
+
+        # Follow any available actions (direct ledger lookups, no addition)
+        for key, action in game.actions.items():
+            action_room = action.room
+            # Check if action is in the current room (or room state)
+            if action_room != state.room:
+                current_room_state = None
+                for base, sname in state.room_states:
+                    if base == state.room or sname == state.room:
+                        current_room_state = sname
+                        break
+                if action_room != current_room_state:
+                    continue
+
+            # Actions (pre-printed and discovered) are tracked in room_objects
+            # with > prefix
+            if (action_room, f">{action.name}") not in state.room_objects:
+                continue
+
+            new_state = _apply_arrows(state, action.arrows, action_room, game)
+            if new_state != state:
+                queue.append(new_state)
 
         # Find all interactions the player can trigger in this state
         for ix in game.interactions:
@@ -196,12 +222,17 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
                 # Remove from wherever it is
                 inventory.discard(subj)
                 objects.discard((room, subj))
+                objects.discard((room, f">{subj}"))  # Action removal
 
         elif dest == "player":
             # Move to inventory — use base name for stated nouns
             objects.discard((room, subj))
             base = subj.split("__")[0] if "__" in subj else subj
             inventory.add(base)
+
+        elif dest == "room" and subj.startswith(">"):
+            # Action discovery — track as visible action
+            objects.add((room, subj))
 
         elif dest == "room" and not subj.startswith("room__"):
             # Reveal in current room
