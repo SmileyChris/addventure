@@ -4,7 +4,10 @@
 
 Sealed texts are content blocks hidden from the player until a ledger entry directs them to reveal one. They serve two purposes: dramatic reveals (finales, plot twists) and physical props (maps, cipher keys, puzzle pieces).
 
-The concealment mechanism is a **jigsaw system**: sealed content is sliced into grid squares, shuffled, and interleaved with squares from other sealed texts on shared cut pages. The player cuts out the squares and assembles them by position number to reveal the content. This provides true physical concealment with zero prep work — the scrambling itself prevents accidental reading.
+Two output modes are available, selected at build time:
+
+- **Extended ledger** (default) — sealed content renders as a separate section at the back of the story ledger, after all normal entries. Simple, no prep work, relies on player discipline not to read ahead.
+- **Jigsaw** (`--jigsaw` flag) — sealed content is sliced into grid squares, shuffled, and interleaved with squares from other sealed texts on shared cut pages. The player cuts out the squares and assembles them by position number to reveal the content. True physical concealment — the scrambling itself prevents accidental reading.
 
 ## Authoring Syntax
 
@@ -119,11 +122,10 @@ sealed_close = indent, ":::", newline ;
 
 ### Instruction Generation (`writer.py`)
 
-When a `ResolvedInteraction` has an associated sealed text, append an instruction:
+When a `ResolvedInteraction` has an associated sealed text, append an instruction depending on output mode:
 
-```
-Cut out and assemble the {ref} squares.
-```
+- **Extended ledger:** `Turn to Sealed Text {ref}.`
+- **Jigsaw:** `Cut out and assemble the {ref} squares.`
 
 This is appended after all arrow-generated instructions.
 
@@ -143,9 +145,19 @@ Add sealed texts to the serialized data:
 ]
 ```
 
+### CLI (`cli.py`)
+
+New flag on `adv build`:
+
+```
+--jigsaw    Output sealed texts as jigsaw cut pages (default: extended ledger)
+```
+
+The `--jigsaw` flag is independent of `--md`. In markdown mode, sealed texts always render as a plaintext section (no jigsaw).
+
 ### Markdown Output (`md_writer.py`)
 
-Sealed texts render as a separate section at the end (no concealment in markdown mode):
+Sealed texts always render as a separate section at the end (no concealment in markdown mode):
 
 ```markdown
 ---
@@ -158,7 +170,11 @@ Sealed texts render as a separate section at the end (no concealment in markdown
 The door groans open...
 ```
 
-## Jigsaw System (PDF Layout)
+## Extended Ledger Mode (Default PDF Layout)
+
+Sealed texts render as a separate section after the main story ledger, titled "Sealed Texts." Each sealed text is a full-width block (not two-column like normal ledger entries) with its reference code as a header. Content supports full Typst markup. The section has a brief note: "Do not read ahead — turn to a sealed text only when directed by a ledger entry."
+
+## Jigsaw Mode (PDF Layout, `--jigsaw`)
 
 ### How It Works
 
