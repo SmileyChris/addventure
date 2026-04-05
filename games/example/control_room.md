@@ -37,15 +37,6 @@ CRATE
 BINDINGS
 + LOOK: Thick rope bindings around your wrists.
 
-# Interactions
-
-USE__RESTRAINED + *:
-  You strain against the bindings. No use.
-
-USE__RESTRAINED + CRATE:
-  You lash out with your foot and kick the crate. It scrapes across the floor, revealing a knife underneath.
-  - KNIFE -> room
-
 KNIFE
 + LOOK: A rusty utility knife. Still sharp enough.
 + TAKE:
@@ -55,6 +46,15 @@ KNIFE
   What do you want to use the knife with?
 
   *Hint: you can USE + KNIFE + (another thing)*
+
+# Interactions
+
+USE__RESTRAINED + *:
+  You strain against the bindings. No use.
+
+USE__RESTRAINED + CRATE:
+  You lash out with your foot and kick the crate. It scrapes across the floor, revealing a knife underneath.
+  - KNIFE -> room
 
 USE__RESTRAINED + KNIFE + BINDINGS:
   You saw through the rope. Your hands are free.

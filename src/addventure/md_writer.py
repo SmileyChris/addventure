@@ -3,7 +3,7 @@
 from textwrap import indent
 
 from .models import GameData, ResolvedInteraction
-from .writer import GameWriter, _display_name
+from .writer import GameWriter
 
 
 def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
@@ -63,7 +63,7 @@ def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
     lines.append("|------|---:|")
     for v in game.verbs.values():
         if "__" not in v.name and v.name not in game.auto_verbs:
-            lines.append(f"| {v.name} | {v.id} |")
+            lines.append(f"| {writer.display_name(v.name)} | {v.id} |")
 
     lines.append("\n*If instructed, record new verbs here.*\n")
     for _ in range(3):
@@ -105,9 +105,9 @@ def _room_section(
             lines.append("| Object | ID |")
             lines.append("|--------|---:|")
             for a in preprinted_actions:
-                lines.append(f"| {_display_name(a.name)} | `____` |")
+                lines.append(f"| {writer.display_name(a.name)} | `____` |")
             for n in initial:
-                lines.append(f"| {n.name} | `____` |")
+                lines.append(f"| {writer.display_name(n.name)} | `____` |")
         elif total_slots > 0:
             lines.append("\n### Objects\n")
             for _ in range(total_slots):
@@ -120,14 +120,14 @@ def _room_section(
             lines.append("|--------|------:|")
             entry_prefix_local = game.metadata.get("entry_prefix", "A")
             for a in preprinted_actions:
-                lines.append(f"| {_display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
+                lines.append(f"| {writer.display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
 
         if initial:
             lines.append("\n### Objects\n")
             lines.append("| Object | ID |")
             lines.append("|--------|---:|")
             for n in initial:
-                lines.append(f"| {n.name} | {n.id} |")
+                lines.append(f"| {writer.display_name(n.name)} | {n.id} |")
 
         if max_disc > 0:
             lines.append(

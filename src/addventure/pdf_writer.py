@@ -31,7 +31,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             if sv.name.startswith(v.name + "__"):
                 start_id = sv.id
                 break
-        verbs.append({"name": v.name, "id": start_id})
+        verbs.append({"name": writer.display_name(v.name), "id": start_id})
 
     entry_prefix = game.metadata.get("entry_prefix", "A")
 
@@ -42,7 +42,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
 
         # Initial visible objects (not discovered via arrows or cues)
         objects = [
-            {"name": n.name, "id": n.id}
+            {"name": writer.display_name(n.name), "id": n.id}
             for n in writer._initial_objects(room_name)
         ]
 
@@ -56,7 +56,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
 
         # Actions for this room (pre-printed only)
         room_actions = [
-            {"name": a.name, "entry": a.ledger_id}
+            {"name": writer.display_name(a.name), "entry": a.ledger_id}
             for a in game.actions.values()
             if a.room == room_name and not a.discovered
         ]

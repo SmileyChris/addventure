@@ -98,7 +98,7 @@ Longer narrative goes on indented lines below:
 
 ## Indentation
 
-Addventure uses 2-space indentation to define structure. The hierarchy works like this:
+Addventure uses indentation to define structure. The hierarchy works like this:
 
 ```
 NOUN_NAME                    ← level 0: noun declaration
@@ -109,7 +109,7 @@ NOUN_NAME                    ← level 0: noun declaration
       More narrative         ← level 4: nested narrative
 ```
 
-Each level is two spaces deeper than the last. Indentation is how the compiler knows which arrows and interactions belong together.
+Use spaces, not tabs. Each child line must be indented deeper than its parent. Indentation is how the compiler knows which arrows and interactions belong together.
 
 ## Comments
 
@@ -122,6 +122,15 @@ VALVE
 // + USE: You turn the valve. — disabled for now
 ```
 
+You can also add trailing comments on structural lines:
+
+```markdown
+KEYCARD // starts hidden
+- KEYCARD -> player // acquired here
+```
+
+Trailing comments are not stripped from narrative prose, so `//` inside story text is treated as literal text.
+
 ## Actions
 
 Actions are direct ledger lookups — things the player can do without addition. They're declared with the `>` marker:
@@ -129,16 +138,28 @@ Actions are direct ledger lookups — things the player can do without addition.
 ```markdown
 # Forest
 
-> GO NORTH
+> GO_NORTH
   You head north through the trees.
   - player -> "Clearing"
 
-> GO SOUTH
+> GO_SOUTH
   You retrace your steps to the village.
   - player -> "Village"
 ```
 
-Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). The player just flips to that entry — no verb, no arithmetic.
+Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). Author actions as identifiers like `GO_NORTH`; the writer renders them for display.
+
+By default, identifiers render as upper-case words with spaces. You can change this globally with frontmatter metadata:
+
+```markdown
+---
+name_style: title
+---
+```
+
+That changes rendered names like `GO_NORTH` to `Go North`.
+
+Identifiers use `ALL_CAPS` with optional single underscores like `GO_NORTH` or `WALL_PANEL`. Double underscores are reserved for states, such as `DOOR__OPEN`.
 
 Actions are ideal for directional navigation, but they can do anything an interaction does: narrative, arrows, state changes.
 
@@ -152,7 +173,7 @@ HATCH
   You pry the hatch open.
   - HATCH -> trash
   - CROWBAR -> trash
-  > GO DOWN
+  > GO_DOWN
     You descend into darkness.
     - player -> "Basement"
 ```
@@ -167,7 +188,7 @@ Actions can be removed with `-> trash`, just like nouns:
 LEVER
 + USE:
   The bridge collapses behind you!
-  - GO BACK -> trash
+  - GO_BACK -> trash
 ```
 
 This generates "Cross out GO BACK on this room sheet."

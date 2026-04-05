@@ -28,6 +28,12 @@ start: Entrance Hall
 | `title` | Game title, shown on printed sheets |
 | `author` | Author name, shown in footers |
 | `start` | Starting room name (must match a `#` header) |
+| `entry_prefix` | Prefix for ledger entry labels (default: none) |
+| `image` | Path to cover/watermark image |
+| `image_height` | Height of the cover image |
+| `name_style` | Identifier rendering style: `upper_words` (default) or `title` |
+
+Unknown keys are accepted but produce a build warning.
 
 ## Index sections
 
@@ -92,7 +98,7 @@ Requires verb + entity + target (three IDs added).
 ### Actions
 
 ```markdown
-> GO NORTH
+> GO_NORTH
   Narrative text.
   - player -> "Room Name"
 ```
@@ -129,13 +135,13 @@ Nested under the arrow that creates the state.
 | `-> VERB` | Reveal a new verb on the player's verb sheet (no subject) |
 | `VERB -> trash` | Remove a verb from the player's verb sheet |
 | `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
-| `ACTION NAME -> trash` | Remove an action from the room sheet |
+| `ACTION_NAME -> trash` | Remove an action from the room sheet |
 
 ## Special syntax
 
 | Syntax | Meaning |
 |---|---|
-| `> ACTION NAME` | Declare an action (direct ledger lookup, no addition) |
+| `> ACTION_NAME` | Declare an action (direct ledger lookup, no addition) |
 | `ENTITY__STATE` | Double-underscore separates base name from state |
 | `*` | Wildcard — matches all entities in the room |
 | `//` | Comment — ignored by the compiler |
@@ -146,8 +152,52 @@ Nested under the arrow that creates the state.
 
 ## Naming rules
 
-- Nouns, items, and verbs: `ALL_CAPS` with optional underscores
+- Nouns, items, verbs, and actions: `ALL_CAPS` with optional single underscores between segments
 - States: `BASE__STATE` (double underscore)
+
+Plain identifiers may not contain `__`. Double underscore is reserved for state syntax only.
+
+## Name rendering
+
+Identifiers are authored in strict machine form, such as `GO_NORTH` or `WALL_PANEL`.
+By default they are rendered for players with spaces: `GO NORTH`, `WALL PANEL`.
+
+You can change the default rendering style in frontmatter:
+
+```markdown
+---
+name_style: title
+---
+```
+
+Supported values:
+
+- `upper_words` — `GO_NORTH` → `GO NORTH`
+- `title` — `GO_NORTH` → `Go North`
+
+## Wildcard
+
+`*` is only valid as the entire target list of an interaction:
+
+```markdown
+LOOK + *:
+  You scan the room.
+```
+
+It is not valid inside multi-target or alternation forms:
+
+```markdown
+USE + * + KEY:   // invalid
+USE + BOX|*:     // invalid
+```
+
+## Comments
+
+Use `//` for comments.
+
+- Full-line comments are allowed anywhere.
+- Trailing comments are allowed on structural lines such as frontmatter, declarations, interaction headers, arrows, and actions.
+- Trailing comments are not stripped from narrative text, so `//` remains literal inside prose.
 - Room names: any text after `#`, case-sensitive
 - Room references in arrows: must be quoted (`"Room Name"`)
 

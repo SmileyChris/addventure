@@ -1,6 +1,9 @@
+import pytest
+
 from addventure.models import GameData
 from addventure.compiler import compile_game
 from addventure import GameWriter
+from addventure.parser import ParseError
 
 
 def test_gamedata_has_suppressed_interactions():
@@ -98,6 +101,35 @@ LOOK: A room.
     game = compile_game(global_src, [room_src])
     assert "COMPASS" in game.items
     assert "ROPE" in game.items
+
+
+def test_arbitrary_space_indentation_is_accepted():
+    """Structure is based on deeper indentation, not 2-space buckets."""
+    global_src = "# Verbs\nLOOK\nTAKE\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+KEY
+ + LOOK: A brass key.
+ + TAKE:
+  You pocket the key.
+  - KEY -> player
+"""
+    game = compile_game(global_src, [room_src])
+    key = game.items["KEY"]
+    look_id = game.verbs["LOOK"].id
+
+    inv_looks = [ri for ri in game.resolved if ri.sum_id == look_id + key.id]
+    assert len(inv_looks) == 1
+    assert inv_looks[0].narrative == "A brass key."
+
+
+def test_tab_indentation_is_rejected():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = "# Room\nLOOK: A room.\n\nKEY\n\t+ LOOK: Invalid tab indent.\n"
+
+    with pytest.raises(ParseError, match="Tabs are not allowed for indentation"):
+        compile_game(global_src, [room_src])
 
 
 def test_acquisition_interaction_not_duplicated():

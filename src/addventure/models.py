@@ -98,3 +98,4 @@ class GameData:
     auto_verbs: set[str] = field(default_factory=set)
     suppressed_interactions: list[Interaction] = field(default_factory=list)
     actions: dict[str, Action] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)

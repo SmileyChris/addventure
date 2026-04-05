@@ -88,6 +88,18 @@ Game scripts use markdown-based syntax:
 - `*` wildcard — matches all entities in room
 - Indentation (2-space) defines hierarchy within `+`/`-` blocks
 
+## Language Changes
+
+Any change to the script language must update all of:
+
+- `src/addventure/parser.py` — parser behavior
+- `docs/grammar.ebnf` — formal syntax spec
+- User-facing docs (`docs/reference.md`, `docs/writing-rooms.md`) if applicable
+- `games/example/` if applicable
+- Tests
+
+The parser is strict: every block type rejects unexpected lines. Do not add silent skips (`i += 1` on unrecognized input). Unknown frontmatter keys are valid but produce build warnings.
+
 ## Releasing
 
 To create a new release:

@@ -1,262 +1,327 @@
-(* Addventure Script Grammar — EBNF *)
-(* Whitespace-sensitive: indentation is 2-space increments. *)
-(* INDENT(n) means exactly n×2 leading spaces.              *)
+(* Addventure Concrete Syntax Specification *)
+
+(* This file documents the concrete source syntax accepted by the parser.
+   It is intentionally not a parser-consumable grammar. Structural syntax
+   and validation rules are separated so the language definition stays
+   precise without smuggling semantic checks into pseudo-EBNF. *)
 
 
 (* ══════════════════════════════════════════════════════════ *)
-(*  Top-level structure                                      *)
+(*  1. Lexical Conventions                                   *)
 (* ══════════════════════════════════════════════════════════ *)
 
-game            = index-file , { room-file } ;
-
-index-file      = [ frontmatter ] , [ description ] , { global-section } ;
-
-room-file       = [ frontmatter ] , { room-section | interactions-section } ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Frontmatter                                              *)
-(* ══════════════════════════════════════════════════════════ *)
-
-frontmatter     = "---" , newline ,
-                  { meta-key , ":" , meta-value , newline } ,
-                  "---" , newline ;
-
-meta-key        = text ;            (* title | author | start | entry_prefix | chapters | image *)
-meta-value      = text ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Description                                              *)
-(* ══════════════════════════════════════════════════════════ *)
-
-(* Body text between frontmatter and first # header.         *)
-(* Each non-empty, non-comment line becomes a paragraph.     *)
-
-description     = { text-line } ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Global sections (index.md only)                          *)
-(* ══════════════════════════════════════════════════════════ *)
-
-global-section  = verbs-section | items-section ;
-
-verbs-section   = "# Verbs" , newline , { NAME , newline } ;
-
-items-section   = "# Items" , newline , { NAME , newline , [ noun-block(0) ] } ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Room sections                                            *)
-(* ══════════════════════════════════════════════════════════ *)
-
-room-section    = room-header , newline , room-body ;
-
-room-header     = "# " , room-name ;
-
-room-body       = { room-level-line } ;
-
-room-level-line = room-interaction          (* LOOK: desc  or  VERB + TARGET: *)
-                | room-arrow                (* subject -> dest *)
-                | noun-declaration          (* NAME at indent 0 *)
-                | action-declaration ;      (* > GO NORTH *)
-
-room-interaction = interaction-header ;     (* context entity = current room *)
-
-room-arrow      = arrow ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Nouns                                                    *)
-(* ══════════════════════════════════════════════════════════ *)
-
-noun-declaration = INDENT(0) , NAME , newline ,
-                   noun-block(0) ;
-
-(* noun-block(n): children of a noun declared at indent n.        *)
-(* + lines at indent n define interactions on the noun.           *)
-(* Deeper lines are nested content (narratives, arrows, children).*)
-(* - arrows at indent n are siblings, not children — they end the block. *)
-
-noun-block(n)   = { INDENT(n) , "+" , " " , interaction-content(n)
-                  | INDENT(>n) , "-" , " " , arrow-line(>n)
-                  | INDENT(>n) , NAME , newline , noun-block(>n)
-                  } ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Interactions                                             *)
-(* ══════════════════════════════════════════════════════════ *)
-
-interaction-header = [ "+" , " " ] , verb-target-spec , ":" , [ inline-narrative ] , newline ,
-                     interaction-body ;
-
-verb-target-spec = NAME , { "+" , target-group } ;
-
-target-group    = noun-ref , { "|" , noun-ref } ;
-
-interaction-body = { narrative-line | arrow-line | action-declaration } ;
-
-narrative-line  = INDENT(>parent) , text ;    (* no marker, no arrow, not ALL_CAPS *)
-
-arrow-line      = "-" , " " , arrow , newline , [ arrow-children ] ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Arrows                                                   *)
-(* ══════════════════════════════════════════════════════════ *)
-
-arrow           = subject , " -> " , destination
-                | " -> " , NAME ;             (* verb reveal: no subject *)
-
-subject         = noun-ref                    (* NOUN, NOUN__STATE *)
-                | action-name                 (* GO NORTH — action trash/removal *)
-                | "player"
-                | "room"
-                | "?" ;                       (* cue trigger *)
-
-destination     = "trash"                     (* destroy noun, verb, or action *)
-                | "player"                    (* move to inventory *)
-                | "room"                      (* reveal in current room, or revert room state *)
-                | quoted-room                 (* move to / reveal in named room *)
-                | noun-state-ref              (* transform: NOUN__STATE *)
-                | NAME                        (* revert: NOUN__STATE -> NOUN *)
-                | room-state-ref ;            (* transform: room__STATE *)
-
-quoted-room     = '"' , room-name , '"' ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Arrow children                                           *)
-(* ══════════════════════════════════════════════════════════ *)
-
-(* What follows an arrow depends on the destination type:    *)
-
-arrow-children  = arrow-children-trash        (* -> trash: skip deeper lines *)
-                | arrow-children-player       (* -> player: skip deeper lines *)
-                | arrow-children-movement     (* player -> "Room": nothing *)
-                | arrow-children-reveal       (* -> room: noun-block for subject *)
-                | arrow-children-remote       (* -> "Room": noun-block in target room *)
-                | arrow-children-transform    (* -> STATE: noun-block for new state *)
-                | arrow-children-room-state   (* -> room__STATE: room-state-block *)
-                | arrow-children-cue          (* ? -> "Room": cue block *)
-                | arrow-children-verb-reveal  (* -> VERB: nothing *)
-                | arrow-children-verb-trash ; (* VERB -> trash: nothing *)
-
-arrow-children-verb-reveal = (* empty — -> VERB has no children *) ;
-arrow-children-verb-trash  = (* empty — VERB -> trash has no children *) ;
-
-arrow-children-trash    = { INDENT(>arrow) , any-line } ;   (* consumed and ignored *)
-arrow-children-player   = noun-block ;                       (* optional + interactions override/suppress inventory duplicates *)
-arrow-children-movement = (* empty — player -> "Room" has no children *) ;
-
-arrow-children-reveal   = noun-block ;        (* defines subject in current room *)
-arrow-children-remote   = noun-block ;        (* defines subject in target room *)
-arrow-children-transform = noun-block ;       (* defines the new noun state *)
-
-arrow-children-room-state = room-state-block ;
-
-arrow-children-cue      = cue-block ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Cue blocks (? -> "Room")                                 *)
-(* ══════════════════════════════════════════════════════════ *)
-
-(* A cue defines a deferred cross-room effect. The indented  *)
-(* block contains a narrative and arrows that execute when    *)
-(* the player enters the target room and the cue resolves.   *)
-(*                                                            *)
-(* Cue destination determines which room states it fires in:  *)
-(*   ? -> "Room"           any state (base + all variants)    *)
-(*   ? -> "Room__STATE"    only that specific state           *)
-(*   ? -> "Room__"         only the base state (no variant)   *)
-
-cue-block       = { INDENT(>arrow) , ( narrative-line | cue-arrow-line ) } ;
-
-cue-arrow-line  = "-" , " " , cue-arrow , newline ;
-
-cue-arrow       = noun-ref , " -> " , destination ;   (* arrows within the target room *)
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Room state blocks                                        *)
-(* ══════════════════════════════════════════════════════════ *)
-
-(* Children of room -> room__STATE arrows.                   *)
-(* Can contain interactions, nouns, and arrows.              *)
-
-room-state-block = { INDENT(>=child) , ( room-state-interaction
-                                        | room-state-noun
-                                        | room-state-arrow ) } ;
-
-room-state-interaction = "+" , " " , interaction-content ;
-
-room-state-noun = [ "+" , " " ] , NAME , newline , noun-block ;
-
-room-state-arrow = "-" , " " , arrow-line ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Actions                                                  *)
-(* ══════════════════════════════════════════════════════════ *)
-
-(* Actions are direct ledger lookups — no verb+noun addition.  *)
-(* ">" declares an action. At room level = pre-printed.        *)
-(* Nested inside an interaction = discoverable.                *)
-
-action-declaration = ">" , " " , action-name , newline ,
-                     action-body ;
-
-action-name     = ? any non-empty text (spaces allowed) ? ;   (* e.g. GO NORTH, PULL LEVER *)
-
-action-body     = { INDENT(>parent) , ( narrative-line | arrow-line ) } ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Freeform interactions (# Interactions section)           *)
-(* ══════════════════════════════════════════════════════════ *)
-
-interactions-section = "# Interactions" , newline ,
-                       { freeform-interaction } ;
-
-freeform-interaction = freeform-header , newline ,
-                       { INDENT(1+) , ( narrative-line | arrow-line ) } ;
-
-freeform-header = NAME , "+" , target-group , { "+" , target-group } , ":" ;
-
-
-(* ══════════════════════════════════════════════════════════ *)
-(*  Noun references                                          *)
-(* ══════════════════════════════════════════════════════════ *)
-
-noun-ref        = NAME                        (* e.g. TERMINAL, CRATE *)
-                | noun-state-ref              (* e.g. TERMINAL__UNLOCKED *)
-                | "*" ;                       (* wildcard: all nouns in room *)
+newline         = "\n" ;
+space           = " " ;
+
+comment-line    = indent , "//" , { any-char-except-newline } , newline ;
+blank-line      = indent , newline ;
+
+indent          = { space } ;
+indent(n)       = ? exactly n space characters ? ;
+
+(* Indentation uses spaces only. Tabs are not allowed in leading whitespace.
+   A child line belongs to a block when it is indented deeper than that
+   block's header line. Indentation width is otherwise unconstrained. *)
+(* `//` may also appear as a trailing comment on structural lines. Trailing
+   comments are not stripped from narrative text lines. *)
+
+NAME            = UPPER , { UPPER | DIGIT } , { "_" , UPPER | DIGIT , { UPPER | DIGIT } } ;
+STATE-NAME      = NAME ;
+STATED-NAME     = NAME , [ "__" , STATE-NAME ] ;
+
+(* Identifier classes:
+   NAME         — plain identifier (verbs, items, base nouns, actions).
+                  Single underscores separate words; double underscore is not
+                  allowed. Starts with a letter.
+   STATE-NAME   — same lexical form as NAME; used after `__` in stated forms.
+   STATED-NAME  — NAME optionally suffixed with `__STATE-NAME`. Used for verb
+                  names in interactions and noun declarations, where a state
+                  qualifier is syntactically valid.
+   noun-ref     — a noun target: plain NAME, stated NOUN__STATE, or wildcard `*`.
+   room-name    — free-form text (room headers and quoted targets). Not an
+                  identifier; no lexical restrictions beyond non-empty.
+   action-name  — plain NAME; actions do not have state variants. *)
 
 noun-state-ref  = NAME , "__" , STATE-NAME ;
+room-state-ref  = "room__" , STATE-NAME ;
 
-room-state-ref  = "room__" , STATE-NAME ;     (* current room state transform *)
+noun-ref        = "*" | noun-state-ref | NAME ;
 
+quoted-room     = '"' , room-name , '"' ;
+room-name       = ? any non-empty text not containing newline or '"' ? ;
 
-(* ══════════════════════════════════════════════════════════ *)
-(*  Terminals                                                *)
-(* ══════════════════════════════════════════════════════════ *)
-
-NAME            = UPPER , { UPPER | DIGIT | "_" } ;      (* e.g. TERMINAL, WALL_PANEL, LOOK *)
-STATE-NAME      = UPPER , { UPPER | DIGIT | "_" } ;      (* e.g. UNLOCKED, OPEN *)
-room-name       = ? any text not containing newline ? ;   (* e.g. Control Room *)
+text            = ? any non-empty text not containing newline ? ;
+action-name     = NAME ;
 
 UPPER           = "A" | "B" | ... | "Z" ;
 DIGIT           = "0" | "1" | ... | "9" ;
 
-comment         = "//" , ? any text ? , newline ;
-newline         = "\n" ;
-text            = ? any non-empty text ? ;
-text-line       = text , newline ;
 
-(* INDENT(n) = exactly n * 2 space characters at line start *)
-(* INDENT(>n) = more than n * 2 space characters            *)
-(* INDENT(>=n) = at least n * 2 space characters            *)
-(* Blank lines and comment lines are skipped everywhere.    *)
+(* ══════════════════════════════════════════════════════════ *)
+(*  2. Top-Level File Shapes                                *)
+(* ══════════════════════════════════════════════════════════ *)
+
+game            = index-file , { room-file } ;
+
+index-file      = [ frontmatter ] ,
+                  { blank-line | comment-line } ,
+                  [ description ] ,
+                  { global-section | blank-line | comment-line } ;
+
+room-file       = [ frontmatter ] ,
+                  { blank-line | comment-line } ,
+                  room-section ,
+                  { room-section | blank-line | comment-line } ;
+
+(* `# Interactions` is part of the current room section, not a standalone
+   top-level file section. *)
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  3. Frontmatter and Description                          *)
+(* ══════════════════════════════════════════════════════════ *)
+
+frontmatter     = "---" , newline ,
+                  { frontmatter-line | blank-line | comment-line } ,
+                  "---" , newline ;
+
+frontmatter-line = text , ":" , [ text ] , newline ;
+
+description     = description-line , { blank-line | comment-line | description-line } ;
+description-line = indent0 , text , newline ;
+
+indent0         = "" ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  4. Global Sections                                      *)
+(* ══════════════════════════════════════════════════════════ *)
+
+global-section  = verbs-section | items-section ;
+
+verbs-section   = "# Verbs" , newline ,
+                  { blank-line | comment-line | verb-line } ;
+
+verb-line       = indent0 , NAME , newline ;
+
+items-section   = "# Items" , newline ,
+                  { blank-line | comment-line | item-declaration } ;
+
+item-declaration = indent0 , NAME , newline ,
+                   [ entity-block(0) ] ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  5. Room Sections                                        *)
+(* ══════════════════════════════════════════════════════════ *)
+
+room-section    = room-header , newline ,
+                  room-body ,
+                  [ interactions-section ] ;
+
+room-header     = "# " , room-name ;
+
+room-body       = { blank-line | comment-line | room-body-line } ;
+
+room-body-line  = room-interaction
+                | room-arrow
+                | noun-declaration
+                | action-declaration ;
+
+room-interaction = indent0 , interaction-header ;
+room-arrow      = indent0 , arrow , newline , [ arrow-children(0, arrow) ] ;
+noun-declaration = indent0 , STATED-NAME , newline , [ entity-block(0) ] ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  6. Entity Blocks                                        *)
+(* ══════════════════════════════════════════════════════════ *)
+
+(* An entity block is the indented content under a noun or item declaration,
+   or under a reveal / transform arrow that introduces a noun. *)
+
+entity-block(n) = entity-line(n+1) , { blank-line | comment-line | entity-line(n+1) } ;
+
+entity-line(m)  = interaction-line(m)
+                | arrow-line(m)
+                | nested-noun(m)
+                | action-line(m) ;
+
+interaction-line(m) = indent(m) , "+ " , interaction-header ;
+arrow-line(m)       = indent(m) , "- " , arrow , newline , [ arrow-children(m, arrow) ] ;
+nested-noun(m)      = indent(m) , STATED-NAME , newline , [ entity-block(m) ] ;
+action-line(m)      = indent(m) , "> " , action-name , newline , action-body(m) ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  7. Interactions                                         *)
+(* ══════════════════════════════════════════════════════════ *)
+
+interaction-header = verb-target-spec , ":" , [ inline-narrative ] , newline ,
+                     [ interaction-body(same-line-indent) ] ;
+
+verb-target-spec   = STATED-NAME , { "+" , target-group } ;
+target-group       = noun-ref , { "|" , noun-ref } ;
+inline-narrative   = text ;
+
+interaction-body(n) = interaction-body-line(n+1) ,
+                      { blank-line | comment-line | interaction-body-line(n+1) } ;
+
+interaction-body-line(m) = narrative-line(m)
+                         | arrow-line(m)
+                         | action-line(m) ;
+
+narrative-line(m) = indent(m) , text , newline ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  8. Arrows                                               *)
+(* ══════════════════════════════════════════════════════════ *)
+
+arrow            = subject , " -> " , destination
+                 | " -> " , NAME ;
+
+subject          = noun-ref
+                 | action-name
+                 | "player"
+                 | "room"
+                 | "?" ;
+
+destination      = "trash"
+                 | "player"
+                 | "room"
+                 | quoted-room
+                 | noun-state-ref
+                 | NAME
+                 | room-state-ref ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  9. Arrow Child Blocks                                   *)
+(* ══════════════════════════════════════════════════════════ *)
+
+(* The allowed child block depends on the arrow form. *)
+
+arrow-children(n, subject -> "player")     = entity-block(n) ;
+arrow-children(n, subject -> "room")       = entity-block(n) ;
+arrow-children(n, subject -> quoted-room)  = entity-block(n) ;
+arrow-children(n, subject -> noun-state-ref) = entity-block(n) ;
+arrow-children(n, "room" -> room-state-ref)  = room-state-block(n) ;
+arrow-children(n, "?" -> quoted-room)      = cue-block(n) ;
+
+(* These arrow forms have no children: *)
+(*   subject -> trash *)
+(*   player -> "Room" *)
+(*   -> VERB *)
+(*   VERB -> trash *)
+(*   VERB__STATE -> VERB *)
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  10. Cue Blocks                                          *)
+(* ══════════════════════════════════════════════════════════ *)
+
+cue-block(n)     = cue-line(n+1) , { blank-line | comment-line | cue-line(n+1) } ;
+
+cue-line(m)      = narrative-line(m)
+                 | cue-arrow-line(m) ;
+
+cue-arrow-line(m) = indent(m) , "- " , cue-arrow , newline ;
+cue-arrow        = noun-ref , " -> " , destination ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  11. Room-State Blocks                                   *)
+(* ══════════════════════════════════════════════════════════ *)
+
+room-state-block(n) = room-state-line(n+1) ,
+                      { blank-line | comment-line | room-state-line(n+1) } ;
+
+room-state-line(m)  = room-state-interaction(m)
+                    | room-state-noun(m)
+                    | room-state-arrow(m) ;
+
+room-state-interaction(m) = indent(m) , "+ " , interaction-header ;
+room-state-noun(m)        = indent(m) , [ "+ " ] , STATED-NAME , newline , [ entity-block(m) ] ;
+room-state-arrow(m)       = indent(m) , "- " , arrow , newline , [ arrow-children(m, arrow) ] ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  12. Actions                                              *)
+(* ══════════════════════════════════════════════════════════ *)
+
+action-declaration = indent0 , "> " , action-name , newline , action-body(0) ;
+
+action-body(n)     = action-body-line(n+1) ,
+                     { blank-line | comment-line | action-body-line(n+1) } ;
+
+action-body-line(m) = narrative-line(m)
+                    | arrow-line(m) ;
+
+(* Actions may appear:
+   - at room level: pre-printed action on the room sheet
+   - inside an interaction body: discoverable action *)
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  13. Freeform Interactions                               *)
+(* ══════════════════════════════════════════════════════════ *)
+
+interactions-section = "# Interactions" , newline ,
+                       { blank-line | comment-line | freeform-interaction } ;
+
+freeform-interaction = indent0 , freeform-header , newline ,
+                       freeform-body(0) ;
+
+freeform-header      = STATED-NAME , "+" , target-group , { "+" , target-group } , ":" ;
+
+freeform-body(n)     = freeform-body-line(n+1) ,
+                       { blank-line | comment-line | freeform-body-line(n+1) } ;
+
+freeform-body-line(m) = narrative-line(m)
+                      | arrow-line(m)
+                      | action-line(m) ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  14. Validation Rules                                    *)
+(* ══════════════════════════════════════════════════════════ *)
+
+(* These are part of the language definition, but they are semantic
+   validation rules rather than concrete syntax.
+
+   1. Tabs are not allowed in indentation.
+   2. `# Verbs` lines must be unindented verb declarations only.
+   3. `# Items` lines must be unindented item declarations only.
+   4. `# Interactions` may contain freeform interactions only.
+   5. Every child line in a block must be indented deeper than its header.
+   6. `-> trash`, `player -> "Room"`, `-> VERB`, and verb-only arrows may not
+      have child blocks.
+   7. `?` arrows must target a quoted room name.
+   8. Unknown verbs, unknown targets, and invalid cue target rooms are rejected
+      during compilation.
+   9. `-> player` requires a `TAKE` verb to exist.
+   10. Duplicate authored interactions are invalid.
+   11. Empty interactions are syntactically valid but resolve as suppression
+       markers rather than ledger entries.
+   12. Room names are free text. `NAME`-shaped identifiers are used for verbs,
+       nouns, items, states, and actions.
+   13. In productions like `interaction-body(same-line-indent)`, the parameter
+       refers to the indentation depth of the line that introduced the block.
+   14. `name_style` is optional frontmatter metadata controlling how identifiers
+       are rendered for players. Supported values are `upper_words` (default)
+       and `title`. This affects rendered verbs, nouns, items, states, and
+       actions, but not free-text room names or narrative.
+   15. `*` is only valid as the entire target list of an interaction, for
+       example `LOOK + *:`. It may not appear inside multi-target or
+       alternation forms such as `USE + * + KEY:` or `USE + BOX|*:`.
+   16. Inside an indented block, any deeper non-comment line must be valid for
+       that block type. Unexpected lines are parse errors; they are not ignored
+       or skipped.
+   17. Room bodies are strict: only room-body-line productions, blank lines,
+       and comments are allowed. Unrecognized lines are parse errors.
+   18. The global file is strict outside sections: only section headers, blank
+       lines, and comments are allowed between (and after) global sections.
+   19. Unknown frontmatter keys are syntactically valid but produce build
+       warnings. Known keys: title, author, start, entry_prefix, image,
+       image_height, name_style. *)

@@ -2,13 +2,16 @@ from .models import GameData, ResolvedInteraction
 from .compiler import get_entity_id
 
 
-def _display_name(name: str) -> str:
+def _display_name(name: str, style: str = "upper_words") -> str:
     """Convert internal names to player-facing display names.
     Strips state suffix (CRATE__OPEN -> CRATE) and converts
-    single underscores to spaces (WALL_PANEL -> WALL PANEL).
+    single underscores to spaces.
     """
     base = name.split("__")[0]
-    return base.replace("_", " ")
+    words = base.replace("_", " ")
+    if style == "title":
+        return words.title()
+    return words
 
 
 class GameWriter:
@@ -25,12 +28,16 @@ class GameWriter:
         self.game = game
         self.blind = blind
         self.entry_prefix = game.metadata.get("entry_prefix", "A")
+        self.name_style = game.metadata.get("name_style", "upper_words")
         self.warnings: list[str] = []
+
+    def display_name(self, name: str) -> str:
+        return _display_name(name, self.name_style)
 
     def _generate_instructions(self, ri: ResolvedInteraction) -> list[str]:
         """Convert arrows into human-readable player instructions."""
         instructions = []
-        dn = _display_name
+        dn = self.display_name
         current_room = ri.room
 
         for arrow in ri.arrows:
@@ -215,7 +222,7 @@ class GameWriter:
         objects = self._initial_objects(room_name)
         instructions = []
 
-        dn = _display_name
+        dn = self.display_name
         if room_name == start:
             # Start room: names already on sheet, just reveal IDs
             if objects:

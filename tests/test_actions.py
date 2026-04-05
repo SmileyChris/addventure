@@ -24,6 +24,12 @@ def test_action_dataclass():
     assert len(action.arrows) == 1
 
 
+def test_display_name_title_style():
+    assert _display_name("GO_NORTH", "title") == "Go North"
+    assert _display_name("WALL_PANEL", "title") == "Wall Panel"
+    assert _display_name("CRATE__OPEN", "title") == "Crate"
+
+
 def test_gamedata_has_actions():
     game = GameData()
     assert game.actions == {}
@@ -51,6 +57,315 @@ LOOK: A sunlit clearing.
     assert len(action.arrows) == 1
     assert action.arrows[0].subject == "player"
     assert action.arrows[0].destination == '"Clearing"'
+
+
+def test_invalid_frontmatter_line_is_rejected():
+    global_src = "---\ntitle: Test\nbad frontmatter\n---\n# Verbs\nLOOK\n\n# Items\n"
+
+    with pytest.raises(ParseError, match="Invalid frontmatter line"):
+        compile_game(global_src, ["# Room\nLOOK: A room.\n"])
+
+
+def test_verbs_section_rejects_structural_lines():
+    global_src = "# Verbs\n  LOOK\n\n# Items\n"
+
+    with pytest.raises(ParseError, match="Unexpected indentation in # Verbs"):
+        compile_game(global_src, ["# Room\nLOOK: A room.\n"])
+
+
+def test_items_section_rejects_stray_indented_lines():
+    global_src = "# Verbs\nLOOK\n\n# Items\n  KEY\n"
+
+    with pytest.raises(ParseError, match="Unexpected indentation in # Items"):
+        compile_game(global_src, ["# Room\nLOOK: A room.\n"])
+
+
+def test_verbs_section_rejects_non_name_identifiers():
+    global_src = "# Verbs\nLook\n\n# Items\n"
+
+    with pytest.raises(ParseError, match="Invalid verb name: Look"):
+        compile_game(global_src, ["# Room\nLOOK: A room.\n"])
+
+
+def test_action_name_must_be_name_identifier():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+
+    with pytest.raises(ParseError, match="Invalid action name: GO NORTH"):
+        compile_game(global_src, [room_src])
+
+
+def test_interaction_targets_must_be_name_identifiers():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
++ LOOK: A box.
+
+# Interactions
+USE + Key:
+  Invalid target.
+"""
+
+    with pytest.raises(ParseError, match="Invalid target: Key"):
+        compile_game(global_src, [room_src])
+
+
+def test_plain_name_rejects_double_underscore_in_verbs():
+    global_src = "# Verbs\nGO__NORTH\n\n# Items\n"
+
+    with pytest.raises(ParseError, match="Invalid verb name: GO__NORTH"):
+        compile_game(global_src, ["# Room\nLOOK: A room.\n"])
+
+
+def test_plain_name_rejects_double_underscore_in_items():
+    global_src = "# Verbs\nLOOK\n\n# Items\nKEY__CARD\n"
+
+    with pytest.raises(ParseError, match="Invalid item name: KEY__CARD"):
+        compile_game(global_src, ["# Room\nLOOK: A room.\n"])
+
+
+def test_plain_name_rejects_double_underscore_in_actions():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+> GO__NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+
+    with pytest.raises(ParseError, match="Invalid action name: GO__NORTH"):
+        compile_game(global_src, [room_src])
+
+
+def test_state_reference_still_allows_reserved_double_underscore():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
++ LOOK: A box.
++ USE:
+  You open it.
+  - BOX -> BOX__OPEN
+    + LOOK: An open box.
+"""
+
+    game = compile_game(global_src, [room_src])
+    assert "Room::BOX__OPEN" in game.nouns
+
+
+def test_trailing_comments_allowed_on_structural_lines():
+    global_src = """---
+title: Test // comment
+name_style: title // comment
+---
+# Verbs
+LOOK // comment
+USE // comment
+
+# Items
+KEY // comment
+"""
+    room_src = """# Room
+LOOK: A room. // comment
+
+BOX // comment
++ LOOK: A box. // comment
++ USE + KEY: // comment
+  You open it.
+  - BOX -> BOX__OPEN // comment
+    + LOOK: An open box. // comment
+"""
+
+    game = compile_game(global_src, [room_src])
+    assert "LOOK" in game.verbs
+    assert "USE" in game.verbs
+    assert "KEY" in game.items
+    assert "Room::BOX__OPEN" in game.nouns
+
+
+def test_narrative_text_preserves_double_slash():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: The panel reads // WARNING // in red light.
+"""
+
+    game = compile_game(global_src, [room_src])
+    look = next(ri for ri in game.resolved if ri.verb == "LOOK" and ri.targets == ["@Room"])
+    assert look.narrative == "The panel reads // WARNING // in red light."
+
+
+def test_wildcard_allowed_as_entire_target_list():
+    global_src = "# Verbs\nLISTEN\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LISTEN + *:
+  You scan the room.
+
+BOX
++ LOOK: A box.
+
+KEY
++ LOOK: A key.
+"""
+
+    game = compile_game(global_src, [room_src])
+    wildcard_entries = [ri for ri in game.resolved if ri.verb == "LISTEN" and ri.narrative == "You scan the room."]
+    assert len(wildcard_entries) == 2
+
+
+def test_wildcard_rejected_in_multi_target_interaction():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
++ LOOK: A box.
+
+# Interactions
+USE + * + KEY:
+  Invalid wildcard use.
+"""
+
+    with pytest.raises(ParseError, match="Wildcard '\\*' is only allowed as the entire target list"):
+        compile_game(global_src, [room_src])
+
+
+def test_wildcard_rejected_in_alternation_group():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+# Interactions
+USE + BOX|*:
+  Invalid wildcard use.
+"""
+
+    with pytest.raises(ParseError, match="Wildcard '\\*' is only allowed as the entire target list"):
+        compile_game(global_src, [room_src])
+
+
+def test_interaction_body_rejects_unexpected_plus_line():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
++ USE:
+  You open it.
+  + LOOK: Wrong place.
+"""
+
+    with pytest.raises(ParseError, match="Unexpected line in interaction body"):
+        compile_game(global_src, [room_src])
+
+
+def test_action_body_rejects_unexpected_line():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+> GO_NORTH
+  + LOOK: Wrong place.
+"""
+
+    with pytest.raises(ParseError, match="Unexpected line in action body"):
+        compile_game(global_src, [room_src])
+
+
+def test_entity_block_rejects_unexpected_line():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+BOX
+  Plain text in the wrong place.
+"""
+
+    with pytest.raises(ParseError, match="Unexpected line in entity block"):
+        compile_game(global_src, [room_src])
+
+
+def test_interactions_section_rejects_noun_declarations():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Room
+LOOK: A room.
+
+# Interactions
+ROCK
+  + LOOK: A rock.
+"""
+
+    with pytest.raises(ParseError, match="Unexpected: ROCK"):
+        compile_game(global_src, [room_src])
+
+
+def test_movement_arrow_cannot_have_children():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+PATH
++ LOOK: A narrow path.
++ USE:
+  You head onward.
+  - player -> "Clearing"
+    Extra text that should not be allowed.
+
+# Clearing
+LOOK: A clearing.
+"""
+
+    with pytest.raises(ParseError, match="Movement arrow cannot have children"):
+        compile_game(global_src, [room_src])
+
+
+def test_trash_arrow_cannot_have_children():
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+BRANCH
++ LOOK: A dead branch.
++ USE:
+  You snap it.
+  - BRANCH -> trash
+    Extra text that should not be allowed.
+"""
+
+    with pytest.raises(ParseError, match="Arrow to trash cannot have children"):
+        compile_game(global_src, [room_src])
+
+
+def test_verb_reveal_arrow_cannot_have_children():
+    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+ALTAR
++ LOOK: A stone altar.
++ USE:
+  A new idea occurs to you.
+  -  -> PRAY
+    Extra text that should not be allowed.
+"""
+
+    with pytest.raises(ParseError, match="Verb reveal arrow cannot have children"):
+        compile_game(global_src, [room_src])
 
 
 def test_parse_discoverable_action():
@@ -250,6 +565,28 @@ LOOK: A clearing.
     assert f"{entry_prefix}-{action.ledger_id}" in md
 
 
+def test_markdown_uses_title_name_style_metadata():
+    global_src = "---\nname_style: title\n---\n# Verbs\nLOOK\n\n# Items\n"
+    room_src = """# Forest
+LOOK: A forest.
+
+WALL_PANEL
++ LOOK: A wall panel.
+
+> GO_NORTH
+  You head north.
+  - player -> "Clearing"
+
+# Clearing
+LOOK: A clearing.
+"""
+    game = compile_game(global_src, [room_src])
+    md, warnings = generate_markdown(game)
+    assert "Go North" in md
+    assert "Wall Panel" in md
+    assert "GO NORTH" not in md
+
+
 def test_markdown_ledger_includes_action_entries():
     from addventure.md_writer import generate_markdown
 
@@ -357,7 +694,7 @@ LOOK: A clearing.
     forest = next(r for r in data["rooms"] if r["name"] == "Forest")
     assert "actions" in forest
     assert len(forest["actions"]) == 1
-    assert forest["actions"][0]["name"] == "GO_NORTH"
+    assert forest["actions"][0]["name"] == "GO NORTH"
     assert forest["actions"][0]["entry"] > 0
     action_entry = game.actions["Forest::GO_NORTH"].ledger_id
     assert any(e["entry"] == action_entry for e in data["ledger"])

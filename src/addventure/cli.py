@@ -58,6 +58,9 @@ def cmd_build(args: list[str]):
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
 
+    for warning in game.warnings:
+        print(f"⚠ {warning}", file=sys.stderr)
+
     # Reachability check
     from .validator import validate_reachability
     for warning in validate_reachability(game):

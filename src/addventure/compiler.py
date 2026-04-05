@@ -361,7 +361,8 @@ def resolve_interactions(game: GameData):
             game.suppressed_interactions.append(ix)
             continue
 
-        if ix.target_groups == [["*"]]:
+        if ix.target_groups == [["*"]] or (
+                len(ix.target_groups) == 2 and ix.target_groups[1] == ["*"]):
             # Collect entities that have explicit interactions with this verb
             explicit = set()
             for other in game.interactions:
