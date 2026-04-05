@@ -55,5 +55,26 @@ AIR_DUCT
 
   You made the right call.
 
+  ::: sealed
+  From the roof you can see all of it — the perimeter fence, the service road, the treeline beyond. People spilling out across the gravel in every direction.
+
+  Your companion sits down beside you, breathing hard. "I didn't think anyone was coming," they say.
+
+  You don't answer. Below, someone is helping an older man over a drainage ditch. Someone else is carrying a child.
+
+  Emergency lights are sweeping the far end of the facility — too late, too disorganised. Whatever authority this place had, it's broken now. You can feel it.
+
+  Your companion stands. "We should move."
+
+  "Yeah."
+
+  You take one more look. You want to remember it exactly like this.
+
+  Then you follow them down.
+
+  *Ending: Everyone Out*
+  :::
+
+
 PRISONER
 + LOOK: One of the freed prisoners. They followed you down here, eyes wide but determined.

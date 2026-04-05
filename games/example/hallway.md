@@ -38,3 +38,20 @@ EXIT_DOOR
   You punch in the code. The lock clicks green. The door swings open. Cold air hits your face. You're out.
 
   You don't look back.
+
+  ::: sealed
+  The light is wrong — too bright, too open after all that concrete.
+
+  You walk. Then run. Down a service road, through a gap in the perimeter fence, into a stand of pines. You don't stop until the facility is out of sight.
+
+  Later, you find a payphone. You know a journalist. You know what you saw.
+
+  You left them behind. You know that too. The faces at the windows. The one who mouthed *please.* You tell yourself you had no choice.
+
+  Maybe, with what you know now, you can do more good out here than you could have done in there.
+
+  You pick up the receiver. You dial.
+
+  *Ending: The Witness*
+  :::
+
