@@ -47,11 +47,11 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         ]
 
         disc_count = sum(
-            1 for ix in game.interactions if ix.room == room_name
-            for a in ix.arrows if a.destination == "room"
+            1 for n in game.nouns.values()
+            if n.room == room_name and n.state is None and n.discovered
         ) + sum(
-            1 for cue in game.cues if cue.target_room == room_name
-            for a in cue.arrows if a.destination == "room"
+            1 for a in game.actions.values()
+            if a.room == room_name and a.discovered
         )
 
         # Actions for this room (pre-printed only)
@@ -60,13 +60,6 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             for a in game.actions.values()
             if a.room == room_name and not a.discovered
         ]
-
-        # Count discoverable actions toward discovery slots
-        action_disc_count = sum(
-            1 for a in game.actions.values()
-            if a.room == room_name and a.discovered
-        )
-        disc_count += action_disc_count
 
         # Get room description from LOOK + @room interaction
         look_entry = writer._find_entry("LOOK", f"@{room_name}", room_name)

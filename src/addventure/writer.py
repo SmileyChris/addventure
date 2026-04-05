@@ -1,5 +1,5 @@
 from .models import GameData, ResolvedInteraction
-from .compiler import cue_targets_room_name, get_entity_id
+from .compiler import get_entity_id
 
 
 def _display_name(name: str) -> str:
@@ -242,19 +242,9 @@ class GameWriter:
 
     def _initial_objects(self, room_name: str):
         """Return visible objects in a room (excludes discovered-via-arrow objects)."""
-        discovered_names = set()
-        for ix in self.game.interactions:
-            for a in ix.arrows:
-                if a.destination == "room" and ix.room == room_name:
-                    discovered_names.add(a.subject)
-        for cue in self.game.cues:
-            if cue_targets_room_name(cue.target_room, room_name):
-                for a in cue.arrows:
-                    if a.destination == "room":
-                        discovered_names.add(a.subject)
         return [
             n for n in self.game.nouns.values()
-            if n.room == room_name and n.state is None and n.name not in discovered_names
+            if n.room == room_name and n.state is None and not n.discovered
         ]
 
     def _preprinted_actions(self, room_name: str):
@@ -281,11 +271,8 @@ class GameWriter:
             if rm.state is not None:
                 continue
             count = sum(
-                1 for ix in self.game.interactions if ix.room == room_name
-                for a in ix.arrows if a.destination == "room"
-            ) + sum(
-                1 for cue in self.game.cues if cue.target_room == room_name
-                for a in cue.arrows if a.destination == "room"
+                1 for n in self.game.nouns.values()
+                if n.room == room_name and n.state is None and n.discovered
             ) + sum(
                 1 for a in self.game.actions.values()
                 if a.room == room_name and a.discovered

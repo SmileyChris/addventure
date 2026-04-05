@@ -43,21 +43,9 @@ def validate_reachability(game: GameData) -> list[str]:
         initial_verbs.add(state_variant if state_variant else bv)
 
     # Initial visible objects per room (not discovered via arrows/cues)
-    discovered_names: dict[str, set[str]] = {}
-    for ix in game.interactions:
-        for a in ix.arrows:
-            if a.destination == "room":
-                discovered_names.setdefault(ix.room, set()).add(a.subject)
-    for cue in game.cues:
-        for a in cue.arrows:
-            if a.destination == "room":
-                for noun in game.nouns.values():
-                    if cue_targets_room_name(cue.target_room, noun.room):
-                        discovered_names.setdefault(noun.room, set()).add(a.subject)
-
     initial_objects = set()
     for key, n in game.nouns.items():
-        if n.state is None and n.name not in discovered_names.get(n.room, set()):
+        if n.state is None and not n.discovered:
             initial_objects.add((n.room, n.name))
     # Pre-printed actions tracked with > prefix
     for key, action in game.actions.items():

@@ -13,6 +13,7 @@ class Noun:
     state: str | None
     room: str
     id: int = 0
+    discovered: bool = False
 
 @dataclass
 class Item:

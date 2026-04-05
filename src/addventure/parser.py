@@ -213,8 +213,11 @@ def _parse_room_body(lines, i, game, room_name):
             elif not _is_header(stripped):
                 noun_name = stripped
                 base, state = _split_name(noun_name)
-                game.nouns[f"{room_name}::{noun_name}"] = Noun(
-                    noun_name, base, state, room_name
+                key = f"{room_name}::{noun_name}"
+                existing = game.nouns.get(key)
+                game.nouns[key] = Noun(
+                    noun_name, base, state, room_name,
+                    discovered=existing.discovered if existing else False,
                 )
                 i += 1
                 i = _parse_entity_block(lines, i, game, room_name, noun_name, 0)
@@ -229,7 +232,7 @@ def _parse_room_body(lines, i, game, room_name):
     return i
 
 
-def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent):
+def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent, propagated_arrows=None):
     """Parse children of an entity. Children are + or - lines indented deeper than entity_indent."""
     while i < len(lines):
         line = lines[i]
@@ -264,9 +267,11 @@ def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent):
                 arrow = _parse_arrow(content, i + 1)
                 if arrow.subject == "room":
                     arrow.subject = f"@{room_name}"
+                if propagated_arrows is not None:
+                    propagated_arrows.append(arrow)
                 arr_indent = _indent(line)
                 i += 1
-                i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1)
+                i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=propagated_arrows)
             else:
                 i += 1
         else:
@@ -410,7 +415,9 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
                 base, state = _split_name(subj)
                 key = f"{noun_room}::{subj}"
                 if key not in game.nouns:
-                    game.nouns[key] = Noun(subj, base, state, noun_room)
+                    game.nouns[key] = Noun(subj, base, state, noun_room, discovered=True)
+                else:
+                    game.nouns[key].discovered = True
         return i
 
     if dest == "trash":
@@ -445,7 +452,9 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
         base, state = _split_name(subject)
         key = f"{room_name}::{subject}"
         if key not in game.nouns:
-            game.nouns[key] = Noun(subject, base, state, room_name)
+            game.nouns[key] = Noun(subject, base, state, room_name, discovered=True)
+        else:
+            game.nouns[key].discovered = True
         return _parse_entity_block(lines, i, game, room_name, subject, child_indent - 1)
 
     # -> VERBNAME (verb reveal): skip, no children
@@ -473,7 +482,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
         key = f"{room_name}::{dest_name}"
         if key not in game.nouns:
             game.nouns[key] = Noun(dest_name, base, state, room_name)
-        return _parse_entity_block(lines, i, game, room_name, dest_name, child_indent - 1)
+        return _parse_entity_block(lines, i, game, room_name, dest_name, child_indent - 1, propagated_arrows=propagated_arrows)
 
 
 def _parse_room_state_children(lines, i, game, room_state_name, child_indent, propagated_arrows=None):
