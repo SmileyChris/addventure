@@ -457,7 +457,7 @@ LOOK: A small island.
 
 
 def test_blind_mode_actions():
-    """Blind mode should still render action entries and room sheet references."""
+    """In blind mode, actions merge into blank slot pool. LOOK reveals them."""
     global_src = "# Verbs\nLOOK\n\n# Items\n"
     room_src = """# Forest
 LOOK: A forest.
@@ -473,9 +473,16 @@ LOOK: A clearing.
     md, warnings = generate_markdown(game, blind=True)
     action = game.actions["Forest::GO_NORTH"]
     entry_prefix = game.metadata.get("entry_prefix", "A")
-    # Action should appear on room sheet and in ledger even in blind mode
-    assert "GO NORTH" in md
+    # Action entry should be in ledger
     assert f"{entry_prefix}-{action.ledger_id}" in md
+    # No separate "Actions" section in blind mode
+    assert "### Actions" not in md
+    # LOOK + @room should reveal the action via instructions
+    writer = GameWriter(game, blind=True)
+    look_ri = next(ri for ri in game.resolved
+                   if ri.verb == "LOOK" and ri.targets == ["@Forest"])
+    instructions = writer._generate_instructions(look_ri)
+    assert any("GO NORTH" in inst for inst in instructions)
 
 
 def test_freeform_interaction_with_action():

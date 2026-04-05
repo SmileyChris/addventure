@@ -117,6 +117,12 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
     start_room = writer._start_room()
 
     # Normalize discovery slots: all rooms get the max to avoid leaking info
+    # In blind mode, pre-printed actions are merged into the blank slot pool
+    if blind:
+        for room in rooms:
+            room["discovery_slots"] += len(room["actions"])
+            if room["name"] != start_room:
+                room["actions"] = []
     max_disc = max((r["discovery_slots"] for r in rooms), default=0)
     for room in rooms:
         room["discovery_slots"] = max_disc

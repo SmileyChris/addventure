@@ -231,6 +231,13 @@ class GameWriter:
                     f"Write {dn(obj.name)} ({obj.id}) in an object slot."
                 )
 
+        # Reveal pre-printed actions
+        prefix = self.entry_prefix
+        for action in self._preprinted_actions(room_name):
+            instructions.append(
+                f"Write {dn(action.name)} ({prefix}-{action.ledger_id}) in an object slot."
+            )
+
         return instructions
 
     def _initial_objects(self, room_name: str):
@@ -248,6 +255,13 @@ class GameWriter:
         return [
             n for n in self.game.nouns.values()
             if n.room == room_name and n.state is None and n.name not in discovered_names
+        ]
+
+    def _preprinted_actions(self, room_name: str):
+        """Return pre-printed actions in a room."""
+        return [
+            a for a in self.game.actions.values()
+            if a.room == room_name and not a.discovered
         ]
 
     def _start_room(self) -> str | None:

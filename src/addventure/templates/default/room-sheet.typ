@@ -63,9 +63,12 @@
     }
   ]
 
-  // Objects section
+  // Actions and objects
+  let prefix = if "entry_prefix" in room { room.entry_prefix } else { "A" }
+  let room-actions = if "actions" in room { room.actions } else { () }
   let obj-count = room.objects.len()
-  let total-slots = if blind { obj-count + room.discovery_slots } else { obj-count }
+  let act-count = room-actions.len()
+  let total-slots = if blind { obj-count + act-count + room.discovery_slots } else { obj-count }
 
   if total-slots > 0 {
     v(1em)
@@ -75,7 +78,7 @@
     if blind {
       // Blind mode: all slots are blank write-ins (objects + discoveries merged)
       if is-start {
-        // Start room: show names, blank ID slots
+        // Start room: show names, blank ID slots (objects + actions)
         for obj in room.objects {
           block(
             width: 100%,
@@ -86,6 +89,22 @@
               gutter: 0.5em,
               align(left + horizon)[
                 #strike-text(text(font: "Liberation Sans", size: 10pt)[#obj.name.replace("_", " ")])
+              ],
+              align(right + horizon)[#id-box(hide[000])],
+            )
+          ]
+          line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+        }
+        for act in room-actions {
+          block(
+            width: 100%,
+            below: 0.4em,
+          )[
+            #grid(
+              columns: (1fr, auto),
+              gutter: 0.5em,
+              align(left + horizon)[
+                #strike-text(text(font: "Liberation Sans", size: 10pt)[#act.name.replace("_", " ")])
               ],
               align(right + horizon)[#id-box(hide[000])],
             )
@@ -133,9 +152,8 @@
   }
 
   // Actions section (direct ledger references)
-  let prefix = if "entry_prefix" in room { room.entry_prefix } else { "A" }
-  let room-actions = if "actions" in room { room.actions } else { () }
-  if room-actions.len() > 0 {
+  // In blind mode, actions are merged into the blank slot pool above.
+  if room-actions.len() > 0 and not blind {
     v(1em)
     section-title("Actions")
     v(0.3em)

@@ -96,14 +96,18 @@ def _room_section(
     # Objects
     initial = writer._initial_objects(room_name)
 
+    preprinted_actions = writer._preprinted_actions(room_name)
+
     if blind:
-        total_slots = len(initial) + max_disc
+        total_slots = len(initial) + len(preprinted_actions) + max_disc
         if is_start:
             lines.append("\n### Objects\n")
             lines.append("| Object | ID |")
             lines.append("|--------|---:|")
             for n in initial:
                 lines.append(f"| {n.name} | `____` |")
+            for a in preprinted_actions:
+                lines.append(f"| {_display_name(a.name)} | `____` |")
         elif total_slots > 0:
             lines.append("\n### Objects\n")
             for _ in range(total_slots):
@@ -116,7 +120,7 @@ def _room_section(
             for n in initial:
                 lines.append(f"| {n.name} | {n.id} |")
 
-        if (not blind or is_start) and max_disc > 0:
+        if max_disc > 0:
             lines.append(
                 f"\n### Discoveries\n"
                 f"*If objects are discovered in this room, record them here.*\n"
@@ -124,18 +128,14 @@ def _room_section(
             for _ in range(max_disc):
                 lines.append("- ______________ `[____]`")
 
-    # Actions (pre-printed)
-    room_actions = [
-        a for a in game.actions.values()
-        if a.room == room_name and not a.discovered
-    ]
-    if room_actions:
-        lines.append("\n### Actions\n")
-        lines.append("| Action | Entry |")
-        lines.append("|--------|------:|")
-        entry_prefix_local = game.metadata.get("entry_prefix", "A")
-        for a in room_actions:
-            lines.append(f"| {_display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
+        # Actions (pre-printed) — only in non-blind mode
+        if preprinted_actions:
+            lines.append("\n### Actions\n")
+            lines.append("| Action | Entry |")
+            lines.append("|--------|------:|")
+            entry_prefix_local = game.metadata.get("entry_prefix", "A")
+            for a in preprinted_actions:
+                lines.append(f"| {_display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
 
     return "\n".join(lines)
 
