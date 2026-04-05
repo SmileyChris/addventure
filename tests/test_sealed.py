@@ -237,3 +237,40 @@ KEY
     assert len(data["sealed_texts"]) == 1
     assert data["sealed_texts"][0]["content"] == "The hidden chamber."
     assert "ref" in data["sealed_texts"][0]
+
+
+from addventure.jigsaw import compute_grid, interleave_pieces
+
+def test_compute_grid_basic():
+    grid = compute_grid(
+        content_w_mm=160, content_h_mm=50,
+        cols=4, target_cell_h_mm=25,
+    )
+    assert grid["cols"] == 4
+    assert grid["rows"] == 2
+    assert grid["cell_w_mm"] == pytest.approx(40.0)
+    assert grid["cell_h_mm"] == pytest.approx(25.0)
+
+def test_compute_grid_rounds_up():
+    grid = compute_grid(
+        content_w_mm=160, content_h_mm=60,
+        cols=4, target_cell_h_mm=25,
+    )
+    # 60/25 = 2.4 → ceil = 3 rows needed to cover content
+    assert grid["rows"] == 3
+
+def test_interleave_no_adjacent():
+    """Pieces should not be adjacent to their original neighbors."""
+    pieces = list(range(8))  # 4x2 grid, positions 0-7
+    cols = 4
+    result = interleave_pieces(pieces, cols)
+    assert len(result) == 8
+    assert set(result) == set(pieces)
+    # Check no original horizontal neighbors are adjacent in result
+    for i in range(len(result) - 1):
+        a, b = result[i], result[i + 1]
+        # Original neighbors: same row, columns differ by 1
+        a_row, a_col = divmod(a, cols)
+        b_row, b_col = divmod(b, cols)
+        if a_row == b_row:
+            assert abs(a_col - b_col) != 1, f"Pieces {a} and {b} are original neighbors"
