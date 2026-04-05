@@ -193,6 +193,8 @@ Jigsaw mode uses a two-pass approach to achieve accurate content measurement:
 
 **Pass 2 — Slice:** The main Typst compilation receives the grid data as JSON input. For each piece, Typst uses `box(clip: true)` with `move(dx, dy)` to show only the piece's portion of the full content block. Flipped pieces are wrapped in `rotate(180deg)`. The `align(left + top)` rule must be set inside each clip box to prevent alignment inheritance.
 
+**Border technique:** Each clip box is expanded by the stroke width (`kerf`) so that the stroke covers a thin strip of adjacent content rather than this piece's own content. The clip box is `cell-w + kerf` wide and offset by `-kerf/2`, so the border sits entirely outside the piece's actual content area. This prevents borders from obscuring text at any stroke width. Pass 1 uses a matching page margin so the content block has padding at the outer edges for the same purpose.
+
 ### Piece Layout
 
 - Pieces are rectangular (wider than tall), matching the natural shape of text content.
