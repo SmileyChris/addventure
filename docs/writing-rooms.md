@@ -129,11 +129,11 @@ Actions are direct ledger lookups — things the player can do without addition.
 ```markdown
 # Forest
 
-> GO_NORTH
+> GO NORTH
   You head north through the trees.
   - player -> "Clearing"
 
-> GO_SOUTH
+> GO SOUTH
   You retrace your steps to the village.
   - player -> "Village"
 ```
@@ -141,10 +141,6 @@ Actions are direct ledger lookups — things the player can do without addition.
 Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). The player just flips to that entry — no verb, no arithmetic.
 
 Actions are ideal for directional navigation, but they can do anything an interaction does: narrative, arrows, state changes.
-
-### Naming
-
-Action names follow the same rules as nouns: `ALL_CAPS` with underscores. The display name is prettified (`GO_NORTH` → "GO NORTH").
 
 ### Discoverable actions
 
@@ -156,7 +152,7 @@ HATCH
   You pry the hatch open.
   - HATCH -> trash
   - CROWBAR -> trash
-  > GO_DOWN
+  > GO DOWN
     You descend into darkness.
     - player -> "Basement"
 ```
@@ -171,7 +167,7 @@ Actions can be removed with `-> trash`, just like nouns:
 LEVER
 + USE:
   The bridge collapses behind you!
-  - GO_BACK -> trash
+  - GO BACK -> trash
 ```
 
 This generates "Cross out GO BACK on this room sheet."

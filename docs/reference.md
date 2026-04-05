@@ -92,7 +92,7 @@ Requires verb + entity + target (three IDs added).
 ### Actions
 
 ```markdown
-> ACTION_NAME
+> GO NORTH
   Narrative text.
   - player -> "Room Name"
 ```
@@ -129,13 +129,13 @@ Nested under the arrow that creates the state.
 | `-> VERB` | Reveal a new verb on the player's verb sheet (no subject) |
 | `VERB -> trash` | Remove a verb from the player's verb sheet |
 | `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
-| `ACTION_NAME -> trash` | Remove an action from the room sheet |
+| `ACTION NAME -> trash` | Remove an action from the room sheet |
 
 ## Special syntax
 
 | Syntax | Meaning |
 |---|---|
-| `> ACTION_NAME` | Declare an action (direct ledger lookup, no addition) |
+| `> ACTION NAME` | Declare an action (direct ledger lookup, no addition) |
 | `ENTITY__STATE` | Double-underscore separates base name from state |
 | `*` | Wildcard — matches all entities in the room |
 | `//` | Comment — ignored by the compiler |
