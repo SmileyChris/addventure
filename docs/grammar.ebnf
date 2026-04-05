@@ -42,9 +42,9 @@ description     = { text-line } ;
 
 global-section  = verbs-section | items-section ;
 
-verbs-section   = "# Verbs" , newline , { ENTITY-NAME , newline } ;
+verbs-section   = "# Verbs" , newline , { NAME , newline } ;
 
-items-section   = "# Items" , newline , { ENTITY-NAME , newline , [ entity-block(0) ] } ;
+items-section   = "# Items" , newline , { NAME , newline , [ noun-block(0) ] } ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -59,7 +59,7 @@ room-body       = { room-level-line } ;
 
 room-level-line = room-interaction          (* LOOK: desc  or  VERB + TARGET: *)
                 | room-arrow                (* subject -> dest *)
-                | entity-declaration        (* ENTITY-NAME at indent 0 *)
+                | noun-declaration          (* NAME at indent 0 *)
                 | action-declaration ;      (* > GO NORTH *)
 
 room-interaction = interaction-header ;     (* context entity = current room *)
@@ -68,20 +68,20 @@ room-arrow      = arrow ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
-(*  Entities                                                 *)
+(*  Nouns                                                    *)
 (* ══════════════════════════════════════════════════════════ *)
 
-entity-declaration = INDENT(0) , ENTITY-NAME , newline ,
-                     entity-block(0) ;
+noun-declaration = INDENT(0) , NAME , newline ,
+                   noun-block(0) ;
 
-(* entity-block(n): children of an entity declared at indent n.    *)
-(* + lines at indent n define interactions on the entity.          *)
-(* Deeper lines are nested content (narratives, arrows, children). *)
+(* noun-block(n): children of a noun declared at indent n.        *)
+(* + lines at indent n define interactions on the noun.           *)
+(* Deeper lines are nested content (narratives, arrows, children).*)
 (* - arrows at indent n are siblings, not children — they end the block. *)
 
-entity-block(n) = { INDENT(n) , "+" , " " , interaction-content(n)
+noun-block(n)   = { INDENT(n) , "+" , " " , interaction-content(n)
                   | INDENT(>n) , "-" , " " , arrow-line(>n)
-                  | INDENT(>n) , ENTITY-NAME , newline , entity-block(>n)
+                  | INDENT(>n) , NAME , newline , noun-block(>n)
                   } ;
 
 
@@ -92,9 +92,9 @@ entity-block(n) = { INDENT(n) , "+" , " " , interaction-content(n)
 interaction-header = [ "+" , " " ] , verb-target-spec , ":" , [ inline-narrative ] , newline ,
                      interaction-body ;
 
-verb-target-spec = VERB-NAME , { "+" , target-group } ;
+verb-target-spec = NAME , { "+" , target-group } ;
 
-target-group    = entity-ref , { "|" , entity-ref } ;
+target-group    = noun-ref , { "|" , noun-ref } ;
 
 interaction-body = { narrative-line | arrow-line | action-declaration } ;
 
@@ -108,19 +108,20 @@ arrow-line      = "-" , " " , arrow , newline , [ arrow-children ] ;
 (* ══════════════════════════════════════════════════════════ *)
 
 arrow           = subject , " -> " , destination
-                | " -> " , VERB-NAME ;        (* verb reveal: no subject *)
+                | " -> " , NAME ;             (* verb reveal: no subject *)
 
-subject         = entity-ref                  (* ENTITY, ENTITY__STATE *)
+subject         = noun-ref                    (* NOUN, NOUN__STATE *)
+                | action-name                 (* GO NORTH — action trash/removal *)
                 | "player"
                 | "room"
                 | "?" ;                       (* cue trigger *)
 
-destination     = "trash"                     (* destroy entity or verb *)
+destination     = "trash"                     (* destroy noun, verb, or action *)
                 | "player"                    (* move to inventory *)
                 | "room"                      (* reveal in current room, or revert room state *)
                 | quoted-room                 (* move to / reveal in named room *)
-                | entity-state-ref            (* transform: ENTITY__STATE *)
-                | ENTITY-NAME                 (* revert: ENTITY__STATE -> ENTITY *)
+                | noun-state-ref              (* transform: NOUN__STATE *)
+                | NAME                        (* revert: NOUN__STATE -> NOUN *)
                 | room-state-ref ;            (* transform: room__STATE *)
 
 quoted-room     = '"' , room-name , '"' ;
@@ -135,9 +136,9 @@ quoted-room     = '"' , room-name , '"' ;
 arrow-children  = arrow-children-trash        (* -> trash: skip deeper lines *)
                 | arrow-children-player       (* -> player: skip deeper lines *)
                 | arrow-children-movement     (* player -> "Room": nothing *)
-                | arrow-children-reveal       (* -> room: entity-block for subject *)
-                | arrow-children-remote       (* -> "Room": entity-block in target room *)
-                | arrow-children-transform    (* -> STATE: entity-block for new state *)
+                | arrow-children-reveal       (* -> room: noun-block for subject *)
+                | arrow-children-remote       (* -> "Room": noun-block in target room *)
+                | arrow-children-transform    (* -> STATE: noun-block for new state *)
                 | arrow-children-room-state   (* -> room__STATE: room-state-block *)
                 | arrow-children-cue          (* ? -> "Room": cue block *)
                 | arrow-children-verb-reveal  (* -> VERB: nothing *)
@@ -147,12 +148,12 @@ arrow-children-verb-reveal = (* empty — -> VERB has no children *) ;
 arrow-children-verb-trash  = (* empty — VERB -> trash has no children *) ;
 
 arrow-children-trash    = { INDENT(>arrow) , any-line } ;   (* consumed and ignored *)
-arrow-children-player   = entity-block ;                     (* optional + interactions override/suppress inventory duplicates *)
+arrow-children-player   = noun-block ;                       (* optional + interactions override/suppress inventory duplicates *)
 arrow-children-movement = (* empty — player -> "Room" has no children *) ;
 
-arrow-children-reveal   = entity-block ;      (* defines subject in current room *)
-arrow-children-remote   = entity-block ;      (* defines subject in target room *)
-arrow-children-transform = entity-block ;     (* defines the new entity state *)
+arrow-children-reveal   = noun-block ;        (* defines subject in current room *)
+arrow-children-remote   = noun-block ;        (* defines subject in target room *)
+arrow-children-transform = noun-block ;       (* defines the new noun state *)
 
 arrow-children-room-state = room-state-block ;
 
@@ -176,7 +177,7 @@ cue-block       = { INDENT(>arrow) , ( narrative-line | cue-arrow-line ) } ;
 
 cue-arrow-line  = "-" , " " , cue-arrow , newline ;
 
-cue-arrow       = entity-ref , " -> " , destination ;   (* arrows within the target room *)
+cue-arrow       = noun-ref , " -> " , destination ;   (* arrows within the target room *)
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -192,7 +193,7 @@ room-state-block = { INDENT(>=child) , ( room-state-interaction
 
 room-state-interaction = "+" , " " , interaction-content ;
 
-room-state-noun = [ "+" , " " ] , ENTITY-NAME , newline , entity-block ;
+room-state-noun = [ "+" , " " ] , NAME , newline , noun-block ;
 
 room-state-arrow = "-" , " " , arrow-line ;
 
@@ -223,18 +224,18 @@ interactions-section = "# Interactions" , newline ,
 freeform-interaction = freeform-header , newline ,
                        { INDENT(1+) , ( narrative-line | arrow-line ) } ;
 
-freeform-header = VERB-NAME , "+" , target-group , { "+" , target-group } , ":" ;
+freeform-header = NAME , "+" , target-group , { "+" , target-group } , ":" ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
-(*  Entity references                                        *)
+(*  Noun references                                          *)
 (* ══════════════════════════════════════════════════════════ *)
 
-entity-ref      = ENTITY-NAME                 (* e.g. TERMINAL, CRATE *)
-                | entity-state-ref            (* e.g. TERMINAL__UNLOCKED *)
-                | "*" ;                       (* wildcard: all entities in room *)
+noun-ref        = NAME                        (* e.g. TERMINAL, CRATE *)
+                | noun-state-ref              (* e.g. TERMINAL__UNLOCKED *)
+                | "*" ;                       (* wildcard: all nouns in room *)
 
-entity-state-ref = ENTITY-NAME , "__" , STATE-NAME ;
+noun-state-ref  = NAME , "__" , STATE-NAME ;
 
 room-state-ref  = "room__" , STATE-NAME ;     (* current room state transform *)
 
@@ -243,9 +244,8 @@ room-state-ref  = "room__" , STATE-NAME ;     (* current room state transform *)
 (*  Terminals                                                *)
 (* ══════════════════════════════════════════════════════════ *)
 
-ENTITY-NAME     = UPPER , { UPPER | DIGIT | "_" } ;      (* e.g. TERMINAL, WALL_PANEL *)
+NAME            = UPPER , { UPPER | DIGIT | "_" } ;      (* e.g. TERMINAL, WALL_PANEL, LOOK *)
 STATE-NAME      = UPPER , { UPPER | DIGIT | "_" } ;      (* e.g. UNLOCKED, OPEN *)
-VERB-NAME       = ENTITY-NAME ;                           (* verbs use same naming *)
 room-name       = ? any text not containing newline ? ;   (* e.g. Control Room *)
 
 UPPER           = "A" | "B" | ... | "Z" ;
