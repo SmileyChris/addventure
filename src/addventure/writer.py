@@ -24,9 +24,10 @@ class GameWriter:
       - Physical sheet layout decisions
     """
 
-    def __init__(self, game: GameData, blind: bool = False):
+    def __init__(self, game: GameData, blind: bool = False, jigsaw: bool = False):
         self.game = game
         self.blind = blind
+        self.jigsaw = jigsaw
         self.entry_prefix = game.metadata.get("entry_prefix", "A")
         self.name_style = game.metadata.get("name_style", "upper_words")
         self.warnings: list[str] = []
@@ -202,6 +203,17 @@ class GameWriter:
                 instructions.append(
                     f"Cross out {cue.id} from your Cue Checks."
                 )
+
+        # Sealed text: append instruction to open/assemble sealed content
+        sealed = next(
+            (st for st in self.game.sealed_texts if st.entry_number == ri.entry_number),
+            None
+        )
+        if sealed:
+            if self.jigsaw:
+                instructions.append(f"Find and assemble the {sealed.ref} pieces.")
+            else:
+                instructions.append(f"Turn to Sealed Text {sealed.ref}.")
 
         # Blind mode: append room reveal instructions for LOOK + @room
         if self.blind:

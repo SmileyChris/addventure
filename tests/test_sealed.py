@@ -1,6 +1,7 @@
 from addventure.models import SealedText, Interaction, GameData
 from addventure.compiler import compile_game
 from addventure.parser import ParseError
+from addventure.writer import GameWriter
 import pytest
 
 def test_sealed_text_dataclass():
@@ -159,3 +160,39 @@ KEY
     # Find the resolved interaction
     ri = next(r for r in game.resolved if r.verb == "USE")
     assert st.entry_number == ri.entry_number
+
+def test_sealed_instruction_extended_ledger():
+    global_src = "# Verbs\nUSE\n\n# Items\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  You turn the key.
+
+  ::: sealed
+  Secret text.
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    ri = next(r for r in game.resolved if r.verb == "USE" and "KEY" in r.targets)
+    instructions = writer._generate_instructions(ri)
+    st = game.sealed_texts[0]
+    assert any(f"Turn to Sealed Text {st.ref}" in inst for inst in instructions)
+
+def test_sealed_instruction_jigsaw():
+    global_src = "# Verbs\nUSE\n\n# Items\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  You turn the key.
+
+  ::: sealed
+  Secret text.
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game, jigsaw=True)
+    ri = next(r for r in game.resolved if r.verb == "USE")
+    instructions = writer._generate_instructions(ri)
+    st = game.sealed_texts[0]
+    assert any(f"Find and assemble the {st.ref} pieces" in inst for inst in instructions)
