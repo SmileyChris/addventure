@@ -88,7 +88,7 @@
             #strike-text(text(font: "Liberation Sans", size: 10pt)[#act.name.replace("_", " ")])
           ],
           align(right + horizon)[
-            #text(font: "Liberation Sans", size: 10pt, weight: "bold")[#prefix\-#str(act.entry)]
+            #id-box(prefix + "-" + str(act.entry), crossable: true)
           ],
         )
       ]
