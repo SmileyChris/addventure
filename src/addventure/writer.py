@@ -356,6 +356,7 @@ def print_build_summary(game: GameData, file=None):
         return f"{n} {word}" if n != 1 else f"{n} {word.rstrip('s')}"
 
     action_count = len({a.ledger_id for a in game.actions.values()})
+    sealed_count = len(game.sealed_texts)
     parts = [
         p(len(game.verbs), "verbs"),
         p(len(game.rooms), "rooms"),
@@ -364,5 +365,6 @@ def print_build_summary(game: GameData, file=None):
         p(len(game.resolved) + action_count, "entries"),
         p(len(game.cues), "cues"),
         p(len(game.actions), "actions"),
+        p(sealed_count, "sealed texts"),
     ]
     print(f"✓ {', '.join(parts)}", file=file)
