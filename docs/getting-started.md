@@ -4,23 +4,29 @@ This guide walks you through creating and compiling your first Addventure game.
 
 ## Prerequisites
 
-- **Python 3.10+**
 - **[uv](https://docs.astral.sh/uv/)** — Python package runner
-- **[Typst](https://typst.app/)** (optional) — for PDF output. If Typst isn't installed, Addventure falls back to plain text.
+- **[Typst](https://typst.app/)** (optional) — for PDF output. Without it, use `--md` for plain text.
 
-## Install Addventure
+## Running Addventure
 
-Clone the repository and you're ready to go:
+Install once with uv:
 
 ```bash
-git clone https://github.com/user/addventure.git
-cd addventure
+uv tool install addventure
 ```
+
+This puts the `adv` command in your PATH. For a one-off run without installing:
+
+```bash
+uvx --from addventure adv build games/sunken-library
+```
+
+The rest of this guide uses `adv` for brevity.
 
 ## Scaffold a new game
 
 ```bash
-uv run adv new "Sunken Library"
+adv new "Sunken Library"
 ```
 
 This creates a game directory with a starter `index.md`:
@@ -33,7 +39,7 @@ games/sunken-library/
 For an interactive setup (choose your own verbs, set an author name):
 
 ```bash
-uv run adv new
+adv new
 ```
 
 ## The index file
@@ -98,20 +104,20 @@ Let's break this down:
 Compile to PDF:
 
 ```bash
-uv run adv build games/sunken-library
+adv build games/sunken-library
 ```
 
 Or markdown if you don't have Typst:
 
 ```bash
-uv run adv build games/sunken-library --md
+adv build games/sunken-library --md
 ```
 
 You can also build from inside the game directory:
 
 ```bash
 cd games/sunken-library
-uv run adv build
+adv build
 ```
 
 The PDF contains all the sheets players need — print it out and play.
@@ -121,7 +127,7 @@ The PDF contains all the sheets players need — print it out and play.
 Addventure ships with a complete example game you can study:
 
 ```bash
-uv run adv build games/example
+adv build games/example
 ```
 
 Look at the files in `games/example/` to see a full game with entity states, multi-target interactions, verb states, and room transitions.
