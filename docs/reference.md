@@ -215,13 +215,13 @@ IDs are re-randomized on each build.
 ## CLI commands
 
 ```bash
-uv run addventure build [dir]                    # Compile to PDF (default)
-uv run addventure build [dir] --md              # Compile to markdown
-uv run addventure build [dir] -o FILE           # Custom output path
-uv run addventure build [dir] --paper a4        # Paper size: a4 (default), letter, legal
-uv run addventure build [dir] --blind           # Blind mode: room names/IDs hidden until discovered
-uv run addventure build [dir] --fragment MODE   # Fragment output mode (see below)
-uv run addventure new [name]                    # Scaffold a new game
+addventure build [dir]                    # Compile to PDF (default)
+addventure build [dir] --md              # Compile to markdown
+addventure build [dir] -o FILE           # Custom output path
+addventure build [dir] --paper a4        # Paper size: a4 (default), letter, legal
+addventure build [dir] --blind           # Blind mode: room names/IDs hidden until discovered
+addventure build [dir] --fragment MODE   # Fragment output mode (see below)
+addventure new [name]                    # Scaffold a new game
 ```
 
 If no directory is given, `addventure build` looks for `index.md` in the current directory, then falls back to `games/example`.

@@ -113,8 +113,12 @@
   font-family: "Montserrat", sans-serif;
   color: #d4c5a9;
   font-weight: 900;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.md-typeset h1,
+.md-typeset h2 {
+  text-transform: uppercase;
 }
 
 .md-typeset h1 {

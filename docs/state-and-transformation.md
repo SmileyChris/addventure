@@ -39,7 +39,7 @@ The entity disappears from the room sheet and appears on the player's inventory 
 - CROWBAR -> trash
 ```
 
-The entity is gone. The story entry tells the player to cross it out permanently.
+The entity is gone. The story entry tells the player to cross it out permanently. Verbs can be trashed the same way — `- EXAMINE -> trash` removes a verb from the player's verb sheet, making any interactions using it inaccessible.
 
 ### `room` — place in the current room
 
@@ -47,7 +47,7 @@ The entity is gone. The story entry tells the player to cross it out permanently
 - KEYCARD -> room
 ```
 
-The entity appears on the current room sheet. Use this to reveal hidden objects or drop items from interactions.
+The entity appears on the current room sheet. Use this to reveal hidden objects or drop items from the player's inventory.
 
 !!! tip "Mention what appears"
     The story entry instructs the player to write the new entity on their room sheet, but it doesn't explain *what* it is — the narrative does. Make sure your narrative text describes what the player found, or the instruction to "Write KEYCARD" comes out of nowhere.
@@ -68,7 +68,7 @@ To affect another room *without* moving the player there, use [cue checks](advan
 - CRATE -> CRATE__OPEN
 ```
 
-The entity changes state. On paper, the player crosses out the old ID and writes in a new one. The new state can have its own interactions (see below).
+The entity changes state. On paper, the player crosses out the old ID and writes in a new one. The new state can have its own interactions (see [Entity states](#entity-states) below). Only nouns and rooms can have states — inventory items cannot.
 
 You can also revert to the base state:
 
@@ -76,13 +76,13 @@ You can also revert to the base state:
 - CRATE__OPEN -> CRATE
 ```
 
-### Verb state — transform a verb
+### `VERB__STATE` — transform a verb
 
 ```markdown
 - USE -> USE__RESTRAINED
 ```
 
-Changes a verb's ID. On the verb sheet, the player crosses out the old ID and writes the new one. This makes the verb behave differently — any interactions defined for `USE__RESTRAINED` now activate instead of the normal `USE` interactions.
+Changes a verb's ID. On the verb sheet, the player crosses out the old ID and writes the new one. This makes the verb behave differently — any interactions defined for `USE__RESTRAINED` now activate instead of the normal `USE` interactions. Use this to temporarily replace a verb's behaviour — for example, blocking all USE actions while the player is restrained. See [Advanced Mechanics](advanced.md#verb-states) for a complete walkthrough.
 
 ### `-> VERB` — reveal a new verb
 
@@ -104,17 +104,9 @@ WIDGET
   You reshape the widget into something new.
 ```
 
-### `VERB -> trash` — remove a verb
-
-```markdown
-- EXAMINE -> trash
-```
-
-Removes a verb from play. The story entry tells the player to cross it out on their verb sheet. Any interactions using that verb become inaccessible.
-
 ## Entity states
 
-States let an entity change its behavior after something happens. The double-underscore separates the base name from the state: `CRATE__OPEN`, `TERMINAL__UNLOCKED`, `DOOR__BROKEN`.
+States let a noun or room change its behaviour after something happens. Items in the player's inventory cannot have states. The double-underscore separates the base name from the state: `CRATE__OPEN`, `TERMINAL__UNLOCKED`, `DOOR__BROKEN`.
 
 Define state-specific interactions by nesting them under the arrow that creates the state:
 
@@ -138,9 +130,9 @@ After the player pries open the crate:
 
 When an entity changes state, the new state **inherits observations** (arrow-free interactions like LOOK) from the base entity that aren't explicitly overridden. In the example above, if `CRATE__OPEN` didn't define its own LOOK, it would inherit the base `CRATE`'s LOOK text.
 
-Actions — interactions that have arrows (state changes, movement, destruction) — are **not** inherited. This prevents game-altering mechanics from silently carrying over to states where they may not make sense.
+**Actions — interactions that have arrows — are never inherited.** If a state needs a TAKE, USE, or any other action, you must define it explicitly on that state. This prevents game-altering mechanics from silently carrying over to states where they don't belong.
 
-This means you only need to define what's *different* about the new state's observations, but any actions must be explicitly defined on each state that needs them.
+In practice: only define observations (like LOOK) that differ from the base — the rest are inherited. But any actions the new state should support (TAKE, USE, etc.) must be written out explicitly, since they are never carried over automatically.
 
 ## Room states
 
@@ -219,7 +211,7 @@ This prevents USE from being auto-duplicated, without creating a ledger entry.
 
 ### Pre-equipped items
 
-Items defined in `# Items` can have their own interaction blocks:
+Items defined in `# Items` start directly in the player's inventory — they have no room noun and never need to be picked up. They can have their own interaction blocks:
 
 ````markdown
 # Items

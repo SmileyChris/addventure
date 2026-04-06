@@ -56,7 +56,16 @@ Here's what's happening:
 1. `USE__RESTRAINED` is a verb state. If the player starts with their verb sheet showing `USE__RESTRAINED` instead of `USE`, every attempt to USE anything triggers the wildcard response.
 2. When the player cuts the bindings, the arrow `USE__RESTRAINED -> USE` restores the normal verb. On paper, the player crosses out the `USE__RESTRAINED` ID on their verb sheet and writes in the real `USE` ID.
 
-To start the game with a modified verb, you'd set it up in your starting room's state or an initial interaction.
+To start the game with a modified verb, list the state variant in `# Verbs` instead of the base verb:
+
+```markdown
+# Verbs
+USE__RESTRAINED
+TAKE
+LOOK
+```
+
+The player begins with `USE__RESTRAINED` on their verb sheet. Once they cut the bindings, the arrow `USE__RESTRAINED -> USE` replaces it with the normal verb.
 
 ## Adding and removing verbs
 
@@ -152,6 +161,24 @@ The `# Items` section in `index.md` is only needed for items that **never exist 
 - Items available from the start that aren't in any room
 
 **Note:** A game must have a `TAKE` verb defined if any noun uses `-> player`.
+
+## Name style
+
+By default, identifiers are rendered for players in upper words: `GO_NORTH` becomes **GO NORTH**, `RUSTY_KEY` becomes **RUSTY KEY**. You can change this with the `name_style` frontmatter key in `index.md`:
+
+```markdown
+---
+title: My Game
+name_style: title
+---
+```
+
+| Value | Example |
+|---|---|
+| `upper_words` (default) | GO NORTH, RUSTY KEY |
+| `title` | Go North, Rusty Key |
+
+This affects how verbs, nouns, items, states, and actions are displayed on the printed sheets. It does not affect free-text room names or narrative prose.
 
 ## Cue checks (cross-room effects)
 
@@ -273,7 +300,7 @@ Entries are **not** merged when:
 
 **Name things clearly.** `RUSTY_KEY` is better than `KEY2`. Players see these names on their sheets.
 
-**Test by building often.** Run `uv run addventure build --md` frequently as you write. The compiler catches errors (undefined entities, bad arrows) and reports them with line numbers.
+**Test by building often.** Run `addventure build --md` frequently as you write. The compiler catches errors (undefined entities, bad arrows) and reports them with line numbers.
 
 **Think about the paper experience.** Every state change means the player has to cross something out and write something new. Complex chains of arrows create complex instructions — keep it manageable.
 
