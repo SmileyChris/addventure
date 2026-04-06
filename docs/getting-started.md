@@ -5,7 +5,7 @@ This guide walks you through creating and compiling your first Addventure game.
 ## Prerequisites
 
 - **[uv](https://docs.astral.sh/uv/)** — Python package runner
-- **[Typst](https://typst.app/)** (optional) — for PDF output. Without it, use `--md` for plain text.
+- **[Typst](https://typst.app/)** (optional, recommended) — for PDF output. Without it, use `--md` for plain text.
 
 ## Running Addventure
 
