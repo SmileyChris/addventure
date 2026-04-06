@@ -23,7 +23,6 @@ Games are directories of `.md` files. Each game directory needs an `index.md` (m
 
 ```
 pyproject.toml             # Package config — `uv run addventure` entry point
-addventure.py              # Legacy entry point (delegates to cli.py)
 src/addventure/
   __init__.py              # Re-exports: compile_game, GameWriter, print_build_summary
   cli.py                   # CLI: `addventure build`, `addventure new` subcommands

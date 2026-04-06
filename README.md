@@ -20,12 +20,12 @@ The player's loop: pick a verb, pick a target, add the IDs, look up the sum. If 
 Python 3.10+. Uses [uv](https://docs.astral.sh/uv/) as the runner. PDF output requires [Typst](https://typst.app/) installed on your system.
 
 ```bash
-uv run adv run                     # compile example game to PDF (example.pdf)
-uv run adv run games/example       # same thing, explicit path
-uv run adv run path/to/game        # your own game
-uv run adv run --text              # plain text output instead of PDF
-uv run adv run -o output.pdf       # custom output path
-uv run adv new my-game             # scaffold a new game directory
+uv run addventure build                     # compile example game to PDF (example.pdf)
+uv run addventure build games/example       # same thing, explicit path
+uv run addventure build path/to/game        # your own game
+uv run addventure build --md                # markdown output instead of PDF
+uv run addventure build -o output.pdf       # custom output path
+uv run addventure new my-game               # scaffold a new game directory
 ```
 
 If `typst` is not on your PATH, the compiler falls back to plain text output automatically.
@@ -126,7 +126,7 @@ USE__RESTRAINED + *:
 
 ## Example Output
 
-Running `uv run adv run` generates a PDF with sheets like:
+Running `uv run addventure build` generates a PDF with sheets like:
 
 ```
 THE FACILITY — VERB SHEET
