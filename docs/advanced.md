@@ -35,6 +35,65 @@ CELL_DOOR
 
 Here KEY is an inventory object. The player needs to have it (on their inventory sheet) to compute the correct sum.
 
+### Room and inventory objects
+
+**Room objects** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
+
+**Inventory objects** live on the inventory sheet. They travel with the player between rooms.
+
+When a room object has a `-> player` arrow, the compiler automatically creates an inventory version. The player crosses out the room object on their room sheet and writes the inventory ID on their inventory sheet. The inventory ID is derived from the TAKE verb: `TAKE ID + room object ID`.
+
+This means you don't need to declare inventory objects in `# Inventory` for things the player picks up — just write the room object in a room with a TAKE interaction:
+
+```markdown
+KEYCARD
++ LOOK: A small keycard with a red stripe.
++ TAKE:
+  You pocket the keycard.
+  - KEYCARD -> player
+```
+
+Most interactions on the room object (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried objects. The exception is acquisition interactions — those where the only arrow is `-> player` (the sole purpose is picking the object up). These aren't duplicated since re-acquiring from inventory is meaningless.
+
+The `# Inventory` section in `index.md` is only needed for inventory objects that **never exist as room objects**:
+
+- Crafted objects (combining two things produces a new object)
+- Abstract rewards or tokens
+- Objects available from the start that aren't in any room
+
+**Note:** A game must have a `TAKE` verb defined if any room object uses `-> player`.
+
+### The Interactions section
+
+Some interactions don't belong to a specific room object — they apply to the room as a whole or involve standalone logic. Put these in a `## Interactions` section at the bottom of a room file:
+
+```markdown
+# Control Room
+LOOK: Fluorescent lights buzz overhead.
+
+TERMINAL
++ LOOK: A dusty CRT monitor.
+
+## Interactions
+
+USE + KNIFE + BINDINGS:
+  You saw through the rope.
+  - BINDINGS -> trash
+```
+
+Interactions in this section follow the same syntax but aren't nested under a room object.
+
+### Wildcards
+
+The `*` wildcard matches all entities in the current room. Use it for catch-all responses:
+
+```markdown
+USE__RESTRAINED + *:
+  You strain against the bindings. No use.
+```
+
+This creates an interaction for every entity the player could target. It's useful for verb states that should block all normal actions, or for generic responses before a puzzle is solved.
+
 ## Verbs
 
 ### Verb states
@@ -106,65 +165,6 @@ Use `VERB -> trash` to permanently remove a verb:
 ```
 
 The ledger tells the player to cross out the verb on their verb sheet. Any interactions using that verb become inaccessible.
-
-### The Interactions section
-
-Some interactions don't belong to a specific room object — they apply to the room as a whole or involve standalone logic. Put these in a `## Interactions` section at the bottom of a room file:
-
-```markdown
-# Control Room
-LOOK: Fluorescent lights buzz overhead.
-
-TERMINAL
-+ LOOK: A dusty CRT monitor.
-
-## Interactions
-
-USE + KNIFE + BINDINGS:
-  You saw through the rope.
-  - BINDINGS -> trash
-```
-
-Interactions in this section follow the same syntax but aren't nested under a room object.
-
-### Wildcards
-
-The `*` wildcard matches all entities in the current room. Use it for catch-all responses:
-
-```markdown
-USE__RESTRAINED + *:
-  You strain against the bindings. No use.
-```
-
-This creates an interaction for every entity the player could target. It's useful for verb states that should block all normal actions, or for generic responses before a puzzle is solved.
-
-### Room and inventory objects
-
-**Room objects** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
-
-**Inventory objects** live on the inventory sheet. They travel with the player between rooms.
-
-When a room object has a `-> player` arrow, the compiler automatically creates an inventory version. The player crosses out the room object on their room sheet and writes the inventory ID on their inventory sheet. The inventory ID is derived from the TAKE verb: `TAKE ID + room object ID`.
-
-This means you don't need to declare inventory objects in `# Inventory` for things the player picks up — just write the room object in a room with a TAKE interaction:
-
-```markdown
-KEYCARD
-+ LOOK: A small keycard with a red stripe.
-+ TAKE:
-  You pocket the keycard.
-  - KEYCARD -> player
-```
-
-Most interactions on the room object (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried objects. The exception is acquisition interactions — those where the only arrow is `-> player` (the sole purpose is picking the object up). These aren't duplicated since re-acquiring from inventory is meaningless.
-
-The `# Inventory` section in `index.md` is only needed for inventory objects that **never exist as room objects**:
-
-- Crafted objects (combining two things produces a new object)
-- Abstract rewards or tokens
-- Objects available from the start that aren't in any room
-
-**Note:** A game must have a `TAKE` verb defined if any room object uses `-> player`.
 
 ## Cue checks (cross-room effects)
 
