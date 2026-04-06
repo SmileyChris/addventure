@@ -8,7 +8,7 @@ Players solve games using only pencil, paper, and arithmetic. No electronics at 
 
 You write game scripts in markdown. Addventure compiles them into a printable PDF (or plain text) with everything players need to play.
 
-The core mechanic: every verb and every entity in the game has a numeric ID. To interact with something, the player **adds** the verb ID to the entity ID, looks up the sum in a potentials list, and reads the corresponding story entry.
+The core mechanic: every verb and every object in the game has a numeric ID. To interact with something, the player **adds** the verb ID to the object ID, looks up the sum in a potentials list, and reads the corresponding story entry.
 
 ```
 LOOK (51) + TERMINAL (951) = 1002 → Read entry A-5
@@ -30,7 +30,7 @@ A compiled game produces four types of sheet:
 :   Tracks carried inventory objects and their IDs. The potentials list maps every valid sum to a story entry number — this is the lookup table players use after adding.
 
 **Story Ledger**
-:   Numbered narrative entries. Each contains a passage of story text and instructions: cross out an entity, write a new ID, move an object to your inventory, go to a different room.
+:   Numbered narrative entries. Each contains a passage of story text and instructions: cross out an object, write a new ID, move an object to your inventory, go to a different room.
 
 ## A player's turn
 
