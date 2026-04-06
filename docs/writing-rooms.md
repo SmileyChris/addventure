@@ -1,6 +1,6 @@
 # Writing Rooms
 
-Every `.md` file in your game directory (besides `index.md`) defines one or more rooms. Files are loaded alphabetically, but the order doesn't affect gameplay.
+Every `.md` file in your game directory (besides `index.md`) defines a room. Files are loaded alphabetically, but the order doesn't affect gameplay.
 
 ## Room headers
 
@@ -10,7 +10,7 @@ A room starts with a `#` header. The header text becomes the room name:
 # Engine Room
 ```
 
-You can define multiple rooms in one file, but one room per file is easier to manage.
+You can define multiple rooms in one file if you prefer, but one room per file is easier to manage.
 
 ## Room descriptions
 
