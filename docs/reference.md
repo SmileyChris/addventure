@@ -21,7 +21,7 @@ addventure build [dir] --fragment MODE   # Fragment output mode (see below)
 addventure new [name]                    # Scaffold a new game
 ```
 
-If no directory is given, `addventure build` looks for `index.md` in the current directory, then falls back to `games/example`.
+If no directory is given, `addventure build` looks for `index.md` in the current directory.
 
 ### Fragment modes
 
