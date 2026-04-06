@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "addventure"
 version = "1.2.0"
-description = "Compiler and writer for paper-based text adventures where addition IS the parser"
+description = "Write interactive fiction played with pencil, paper, and addition"
 readme = "README.md"
 license = "MPL-2.0"
 requires-python = ">=3.10"
 authors = [
     { name = "Chris Beaven" },
 ]
-keywords = ["text-adventure", "game", "compiler", "paper", "tabletop", "pdf"]
+keywords = ["interactive-fiction", "text-adventure", "game", "compiler", "paper", "tabletop", "pdf"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",

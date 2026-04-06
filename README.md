@@ -1,8 +1,8 @@
 # Addventure
 
-A compiler for paper-based text adventures where **addition is the parser**.
+Write interactive fiction played with pencil, paper, and addition.
 
-Players solve games using only pencil, paper, and arithmetic: look up a Verb ID and an Entity ID, add them together, find the sum in a potentials list, then read the corresponding ledger entry. No electronics needed at the table.
+Players solve games by looking up a Verb ID and an Object ID, adding them together, finding the sum in a potentials list, and reading the corresponding ledger entry. No electronics needed at the table.
 
 ## How It Works
 

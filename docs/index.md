@@ -1,6 +1,6 @@
 # Addventure
 
-A compiler for paper-based text adventures where **addition is the parser**.
+Write interactive fiction played with pencil, paper, and addition.
 
 Players solve games using only pencil, paper, and arithmetic. No electronics at the table — just printed sheets and a bit of addition.
 
