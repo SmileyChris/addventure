@@ -2,7 +2,9 @@
 
 Once you're comfortable with rooms, room objects, interactions, and arrows, these features let you build richer puzzles.
 
-## Multi-target interactions
+## Objects
+
+### Multi-target interactions
 
 Some puzzles require combining two things. Multi-target interactions use a verb with two entities:
 
@@ -18,7 +20,7 @@ The syntax is `+ VERB + TARGET:` on the entity that "receives" the action. The p
 
 The second target can be any room object or inventory object — including things in the player's inventory. This is how you create "use X with Y" puzzles.
 
-### Multi-target on inventory objects
+#### Multi-target on inventory objects
 
 Inventory objects (defined in `index.md`) can be used as the second target in any room. The player adds the verb ID + entity ID + inventory object ID to get the sum.
 
@@ -33,7 +35,9 @@ CELL_DOOR
 
 Here KEY is an inventory object. The player needs to have it (on their inventory sheet) to compute the correct sum.
 
-## Verb states
+## Verbs
+
+### Verb states
 
 Just as entities can change state, so can verbs. This lets you change what an action *does* partway through the game.
 
@@ -67,11 +71,11 @@ LOOK
 
 The player begins with `USE__RESTRAINED` on their verb sheet. Once they cut the bindings, the arrow `USE__RESTRAINED -> USE` replaces it with the normal verb.
 
-## Adding and removing verbs
+### Adding and removing verbs
 
 Beyond changing verb *state*, you can add entirely new verbs or remove existing ones mid-game.
 
-### Revealing a new verb
+#### Revealing a new verb
 
 Use `-> VERBNAME` (an arrow with no subject) to grant the player a new ability:
 
@@ -91,7 +95,7 @@ WIDGET
   You reshape the widget into something useful.
 ```
 
-### Removing a verb
+#### Removing a verb
 
 Use `VERB -> trash` to permanently remove a verb:
 
@@ -103,7 +107,7 @@ Use `VERB -> trash` to permanently remove a verb:
 
 The ledger tells the player to cross out the verb on their verb sheet. Any interactions using that verb become inaccessible.
 
-## The Interactions section
+### The Interactions section
 
 Some interactions don't belong to a specific room object — they apply to the room as a whole or involve standalone logic. Put these in a `## Interactions` section at the bottom of a room file:
 
@@ -123,7 +127,7 @@ USE + KNIFE + BINDINGS:
 
 Interactions in this section follow the same syntax but aren't nested under a room object.
 
-## Wildcards
+### Wildcards
 
 The `*` wildcard matches all entities in the current room. Use it for catch-all responses:
 
@@ -134,7 +138,7 @@ USE__RESTRAINED + *:
 
 This creates an interaction for every entity the player could target. It's useful for verb states that should block all normal actions, or for generic responses before a puzzle is solved.
 
-## Room and inventory objects
+### Room and inventory objects
 
 **Room objects** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
 
