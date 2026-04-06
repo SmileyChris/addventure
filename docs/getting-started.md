@@ -73,7 +73,8 @@ Create a new file `games/sunken-library/reading_room.md`:
 
 ```markdown
 # Reading Room
-LOOK: Water-stained shelves sag under the weight of ruined books. A faint glow pulses from somewhere beneath the debris.
+LOOK: Water-stained shelves sag under the weight of ruined books. A faint
+  glow pulses from somewhere beneath the debris.
 
 DESK
 + LOOK: A heavy oak desk, mostly intact. Papers are scattered across it.

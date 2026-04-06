@@ -433,11 +433,14 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
 
     arrows = []
     sealed_content = None
+    blank_line_seen = False
 
     while i < len(lines):
         bline = lines[i]
         bstripped = bline.strip()
         if not bstripped or _is_comment(bstripped):
+            if narrative:
+                blank_line_seen = True
             i += 1
             continue
         if _indent(bline, i + 1) <= current_indent or _is_header(bline):
@@ -452,6 +455,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             arrows.append(arrow)
             arr_indent = _indent(bline, i + 1)
             i += 1
+            blank_line_seen = False
             i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=arrows)
         elif bmarker == "+":
             # A + line inside an interaction is a child of a prior arrow's state
@@ -482,14 +486,20 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
         elif _is_action(bstripped):
             action_name = bstripped[2:].strip()
             action_line = i + 1
+            blank_line_seen = False
             i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=current_indent)
             arrows.append(Arrow(f">{action_name}", "room", action_line))
         elif _is_narrative(bstripped) and not narrative:
             narrative = bstripped
+            blank_line_seen = False
             i += 1
         elif _is_narrative(bstripped) and narrative:
-            # Additional narrative lines — new paragraph
-            narrative += "\n\n" + bstripped
+            # Blank line since last narrative = new paragraph; otherwise same paragraph
+            if blank_line_seen:
+                narrative += "\n\n" + bstripped
+            else:
+                narrative += " " + bstripped
+            blank_line_seen = False
             i += 1
         else:
             raise ParseError(i + 1, f"Unexpected line in interaction body: {bstripped}")

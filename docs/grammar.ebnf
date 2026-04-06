@@ -172,6 +172,8 @@ interaction-body-line(m) = narrative-line(m)
                          | action-line(m) ;
 
 narrative-line(m) = indent(m) , text , newline ;
+(* Consecutive narrative-lines (no blank-line between) are joined as one paragraph.
+   A blank-line between narrative-lines starts a new paragraph. *)
 
 (* Fragment blocks — long-form hidden content within an interaction *)
 fragment-block   = fragment-open , { fragment-line } , fragment-close ;
