@@ -128,6 +128,16 @@ addventure build games/example
 
 Browse the source files at [github.com/SmileyChris/addventure/tree/main/games/example](https://github.com/SmileyChris/addventure/tree/main/games/example) to see a full game with entity states, multi-target interactions, verb states, and room transitions.
 
+## Design tips
+
+**Start small.** A good first game has 2-3 rooms with a few puzzles. The [example game](https://github.com/SmileyChris/addventure/tree/main/games/example) is a good template.
+
+**Name things clearly.** `RUSTY_KEY` is better than `KEY2`. Players see these names on their sheets.
+
+**Test by building often.** Run `addventure build --md` frequently as you write. The compiler catches errors (undefined room objects, bad arrows) and reports them with line numbers.
+
+**Think about the paper experience.** Every state change means the player has to cross something out and write something new. Complex chains of arrows create complex instructions — keep it manageable.
+
 ## Next steps
 
 Now that you have a game building, learn how to flesh out rooms with richer interactions in [Writing Rooms](writing-rooms.md).

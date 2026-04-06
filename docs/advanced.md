@@ -240,7 +240,9 @@ To target *only* the base state (before any transformation), add a trailing `__`
 | `? -> "Room__STATE"` | Only that specific state |
 | `? -> "Room__"` | Only the base state |
 
-## Game sizing and ID allocation
+## Compiler
+
+### Game sizing and ID allocation
 
 The compiler randomly assigns IDs to verbs and entities, then checks that no two interactions produce the same sum. If they do, it retries with a different random seed.
 
@@ -267,7 +269,7 @@ The compiler tries 3-digit IDs first (200 attempts). If no collision-free alloca
 
 **The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ room objects per room stays well under 80 total.
 
-## Ledger entry deduplication
+### Ledger entry deduplication
 
 The compiler merges interactions that produce identical ledger entries into a single entry. This happens most often with:
 
@@ -281,14 +283,4 @@ Entries are **not** merged when:
 - The arrows differ (e.g. the inventory version strips `OBJECT -> player`)
 - An `OBJECT -> trash` arrow would generate different instructions ("Cross out on room sheet" vs "Cross out on Inventory")
 
-## Design tips
-
-**Start small.** A good first game has 2-3 rooms with a few puzzles. The [example game](https://github.com/SmileyChris/addventure/tree/main/games/example) is a good template.
-
-**Name things clearly.** `RUSTY_KEY` is better than `KEY2`. Players see these names on their sheets.
-
-**Test by building often.** Run `addventure build --md` frequently as you write. The compiler catches errors (undefined room objects, bad arrows) and reports them with line numbers.
-
-**Think about the paper experience.** Every state change means the player has to cross something out and write something new. Complex chains of arrows create complex instructions — keep it manageable.
-
-Next: [Script Reference](reference.md) for a compact syntax cheat sheet.
+Next: [Reference](reference.md) for a compact syntax cheat sheet.
