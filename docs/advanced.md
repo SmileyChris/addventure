@@ -354,4 +354,10 @@ Entries are **not** merged when:
 - The arrows differ (e.g. the inventory version strips `OBJECT -> player`)
 - An `OBJECT -> trash` arrow would generate different instructions ("Cross out on room sheet" vs "Cross out on Inventory")
 
+### Formal grammar
+
+The complete syntax is specified in [`docs/grammar.ebnf`](https://github.com/SmileyChris/addventure/blob/main/docs/grammar.ebnf) as an EBNF grammar. It documents the concrete source syntax accepted by the parser, with structural and semantic rules kept separate so the language definition stays precise.
+
+The parser is strict — every block type rejects unexpected lines. If the compiler reports a parse error, the grammar is the authoritative reference for what's valid at that point.
+
 Next: [Reference](reference.md) for a compact syntax cheat sheet.
