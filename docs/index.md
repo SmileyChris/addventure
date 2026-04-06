@@ -45,7 +45,7 @@ IDs are randomly assigned each time a game is compiled, so every printout is a u
 
 ## What authors write
 
-Game scripts are plain markdown files in a directory. You need one `index.md` for metadata, verbs, and inventory objects. Every other `.md` file defines rooms and is loaded alphabetically.
+Game scripts are plain markdown files in a directory. You need one `index.md` for metadata, verbs, and objects. Every other `.md` file defines rooms and is loaded alphabetically.
 
 The script syntax is compact and readable:
 
