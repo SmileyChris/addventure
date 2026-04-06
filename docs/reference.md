@@ -57,7 +57,7 @@ start: Entrance Hall
 | `entry_prefix` | Prefix for ledger entry labels (default: none) |
 | `image` | Path to cover/watermark image |
 | `image_height` | Height of the cover image |
-| `name_style` | Identifier rendering style: `upper_words` (default) or `title` — see [Name style](advanced.md#name-style) |
+| `name_style` | Identifier rendering style: `upper_words` (default) or `title` — see [Name rendering](#name-rendering) |
 
 Unknown keys are accepted but produce a build warning.
 
@@ -210,10 +210,18 @@ Plain identifiers may not contain `__`. Double underscore is reserved for state 
 
 ### Name rendering
 
-Identifiers are authored in strict machine form (`GO_NORTH`, `WALL_PANEL`) and rendered for players with spaces by default (`GO NORTH`, `WALL PANEL`). Change with `name_style` in frontmatter — see [Name style](advanced.md#name-style) for details.
+Identifiers are authored in strict machine form (`GO_NORTH`, `WALL_PANEL`) and rendered for players with spaces by default (`GO NORTH`, `WALL PANEL`). Set `name_style` in frontmatter to change this:
+
+```markdown
+---
+name_style: title
+---
+```
 
 | Value | Example |
 |---|---|
 | `upper_words` (default) | `GO_NORTH` → `GO NORTH` |
 | `title` | `GO_NORTH` → `Go North` |
+
+This affects verbs, room objects, inventory objects, states, and actions on the printed sheets. It does not affect free-text room names or narrative prose.
 

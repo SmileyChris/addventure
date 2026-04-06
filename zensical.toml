@@ -33,4 +33,4 @@ accent = "custom"
 "Advanced Mechanics" = "advanced.md"
 
 [[project.nav]]
-"Script Reference" = "reference.md"
+"Reference" = "reference.md"

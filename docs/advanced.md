@@ -162,24 +162,6 @@ The `# Inventory` section in `index.md` is only needed for inventory objects tha
 
 **Note:** A game must have a `TAKE` verb defined if any room object uses `-> player`.
 
-## Name style
-
-By default, identifiers are rendered for players in upper words: `GO_NORTH` becomes **GO NORTH**, `RUSTY_KEY` becomes **RUSTY KEY**. You can change this with the `name_style` frontmatter key in `index.md` (see [Frontmatter](reference.md#frontmatter) for all available keys):
-
-```markdown
----
-title: My Game
-name_style: title
----
-```
-
-| Value | Example |
-|---|---|
-| `upper_words` (default) | GO NORTH, RUSTY KEY |
-| `title` | Go North, Rusty Key |
-
-This affects how verbs, room objects, inventory objects, states, and actions are displayed on the printed sheets. It does not affect free-text room names or narrative prose.
-
 ## Cue checks (cross-room effects)
 
 Sometimes an action in one room should affect another room — pulling a lever that opens a gate elsewhere, flipping a switch that powers on a machine in the basement, etc. **Cue checks** handle this.
