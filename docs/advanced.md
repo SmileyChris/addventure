@@ -85,7 +85,7 @@ Interactions in this section follow the same syntax but aren't nested under a ro
 
 ### Wildcards
 
-The `*` wildcard matches all entities in the current room. Use it for catch-all responses:
+The `*` wildcard matches all room objects in the current room (not inventory objects). Use it for catch-all responses:
 
 ```markdown
 USE__RESTRAINED + *:
