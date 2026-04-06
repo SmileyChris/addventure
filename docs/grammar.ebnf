@@ -73,7 +73,7 @@ room-file       = [ frontmatter ] ,
                   room-section ,
                   { room-section | blank-line | comment-line } ;
 
-(* `# Interactions` is part of the current room section, not a standalone
+(* `## Interactions` is part of the current room section, not a standalone
    top-level file section. *)
 
 
@@ -278,7 +278,7 @@ action-body-line(m) = narrative-line(m)
 (*  13. Freeform Interactions                               *)
 (* ══════════════════════════════════════════════════════════ *)
 
-interactions-section = "# Interactions" , newline ,
+interactions-section = "## Interactions" , newline ,
                        { blank-line | comment-line | freeform-interaction } ;
 
 freeform-interaction = indent0 , freeform-header , newline ,
@@ -304,7 +304,7 @@ freeform-body-line(m) = narrative-line(m)
    1. Tabs are not allowed in indentation.
    2. `# Verbs` lines must be unindented verb declarations only.
    3. `# Items` lines must be unindented item declarations only.
-   4. `# Interactions` may contain freeform interactions only.
+   4. `## Interactions` may contain freeform interactions only.
    5. Every child line in a block must be indented deeper than its header.
    6. `-> trash`, `player -> "Room"`, `-> VERB`, and verb-only arrows may not
       have child blocks.

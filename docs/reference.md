@@ -145,7 +145,7 @@ Nested under the arrow that creates the state.
 | `ENTITY__STATE` | Double-underscore separates base name from state |
 | `*` | Wildcard — matches all entities in the room |
 | `//` | Comment — ignored by the compiler |
-| `# Interactions` | Section for standalone interactions in a room file |
+| `## Interactions` | Section for standalone interactions in a room file |
 | `? -> "Room"` | Cue arrow — deferred effect in another room |
 | `? -> "Room__STATE"` | Cue targeting a specific room state |
 | `? -> "Room__"` | Cue targeting only the base room state |

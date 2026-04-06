@@ -40,7 +40,7 @@ Just as entities can change state, so can verbs. This lets you change what an ac
 The example game uses this for restraints:
 
 ```markdown
-# Interactions
+## Interactions
 
 USE + KNIFE + BINDINGS:
   You saw through the rope. Your hands are free.
@@ -94,9 +94,9 @@ Use `VERB -> trash` to permanently remove a verb:
 
 The ledger tells the player to cross out the verb on their verb sheet. Any interactions using that verb become inaccessible.
 
-## The `# Interactions` section
+## The Interactions section
 
-Some interactions don't belong to a specific noun — they apply to the room as a whole or involve standalone logic. Put these in a `# Interactions` section at the bottom of a room file:
+Some interactions don't belong to a specific noun — they apply to the room as a whole or involve standalone logic. Put these in a `## Interactions` section at the bottom of a room file:
 
 ```markdown
 # Control Room
@@ -105,7 +105,7 @@ LOOK: Fluorescent lights buzz overhead.
 TERMINAL
 + LOOK: A dusty CRT monitor.
 
-# Interactions
+## Interactions
 
 USE + KNIFE + BINDINGS:
   You saw through the rope.

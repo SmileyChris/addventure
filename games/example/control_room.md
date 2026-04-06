@@ -47,7 +47,7 @@ KNIFE
 
   *Hint: you can USE + KNIFE + (another thing)*
 
-# Interactions
+## Interactions
 
 USE__RESTRAINED + *:
   You strain against the bindings. No use.

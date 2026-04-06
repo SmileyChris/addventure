@@ -112,7 +112,7 @@ LOOK: A room.
 BOX
 + LOOK: A box.
 
-# Interactions
+## Interactions
 USE + Key:
   Invalid target.
 """
@@ -236,7 +236,7 @@ LOOK: A room.
 BOX
 + LOOK: A box.
 
-# Interactions
+## Interactions
 USE + * + KEY:
   Invalid wildcard use.
 """
@@ -250,7 +250,7 @@ def test_wildcard_rejected_in_alternation_group():
     room_src = """# Room
 LOOK: A room.
 
-# Interactions
+## Interactions
 USE + BOX|*:
   Invalid wildcard use.
 """
@@ -305,7 +305,7 @@ def test_interactions_section_rejects_noun_declarations():
     room_src = """# Room
 LOOK: A room.
 
-# Interactions
+## Interactions
 ROCK
   + LOOK: A rock.
 """
@@ -831,7 +831,7 @@ LOOK: A forest.
 ROCK
 + LOOK: A big rock.
 
-# Interactions
+## Interactions
 
 USE + ROCK:
   You heave the rock aside.

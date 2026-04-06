@@ -51,14 +51,15 @@ def _normalize_structural_line(line: str) -> str:
 
 def _is_header(line: str) -> bool:
     s = line.strip()
-    return s.startswith("# ")
+    return s.startswith("## ") or s.startswith("# ")
 
 def _parse_header(line: str) -> tuple[str, str | None]:
-    """Parse a # header. Returns (section_type, name).
+    """Parse a # or ## header. Returns (section_type, name).
     Known sections (verbs, items, interactions) return (type, None).
     Everything else is a room name: ("room", name).
     """
-    name = line.strip()[2:].strip()
+    s = line.strip()
+    name = s[3:].strip() if s.startswith("## ") else s[2:].strip()
     lower = name.lower()
     if lower in ("verbs", "items", "interactions"):
         return lower, None
