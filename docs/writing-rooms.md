@@ -185,6 +185,18 @@ Actions can also be discovered mid-game (nested under an interaction) or removed
 
 A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. Fragment content uses the same [narrative formatting](#narrative-formatting) as regular prose. See [Fragments](advanced.md#fragments) in Advanced Mechanics.
 
+### PDF output
+
+The default `addventure build` produces a PDF via Typst. A few options affect how the printed game looks and plays:
+
+**Paper size** — `--paper a4` (default) or `--paper letter`. Choose before printing; it affects sheet layout.
+
+**Blind mode** — `--blind` hides room names and IDs on room sheets until the player discovers them via a LOOK interaction. This prevents players from mapping the game before exploring it, but means room state changes (rooms that transform mid-game) can produce stale ID references — the compiler will warn you if this applies to your game.
+
+**Cover page** — `--no-cover` omits the How to Play introduction page. Useful if you're distributing your own instructions.
+
+**Fragment output** — controls where `::: fragment` content is printed. See [Fragment modes](reference.md#fragment-modes) in the Reference.
+
 ## Putting it together
 
 Here's a complete room with two interactive room objects, one of which changes state:
