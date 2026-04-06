@@ -11,19 +11,23 @@ A game is a directory of `.md` files:
 
 ## CLI commands
 
+### build
+
+Compile a game to PDF (default) or markdown.
+
 ```bash
-addventure build [dir]                    # Compile to PDF (default)
-addventure build [dir] --md              # Compile to markdown
-addventure build [dir] -o FILE           # Custom output path
-addventure build [dir] --paper a4        # Paper size: a4 (default), letter, legal
-addventure build [dir] --blind           # Blind mode: room names/IDs hidden until discovered
-addventure build [dir] --fragment MODE   # Fragment output mode (see below)
-addventure new [name]                    # Scaffold a new game
+addventure build [dir]               # Compile to PDF (default)
+addventure build [dir] --md          # Compile to markdown
+addventure build [dir] -o FILE       # Custom output path
+addventure build [dir] --paper SIZE  # Paper size: a4 (default), letter, legal
+addventure build [dir] --blind       # Blind mode: room names/IDs hidden until discovered
+addventure build [dir] --no-cover    # Omit the How to Play cover page
+addventure build [dir] --fragment MODE  # Fragment output mode (see below)
 ```
 
-If no directory is given, `addventure build` looks for `index.md` in the current directory.
+If no directory is given, looks for `index.md` in the current directory.
 
-### Fragment modes
+#### Fragment modes
 
 The `--fragment` flag controls how `::: fragment` blocks are output:
 
@@ -34,6 +38,17 @@ The `--fragment` flag controls how `::: fragment` blocks are output:
 | `jigsaw` | Fragments sliced into shuffled rectangular pieces across cut pages |
 
 `--fragment separate` is useful when you want to print and distribute fragments as physical notes — cut them out and hand them to players in envelopes labelled with the ref (e.g. `Alpha`).
+
+### new
+
+Scaffold a new game directory with a starter `index.md`.
+
+```bash
+addventure new [name]   # Scaffold with defaults (oneshot)
+addventure new          # Interactive setup (choose verbs, set author name)
+```
+
+Run from inside an existing game directory to scaffold a new chapter subdirectory instead.
 
 ## Index files
 
