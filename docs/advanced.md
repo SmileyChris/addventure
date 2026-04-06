@@ -235,12 +235,7 @@ VAULT_DOOR
 
 When this entry fires, the ledger instruction tells the player which fragment to turn to (e.g. "Turn to Fragment Alpha"). Fragments are printed in a separate section at the back of the ledger, or as a separate document — see [Fragment modes](reference.md#fragment-modes).
 
-The content inside `::: fragment` is Typst markup. Plain prose works as-is. Basic formatting:
-
-- `*bold text*` — bold
-- `_italic text_` — italic
-- Blank line between paragraphs
-- `\` at the end of a line — explicit line break (for verse, addresses, etc.)
+Fragment content uses the same narrative formatting as regular prose — see [Narrative formatting](writing-rooms.md#narrative-formatting) for the full syntax.
 
 ### Cue checks (cross-room effects)
 

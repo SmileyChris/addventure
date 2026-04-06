@@ -121,7 +121,9 @@ Consecutive lines are joined into one paragraph. Separate paragraphs with a blan
   The passage beyond is dark and cold. Something moves in the shadows.
 ```
 
-## Indentation
+## Scripting
+
+### Indentation
 
 Addventure uses indentation to define structure. The hierarchy works like this:
 
@@ -136,7 +138,7 @@ ENTITY_NAME                  ← level 0: room object declaration
 
 Use spaces, not tabs. Each child line must be indented deeper than its parent. Indentation is how the compiler knows which arrows and interactions belong together.
 
-## Comments
+### Comments
 
 Use `//` to add comments that the compiler ignores:
 
@@ -156,7 +158,18 @@ KEYCARD // starts hidden
 
 Trailing comments are not stripped from narrative prose, so `//` inside story text is treated as literal text.
 
-## Actions
+### Narrative formatting
+
+Narrative text is rendered as Typst markup. Plain prose works as-is. For richer formatting:
+
+- `*bold text*` — bold
+- `_italic text_` — italic
+- Blank line between paragraphs
+- `\` at the end of a line — explicit line break (for verse, addresses, etc.)
+
+## Advanced
+
+### Actions
 
 Actions are direct ledger lookups — navigation and other things the player can do without addition. Declare them with `>`:
 
@@ -168,9 +181,9 @@ Actions are direct ledger lookups — navigation and other things the player can
 
 Actions can also be discovered mid-game (nested under an interaction) or removed when they're no longer valid. See [Actions](advanced.md#actions) in Advanced Mechanics for full details.
 
-## Fragments
+### Fragments
 
-A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. See [Fragments](advanced.md#fragments) in Advanced Mechanics.
+A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. Fragment content uses the same [narrative formatting](#narrative-formatting) as regular prose. See [Fragments](advanced.md#fragments) in Advanced Mechanics.
 
 ## Putting it together
 
