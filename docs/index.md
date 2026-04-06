@@ -27,10 +27,10 @@ A compiled game produces four types of sheet:
 :   One per location. Lists actions (direct ledger references like "GO NORTH → A-12") and objects with their IDs. Actions are authored as identifiers such as `GO_NORTH` and displayed with spaces. Players flip between room sheets as they move through the game.
 
 **Inventory & Potentials List**
-:   Tracks carried items and their IDs. The potentials list maps every valid sum to a story entry number — this is the lookup table players use after adding.
+:   Tracks carried inventory objects and their IDs. The potentials list maps every valid sum to a story entry number — this is the lookup table players use after adding.
 
 **Story Ledger**
-:   Numbered narrative entries. Each contains a passage of story text and instructions: cross out an entity, write a new ID, move an item to your inventory, go to a different room.
+:   Numbered narrative entries. Each contains a passage of story text and instructions: cross out an entity, write a new ID, move an object to your inventory, go to a different room.
 
 ## A player's turn
 
@@ -45,7 +45,7 @@ IDs are randomly assigned each time a game is compiled, so every printout is a u
 
 ## What authors write
 
-Game scripts are plain markdown files in a directory. You need one `index.md` for metadata, verbs, and items. Every other `.md` file defines rooms and is loaded alphabetically.
+Game scripts are plain markdown files in a directory. You need one `index.md` for metadata, verbs, and inventory objects. Every other `.md` file defines rooms and is loaded alphabetically.
 
 The script syntax is compact and readable:
 

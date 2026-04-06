@@ -25,7 +25,7 @@ KNIFE
     + LOOK: Strange markings near the hilt.
 """
     game = compile_game(global_src, [room_src])
-    key_item = game.items["KNIFE"]
+    key_item = game.inventory["KNIFE"]
     look_id = game.verbs["LOOK"].id
 
     # Inventory LOOK should use item-specific text, not the room noun text
@@ -52,7 +52,7 @@ KNIFE
 """
     game = compile_game(global_src, [room_src])
     use_id = game.verbs["USE"].id
-    knife_item = game.items["KNIFE"]
+    knife_item = game.inventory["KNIFE"]
 
     inv_use = [ri for ri in game.resolved
                if ri.verb == "USE" and ri.sum_id == use_id + knife_item.id]
@@ -79,7 +79,7 @@ COMPASS
 LOOK: A room.
 """
     game = compile_game(global_src, [room_src])
-    compass = game.items["COMPASS"]
+    compass = game.inventory["COMPASS"]
     look_id = game.verbs["LOOK"].id
     use_id = game.verbs["USE"].id
 
@@ -99,8 +99,8 @@ def test_items_section_plain_names_still_work():
 LOOK: A room.
 """
     game = compile_game(global_src, [room_src])
-    assert "COMPASS" in game.items
-    assert "ROPE" in game.items
+    assert "COMPASS" in game.inventory
+    assert "ROPE" in game.inventory
 
 
 def test_arbitrary_space_indentation_is_accepted():
@@ -116,7 +116,7 @@ KEY
   - KEY -> player
 """
     game = compile_game(global_src, [room_src])
-    key = game.items["KEY"]
+    key = game.inventory["KEY"]
     look_id = game.verbs["LOOK"].id
 
     inv_looks = [ri for ri in game.resolved if ri.sum_id == look_id + key.id]
@@ -146,7 +146,7 @@ KNIFE
 """
     game = compile_game(global_src, [room_src])
     use_id = game.verbs["USE"].id
-    knife_item = game.items["KNIFE"]
+    knife_item = game.inventory["KNIFE"]
 
     # USE should not be duplicated for inventory — it's the acquisition action
     inv_use = [ri for ri in game.resolved
@@ -168,7 +168,7 @@ KNIFE
     + LOOK: Strange markings near the hilt.
 """
     game = compile_game(global_src, [room_src])
-    knife_item = game.items["KNIFE"]
+    knife_item = game.inventory["KNIFE"]
     look_id = game.verbs["LOOK"].id
 
     inv_looks = [ri for ri in game.resolved
@@ -193,7 +193,7 @@ KNIFE
     + LOOK: Blade with markings.
 """
     game = compile_game(global_src, [room_src])
-    knife_item = game.items["KNIFE"]
+    knife_item = game.inventory["KNIFE"]
     use_id = game.verbs["USE"].id
     look_id = game.verbs["LOOK"].id
 
@@ -224,7 +224,7 @@ KNIFE
     + LOOK:
 """
     game = compile_game(global_src, [room_src])
-    knife_item = game.items["KNIFE"]
+    knife_item = game.inventory["KNIFE"]
     look_id = game.verbs["LOOK"].id
 
     # No inventory LOOK should exist — suppressed by empty interaction
@@ -253,9 +253,9 @@ KEY__HIDDEN
       - KEY -> player
 """
     game = compile_game(global_src, [room_src])
-    assert "KEY" in game.items
-    assert "KEY__HIDDEN" not in game.items
-    assert "KEY" in game.auto_items
+    assert "KEY" in game.inventory
+    assert "KEY__HIDDEN" not in game.inventory
+    assert "KEY" in game.auto_inventory
 
 
 def test_stated_noun_direct_to_player_registers_base_item():
@@ -274,8 +274,8 @@ GEM__ROUGH
   - GEM__ROUGH -> player
 """
     game = compile_game(global_src, [room_src])
-    assert "GEM" in game.items
-    assert "GEM__ROUGH" not in game.items
+    assert "GEM" in game.inventory
+    assert "GEM__ROUGH" not in game.inventory
 
 
 def test_noun_revealed_under_entity_state_is_discovery():
@@ -308,8 +308,8 @@ NOTE
     assert "GEM" not in initial_names
     assert "NOTE" not in initial_names
     # GEM and NOTE should be marked discovered
-    assert game.nouns["Room::GEM"].discovered is True
-    assert game.nouns["Room::NOTE"].discovered is True
+    assert game.objects["Room::GEM"].discovered is True
+    assert game.objects["Room::NOTE"].discovered is True
     # The interaction should have the -> room arrows propagated
     use_ix = next(ix for ix in game.interactions if ix.verb == "USE" and ix.room == "Room")
     arrow_subjects = [a.subject for a in use_ix.arrows]
@@ -336,7 +336,7 @@ DOOR__LOCKED
     game = compile_game(global_src, [room_src])
     writer = GameWriter(game)
 
-    door_base = game.nouns["Room::DOOR"]
+    door_base = game.objects["Room::DOOR"]
     ri = next(ri for ri in game.resolved
               if ri.narrative == "You unlock the door.")
     instructions = writer._generate_instructions(ri)

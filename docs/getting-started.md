@@ -64,8 +64,8 @@ This file defines three things:
 **Verbs** (under `# Verbs`)
 :   The actions players can perform. List one per line, in `ALL_CAPS`. Three verbs is a good starting point — you can always add more.
 
-**Items** (under `# Inventory`)
-:   Objects that live in the player's inventory. Items can be picked up, carried between rooms, and used in interactions. Leave this empty for now — we'll add items as we build out rooms.
+**Inventory objects** (under `# Inventory`)
+:   Objects that live in the player's inventory. Inventory objects can be picked up, carried between rooms, and used in interactions. Leave this empty for now — we'll add inventory objects as we build out rooms.
 
 ## Create your first room
 
@@ -90,8 +90,8 @@ Let's break this down:
 
 - `# Reading Room` — declares a room. The header text becomes the room name.
 - `LOOK: ...` at the top — the room-level description. Players see this when they LOOK at the room itself.
-- `DESK` and `LANTERN` — nouns. Bare `ALL_CAPS` names on their own line. These are objects in the room.
-- `+ LOOK:` and `+ TAKE:` — interactions on a noun. The `+` prefix marks an interaction.
+- `DESK` and `LANTERN` — room objects. Bare `ALL_CAPS` names on their own line. These are objects in the room.
+- `+ LOOK:` and `+ TAKE:` — interactions on a room object. The `+` prefix marks an interaction.
 - Indented text — narrative. The story the player reads when the interaction triggers.
 - `- LANTERN -> player` — an arrow. Moves the lantern to the player's inventory.
 

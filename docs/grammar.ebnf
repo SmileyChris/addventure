@@ -30,22 +30,22 @@ STATE-NAME      = NAME ;
 STATED-NAME     = NAME , [ "__" , STATE-NAME ] ;
 
 (* Identifier classes:
-   NAME         — plain identifier (verbs, items, base nouns, actions).
+   NAME         — plain identifier (verbs, items, base room objects, actions).
                   Single underscores separate words; double underscore is not
                   allowed. Starts with a letter.
    STATE-NAME   — same lexical form as NAME; used after `__` in stated forms.
    STATED-NAME  — NAME optionally suffixed with `__STATE-NAME`. Used for verb
-                  names in interactions and noun declarations, where a state
-                  qualifier is syntactically valid.
-   noun-ref     — a noun target: plain NAME, stated NOUN__STATE, or wildcard `*`.
+                  names in interactions and room object declarations, where a
+                  state qualifier is syntactically valid.
+   object-ref   — a room object target: plain NAME, stated OBJ__STATE, or wildcard `*`.
    room-name    — free-form text (room headers and quoted targets). Not an
                   identifier; no lexical restrictions beyond non-empty.
    action-name  — plain NAME; actions do not have state variants. *)
 
-noun-state-ref  = NAME , "__" , STATE-NAME ;
-room-state-ref  = "room__" , STATE-NAME ;
+object-state-ref  = NAME , "__" , STATE-NAME ;
+room-state-ref    = "room__" , STATE-NAME ;
 
-noun-ref        = "*" | noun-state-ref | NAME ;
+object-ref        = "*" | object-state-ref | NAME ;
 
 quoted-room     = '"' , room-name , '"' ;
 room-name       = ? any non-empty text not containing newline or '"' ? ;
@@ -125,31 +125,31 @@ room-body       = { blank-line | comment-line | room-body-line } ;
 
 room-body-line  = room-interaction
                 | room-arrow
-                | noun-declaration
+                | object-declaration
                 | action-declaration ;
 
 room-interaction = indent0 , interaction-header ;
 room-arrow      = indent0 , arrow , newline , [ arrow-children(0, arrow) ] ;
-noun-declaration = indent0 , STATED-NAME , newline , [ entity-block(0) ] ;
+object-declaration = indent0 , STATED-NAME , newline , [ entity-block(0) ] ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
 (*  6. Entity Blocks                                        *)
 (* ══════════════════════════════════════════════════════════ *)
 
-(* An entity block is the indented content under a noun or item declaration,
-   or under a reveal / transform arrow that introduces a noun. *)
+(* An entity block is the indented content under a room object or inventory object
+   declaration, or under a reveal / transform arrow that introduces a room object. *)
 
 entity-block(n) = entity-line(n+1) , { blank-line | comment-line | entity-line(n+1) } ;
 
 entity-line(m)  = interaction-line(m)
                 | arrow-line(m)
-                | nested-noun(m)
+                | nested-object(m)
                 | action-line(m) ;
 
 interaction-line(m) = indent(m) , "+ " , interaction-header ;
 arrow-line(m)       = indent(m) , "- " , arrow , newline , [ arrow-children(m, arrow) ] ;
-nested-noun(m)      = indent(m) , STATED-NAME , newline , [ entity-block(m) ] ;
+nested-object(m)    = indent(m) , STATED-NAME , newline , [ entity-block(m) ] ;
 action-line(m)      = indent(m) , "> " , action-name , newline , action-body(m) ;
 
 
@@ -161,7 +161,7 @@ interaction-header = verb-target-spec , ":" , [ inline-narrative ] , newline ,
                      [ interaction-body(same-line-indent) ] ;
 
 verb-target-spec   = STATED-NAME , { "+" , target-group } ;
-target-group       = noun-ref , { "|" , noun-ref } ;
+target-group       = object-ref , { "|" , object-ref } ;
 inline-narrative   = text ;
 
 interaction-body(n) = interaction-body-line(n+1) ,
@@ -192,7 +192,7 @@ fragment-line    = indent , text-line ;
 arrow            = subject , " -> " , destination
                  | " -> " , NAME ;
 
-subject          = noun-ref
+subject          = object-ref
                  | action-name
                  | "player"
                  | "room"
@@ -202,7 +202,7 @@ destination      = "trash"
                  | "player"
                  | "room"
                  | quoted-room
-                 | noun-state-ref
+                 | object-state-ref
                  | NAME
                  | room-state-ref ;
 
@@ -213,12 +213,12 @@ destination      = "trash"
 
 (* The allowed child block depends on the arrow form. *)
 
-arrow-children(n, subject -> "player")     = entity-block(n) ;
-arrow-children(n, subject -> "room")       = entity-block(n) ;
-arrow-children(n, subject -> quoted-room)  = entity-block(n) ;
-arrow-children(n, subject -> noun-state-ref) = entity-block(n) ;
+arrow-children(n, subject -> "player")       = entity-block(n) ;
+arrow-children(n, subject -> "room")         = entity-block(n) ;
+arrow-children(n, subject -> quoted-room)    = entity-block(n) ;
+arrow-children(n, subject -> object-state-ref) = entity-block(n) ;
 arrow-children(n, "room" -> room-state-ref)  = room-state-block(n) ;
-arrow-children(n, "?" -> quoted-room)      = cue-block(n) ;
+arrow-children(n, "?" -> quoted-room)        = cue-block(n) ;
 
 (* These arrow forms have no children: *)
 (*   subject -> trash *)
@@ -238,7 +238,7 @@ cue-line(m)      = narrative-line(m)
                  | cue-arrow-line(m) ;
 
 cue-arrow-line(m) = indent(m) , "- " , cue-arrow , newline ;
-cue-arrow        = noun-ref , " -> " , destination ;
+cue-arrow        = object-ref , " -> " , destination ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -249,11 +249,11 @@ room-state-block(n) = room-state-line(n+1) ,
                       { blank-line | comment-line | room-state-line(n+1) } ;
 
 room-state-line(m)  = room-state-interaction(m)
-                    | room-state-noun(m)
+                    | room-state-object(m)
                     | room-state-arrow(m) ;
 
 room-state-interaction(m) = indent(m) , "+ " , interaction-header ;
-room-state-noun(m)        = indent(m) , [ "+ " ] , STATED-NAME , newline , [ entity-block(m) ] ;
+room-state-object(m)      = indent(m) , [ "+ " ] , STATED-NAME , newline , [ entity-block(m) ] ;
 room-state-arrow(m)       = indent(m) , "- " , arrow , newline , [ arrow-children(m, arrow) ] ;
 
 
@@ -316,13 +316,13 @@ freeform-body-line(m) = narrative-line(m)
    11. Empty interactions are syntactically valid but resolve as suppression
        markers rather than ledger entries.
    12. Room names are free text. `NAME`-shaped identifiers are used for verbs,
-       nouns, items, states, and actions.
+       room objects, inventory objects, states, and actions.
    13. In productions like `interaction-body(same-line-indent)`, the parameter
        refers to the indentation depth of the line that introduced the block.
    14. `name_style` is optional frontmatter metadata controlling how identifiers
        are rendered for players. Supported values are `upper_words` (default)
-       and `title`. This affects rendered verbs, nouns, items, states, and
-       actions, but not free-text room names or narrative.
+       and `title`. This affects rendered verbs, room objects, inventory objects,
+       states, and actions, but not free-text room names or narrative.
    15. `*` is only valid as the entire target list of an interaction, for
        example `LOOK + *:`. It may not appear inside multi-target or
        alternation forms such as `USE + * + KEY:` or `USE + BOX|*:`.

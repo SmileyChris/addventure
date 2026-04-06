@@ -104,13 +104,13 @@ def test_global_rejects_stray_text_after_items():
 
 def test_global_rejects_stray_arrow_after_items():
     global_src = "# Verbs\nLOOK\n\n# Inventory\n\nFOO -> BAR\n"
-    with pytest.raises(ParseError, match="Invalid item declaration"):
+    with pytest.raises(ParseError, match="Invalid inventory object declaration"):
         parse_global(global_src)
 
 
 def test_global_rejects_stray_action_after_items():
     global_src = "# Verbs\nLOOK\n\n# Inventory\n\n> GO_NORTH\n"
-    with pytest.raises(ParseError, match="Invalid item declaration"):
+    with pytest.raises(ParseError, match="Invalid inventory object declaration"):
         parse_global(global_src)
 
 
@@ -188,4 +188,4 @@ KEY
 """
     game = parse_global(global_src)
     assert "LOOK" in game.verbs
-    assert "KEY" in game.items
+    assert "KEY" in game.inventory

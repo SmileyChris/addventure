@@ -7,7 +7,7 @@ class Verb:
     id: int = 0
 
 @dataclass
-class Noun:
+class RoomObject:
     name: str
     base: str
     state: str | None
@@ -16,7 +16,7 @@ class Noun:
     discovered: bool = False
 
 @dataclass
-class Item:
+class InventoryObject:
     name: str
     id: int = 0
 
@@ -98,13 +98,13 @@ class SealedText:
 class GameData:
     metadata: dict[str, str] = field(default_factory=dict)
     verbs: dict[str, Verb] = field(default_factory=dict)
-    nouns: dict[str, Noun] = field(default_factory=dict)
-    items: dict[str, Item] = field(default_factory=dict)
+    objects: dict[str, RoomObject] = field(default_factory=dict)
+    inventory: dict[str, InventoryObject] = field(default_factory=dict)
     rooms: dict[str, Room] = field(default_factory=dict)
     interactions: list[Interaction] = field(default_factory=list)
     resolved: list[ResolvedInteraction] = field(default_factory=list)
     cues: list[Cue] = field(default_factory=list)
-    auto_items: set[str] = field(default_factory=set)
+    auto_inventory: set[str] = field(default_factory=set)
     auto_verbs: set[str] = field(default_factory=set)
     suppressed_interactions: list[Interaction] = field(default_factory=list)
     actions: dict[str, Action] = field(default_factory=dict)

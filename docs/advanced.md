@@ -1,6 +1,6 @@
 # Advanced Mechanics
 
-Once you're comfortable with rooms, nouns, interactions, and arrows, these features let you build richer puzzles.
+Once you're comfortable with rooms, room objects, interactions, and arrows, these features let you build richer puzzles.
 
 ## Multi-target interactions
 
@@ -16,11 +16,11 @@ TERMINAL
 
 The syntax is `+ VERB + TARGET:` on the entity that "receives" the action. The player computes: `VERB + ENTITY + TARGET` (three IDs added together), and the sum maps to this interaction's story entry.
 
-The second target can be any noun or item — including things in the player's inventory. This is how you create "use X with Y" puzzles.
+The second target can be any room object or inventory object — including things in the player's inventory. This is how you create "use X with Y" puzzles.
 
-### Multi-target on items
+### Multi-target on inventory objects
 
-Items (defined in `index.md`) can be used as the second target in any room. The player adds the verb ID + entity ID + item ID to get the sum.
+Inventory objects (defined in `index.md`) can be used as the second target in any room. The player adds the verb ID + entity ID + inventory object ID to get the sum.
 
 ```markdown
 CELL_DOOR
@@ -31,7 +31,7 @@ CELL_DOOR
   - player -> "Corridor"
 ```
 
-Here KEY is an inventory item. The player needs to have it (on their inventory sheet) to compute the correct sum.
+Here KEY is an inventory object. The player needs to have it (on their inventory sheet) to compute the correct sum.
 
 ## Verb states
 
@@ -81,7 +81,7 @@ Use `-> VERBNAME` (an arrow with no subject) to grant the player a new ability:
   - -> COMBINE
 ```
 
-The verb doesn't need to be listed in `# Verbs` — the compiler auto-registers it (like `-> player` auto-registers items). It won't appear on the verb sheet at game start. When the arrow fires, the ledger tells the player to record the verb name and ID.
+The verb doesn't need to be listed in `# Verbs` — the compiler auto-registers it (like `-> player` auto-registers inventory objects). It won't appear on the verb sheet at game start. When the arrow fires, the ledger tells the player to record the verb name and ID.
 
 Define interactions for the new verb normally — they work as soon as the player has it:
 
@@ -105,7 +105,7 @@ The ledger tells the player to cross out the verb on their verb sheet. Any inter
 
 ## The Interactions section
 
-Some interactions don't belong to a specific noun — they apply to the room as a whole or involve standalone logic. Put these in a `## Interactions` section at the bottom of a room file:
+Some interactions don't belong to a specific room object — they apply to the room as a whole or involve standalone logic. Put these in a `## Interactions` section at the bottom of a room file:
 
 ```markdown
 # Control Room
@@ -121,7 +121,7 @@ USE + KNIFE + BINDINGS:
   - BINDINGS -> trash
 ```
 
-Interactions in this section follow the same syntax but aren't nested under a noun.
+Interactions in this section follow the same syntax but aren't nested under a room object.
 
 ## Wildcards
 
@@ -134,15 +134,15 @@ USE__RESTRAINED + *:
 
 This creates an interaction for every entity the player could target. It's useful for verb states that should block all normal actions, or for generic responses before a puzzle is solved.
 
-## Inventory vs. nouns
+## Room and inventory objects
 
-**Nouns** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
+**Room objects** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
 
-**Items** live on the inventory sheet. They travel with the player between rooms.
+**Inventory objects** live on the inventory sheet. They travel with the player between rooms.
 
-When a noun has a `-> player` arrow, the compiler automatically creates an inventory version. The player crosses out the noun on their room sheet and writes the inventory ID on their inventory sheet. The inventory ID is derived from the TAKE verb: `TAKE ID + noun ID`.
+When a room object has a `-> player` arrow, the compiler automatically creates an inventory version. The player crosses out the room object on their room sheet and writes the inventory ID on their inventory sheet. The inventory ID is derived from the TAKE verb: `TAKE ID + room object ID`.
 
-This means you don't need to declare items in `# Inventory` for things the player picks up — just write the noun in a room with a TAKE interaction:
+This means you don't need to declare inventory objects in `# Inventory` for things the player picks up — just write the room object in a room with a TAKE interaction:
 
 ```markdown
 KEYCARD
@@ -152,15 +152,15 @@ KEYCARD
   - KEYCARD -> player
 ```
 
-Most interactions on the noun (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried items. The exception is acquisition interactions — those where the only arrow is `-> player` (the sole purpose is picking the item up). These aren't duplicated since re-acquiring from inventory is meaningless.
+Most interactions on the room object (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried objects. The exception is acquisition interactions — those where the only arrow is `-> player` (the sole purpose is picking the object up). These aren't duplicated since re-acquiring from inventory is meaningless.
 
-The `# Inventory` section in `index.md` is only needed for items that **never exist as room nouns**:
+The `# Inventory` section in `index.md` is only needed for inventory objects that **never exist as room objects**:
 
-- Crafted items (combining two things produces a new item)
+- Crafted objects (combining two things produces a new object)
 - Abstract rewards or tokens
-- Items available from the start that aren't in any room
+- Objects available from the start that aren't in any room
 
-**Note:** A game must have a `TAKE` verb defined if any noun uses `-> player`.
+**Note:** A game must have a `TAKE` verb defined if any room object uses `-> player`.
 
 ## Name style
 
@@ -178,7 +178,7 @@ name_style: title
 | `upper_words` (default) | GO NORTH, RUSTY KEY |
 | `title` | Go North, Rusty Key |
 
-This affects how verbs, nouns, items, states, and actions are displayed on the printed sheets. It does not affect free-text room names or narrative prose.
+This affects how verbs, room objects, inventory objects, states, and actions are displayed on the printed sheets. It does not affect free-text room names or narrative prose.
 
 ## Cue checks (cross-room effects)
 
@@ -263,36 +263,37 @@ The compiler randomly assigns IDs to verbs and entities, then checks that no two
 - Entity IDs: 3-digit (100–999, excluding multiples of 5) — 720 possible values
 - Sums range from ~111 to ~1100 for single-target, higher for multi-target
 
-**When do collisions happen?** Two interactions collide when `verb1 + entity1 = verb2 + entity2`. This only occurs across *different* verbs (same verb + different entity always gives different sums). The number of verbs barely matters — what drives collisions is **total noun count** across all rooms.
+**When do collisions happen?** Two interactions collide when `verb1 + entity1 = verb2 + entity2`. This only occurs across *different* verbs (same verb + different entity always gives different sums). The number of verbs barely matters — what drives collisions is **total room object count** across all rooms.
 
 **Rough sizing guide:**
 
-| Total nouns | Entity IDs | Success rate per attempt | Notes |
+| Total room objects | Entity IDs | Success rate per attempt | Notes |
 |---|---|---|---|
 | Up to ~80 | 3-digit | >50% (finds in 1–2 tries) | Comfortable |
 | ~80–100 | 3-digit | ~1–10% (finds in 20–100 tries) | Pushes the limit |
 | 100+ | 4-digit (auto) | >50% again | Compiler falls back automatically |
 | 300+ | 4-digit | Starts getting tight | Consider splitting into chapters |
 
+
 The compiler tries 3-digit IDs first (200 attempts). If no collision-free allocation is found, it automatically retries with 4-digit entity IDs (1000–9999, 7200 possible values) and 3-digit verb IDs (101–999). The wider verb range spreads sums out more, making it harder for players to reverse-engineer which verb was used. This is seamless — larger games just get slightly bigger numbers on the sheets.
 
 **For very large games**, split into chapters. Each chapter is an independent game with its own ID space. Use narrative handoffs at chapter boundaries: the ending ledger entry tells the player what they're carrying, and the next chapter's first entry sets up the new inventory with fresh IDs.
 
-**The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ nouns per room stays well under 80 total.
+**The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ room objects per room stays well under 80 total.
 
 ## Ledger entry deduplication
 
 The compiler merges interactions that produce identical ledger entries into a single entry. This happens most often with:
 
 - **Wildcard expansions** — `USE__RESTRAINED + *:` creates one interaction per entity, but they all share the same narrative and arrows, so they share one entry.
-- **Item duplication** — when a noun interaction is duplicated for the inventory version and nothing in the arrows references the item differently (no `-> trash` of the item), the noun and inventory versions share one entry.
+- **Item duplication** — when a room object interaction is duplicated for the inventory version and nothing in the arrows references the inventory object differently (no `-> trash` of the inventory object), the room object and inventory versions share one entry.
 
 Each version still has its own sum in the Potentials List, but they all point to the same entry number. This keeps the ledger compact.
 
 Entries are **not** merged when:
 
-- The arrows differ (e.g. the inventory version strips `item -> player`)
-- An `item -> trash` arrow would generate different instructions ("Cross out on room sheet" vs "Cross out on Inventory")
+- The arrows differ (e.g. the inventory version strips `OBJECT -> player`)
+- An `OBJECT -> trash` arrow would generate different instructions ("Cross out on room sheet" vs "Cross out on Inventory")
 
 ## Design tips
 
@@ -300,7 +301,7 @@ Entries are **not** merged when:
 
 **Name things clearly.** `RUSTY_KEY` is better than `KEY2`. Players see these names on their sheets.
 
-**Test by building often.** Run `addventure build --md` frequently as you write. The compiler catches errors (undefined entities, bad arrows) and reports them with line numbers.
+**Test by building often.** Run `addventure build --md` frequently as you write. The compiler catches errors (undefined room objects, bad arrows) and reports them with line numbers.
 
 **Think about the paper experience.** Every state change means the player has to cross something out and write something new. Complex chains of arrows create complex instructions — keep it manageable.
 

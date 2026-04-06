@@ -47,7 +47,7 @@ The entity is gone. The story entry tells the player to cross it out permanently
 - KEYCARD -> room
 ```
 
-The entity appears on the current room sheet. Use this to reveal hidden objects or drop items from the player's inventory.
+The entity appears on the current room sheet. Use this to reveal hidden objects or drop inventory objects back into the room.
 
 !!! tip "Mention what appears"
     The story entry instructs the player to write the new entity on their room sheet, but it doesn't explain *what* it is — the narrative does. Make sure your narrative text describes what the player found, or the instruction to "Write KEYCARD" comes out of nowhere.
@@ -68,7 +68,7 @@ To affect another room *without* moving the player there, use [cue checks](advan
 - CRATE -> CRATE__OPEN
 ```
 
-The entity changes state. On paper, the player crosses out the old ID and writes in a new one. The new state can have its own interactions (see [Entity states](#entity-states) below). Only nouns and rooms can have states — inventory items cannot.
+The entity changes state. On paper, the player crosses out the old ID and writes in a new one. The new state can have its own interactions (see [Entity states](#entity-states) below). Only room objects and rooms can have states — inventory objects cannot.
 
 You can also revert to the base state:
 
@@ -90,7 +90,7 @@ Changes a verb's ID. On the verb sheet, the player crosses out the old ID and wr
 - -> COMBINE
 ```
 
-Grants the player a new verb. The story entry tells the player to record the verb name and ID on their verb sheet. The verb does not need to be listed in `# Verbs` — the compiler auto-registers it when it sees this arrow, just like `-> player` auto-registers items.
+Grants the player a new verb. The story entry tells the player to record the verb name and ID on their verb sheet. The verb does not need to be listed in `# Verbs` — the compiler auto-registers it when it sees this arrow, just like `-> player` auto-registers inventory objects.
 
 Define interactions for the new verb as normal — they'll resolve once the player has the verb:
 
@@ -106,7 +106,7 @@ WIDGET
 
 ## Entity states
 
-States let a noun or room change its behaviour after something happens. Items in the player's inventory cannot have states. The double-underscore separates the base name from the state: `CRATE__OPEN`, `TERMINAL__UNLOCKED`, `DOOR__BROKEN`.
+States let a room object or room change its behaviour after something happens. Inventory objects cannot have states. The double-underscore separates the base name from the state: `CRATE__OPEN`, `TERMINAL__UNLOCKED`, `DOOR__BROKEN`.
 
 Define state-specific interactions by nesting them under the arrow that creates the state:
 
@@ -153,10 +153,10 @@ Rooms are entities too, and they can change state. Use the special keyword `room
 When the room changes state:
 
 - The room gets a new ID (players cross out the old one on their room sheet)
-- New nouns can appear (HATCH, in this example)
+- New room objects can appear (HATCH, in this example)
 - The room's LOOK description changes
 
-Room states work just like entity states — new nouns and interactions nest under the arrow, and observations not overridden are inherited (actions are not).
+Room states work just like entity states — new room objects and interactions nest under the arrow, and observations not overridden are inherited (actions are not).
 
 ## Chaining arrows
 
@@ -185,7 +185,7 @@ The story entry generated for this interaction contains all the instructions the
 
 ## Item interactions
 
-When a noun is picked up (`-> player`), its interactions are automatically duplicated for the inventory version. You can override specific interactions by defining them under `-> player`:
+When a room object is picked up (`-> player`), its interactions are automatically duplicated for the inventory version. You can override specific interactions by defining them under `-> player`:
 
 ````markdown
 KNIFE
@@ -196,7 +196,7 @@ KNIFE
     + LOOK: Strange markings near the hilt.
 ````
 
-The inventory KNIFE gets the custom LOOK ("Strange markings..."), while the room KNIFE keeps its original LOOK ("A rusty blade..."). Any verbs not overridden (like USE) are still auto-duplicated from the room noun.
+The inventory KNIFE gets the custom LOOK ("Strange markings..."), while the room KNIFE keeps its original LOOK ("A rusty blade..."). Any verbs not overridden (like USE) are still auto-duplicated from the room object.
 
 ### Suppressing inherited interactions
 
@@ -211,7 +211,7 @@ This prevents USE from being auto-duplicated, without creating a ledger entry.
 
 ### Pre-equipped items
 
-Items defined in `# Inventory` start directly in the player's inventory — they have no room noun and never need to be picked up. They can have their own interaction blocks:
+Inventory objects defined in `# Inventory` start directly in the player's inventory — they have no room object and never need to be picked up. They can have their own interaction blocks:
 
 ````markdown
 # Inventory

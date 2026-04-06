@@ -1,6 +1,6 @@
 import re
 from .models import (
-    GameData, Verb, Noun, Item, Room, Arrow, Interaction, Cue, Action,
+    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action,
 )
 
 
@@ -13,7 +13,7 @@ class ParseError(Exception):
 
 _NAME_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$")
 _STATED_NAME_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*(?:__[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)?$")
-_NOUN_REF_RE = re.compile(r"^(?:[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*(?:__[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)?|\*)$")
+_OBJECT_REF_RE = re.compile(r"^(?:[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*(?:__[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)?|\*)$")
 
 def _indent(line: str, ln: int | None = None) -> int:
     prefix = line[:len(line) - len(line.lstrip(" \t"))]
@@ -112,8 +112,8 @@ def _is_narrative(s: str) -> bool:
 def _is_name(s: str) -> bool:
     return bool(_NAME_RE.match(s))
 
-def _is_noun_ref(s: str) -> bool:
-    return bool(_NOUN_REF_RE.match(s))
+def _is_object_ref(s: str) -> bool:
+    return bool(_OBJECT_REF_RE.match(s))
 
 def _is_stated_name(s: str) -> bool:
     return bool(_STATED_NAME_RE.match(s))
@@ -123,8 +123,8 @@ def _require_name(value: str, ln: int, what: str) -> str:
         raise ParseError(ln, f"Invalid {what}: {value}")
     return value
 
-def _require_noun_ref(value: str, ln: int, what: str) -> str:
-    if not _is_noun_ref(value):
+def _require_object_ref(value: str, ln: int, what: str) -> str:
+    if not _is_object_ref(value):
         raise ParseError(ln, f"Invalid {what}: {value}")
     return value
 
@@ -141,7 +141,7 @@ def _validate_arrow_endpoint(value: str, ln: int, what: str) -> None:
     if value.startswith("room__"):
         _require_name(value.split("__", 1)[1], ln, f"{what} room state")
         return
-    _require_noun_ref(value, ln, what)
+    _require_object_ref(value, ln, what)
 
 def _validate_target_groups(target_groups: list[list[str]], ln: int) -> None:
     wildcard_groups = [group for group in target_groups if "*" in group]
@@ -241,10 +241,10 @@ def parse_global(source: str) -> GameData:
                         if _indent(lines[i], i + 1) != 0:
                             raise ParseError(i + 1, f"Unexpected indentation in # Inventory: {w}")
                         if w.startswith(("+ ", "- ", "> ")) or _is_arrow(w):
-                            raise ParseError(i + 1, f"Invalid item declaration: {w}")
-                        _require_name(w, i + 1, "item name")
+                            raise ParseError(i + 1, f"Invalid inventory object declaration: {w}")
+                        _require_name(w, i + 1, "inventory object name")
                         item_indent = _indent(lines[i], i + 1)
-                        game.items[w] = Item(w)
+                        game.inventory[w] = InventoryObject(w)
                         i += 1
                         i = _parse_entity_block(lines, i, game, room_name="", entity_name=w, entity_indent=item_indent)
                     else:
@@ -322,17 +322,17 @@ def _parse_room_body(lines, i, game, room_name):
                 i += 1
                 i = _parse_arrow_children(lines, i, game, room_name, arrow, 1)
             elif not _is_header(stripped):
-                noun_name = stripped
-                _require_stated_name(noun_name, i + 1, "noun name")
-                base, state = _split_name(noun_name)
-                key = f"{room_name}::{noun_name}"
-                existing = game.nouns.get(key)
-                game.nouns[key] = Noun(
-                    noun_name, base, state, room_name,
+                obj_name = stripped
+                _require_stated_name(obj_name, i + 1, "room object name")
+                base, state = _split_name(obj_name)
+                key = f"{room_name}::{obj_name}"
+                existing = game.objects.get(key)
+                game.objects[key] = RoomObject(
+                    obj_name, base, state, room_name,
                     discovered=existing.discovered if existing else False,
                 )
                 i += 1
-                i = _parse_entity_block(lines, i, game, room_name, noun_name, 0)
+                i = _parse_entity_block(lines, i, game, room_name, obj_name, 0)
             else:
                 break
         else:
@@ -391,14 +391,14 @@ def _parse_entity_block(lines, i, game, room_name, entity_name, entity_indent, p
             if _is_sealed_fence(stripped):
                 raise ParseError(i + 1, "Fragment blocks must be inside an interaction (+ block)")
             elif not _is_narrative(stripped) and ind > entity_indent:
-                noun_name = stripped
-                _require_stated_name(noun_name, i + 1, "noun name")
-                base, state = _split_name(noun_name)
-                key = f"{room_name}::{noun_name}"
-                if key not in game.nouns:
-                    game.nouns[key] = Noun(noun_name, base, state, room_name)
+                obj_name = stripped
+                _require_stated_name(obj_name, i + 1, "room object name")
+                base, state = _split_name(obj_name)
+                key = f"{room_name}::{obj_name}"
+                if key not in game.objects:
+                    game.objects[key] = RoomObject(obj_name, base, state, room_name)
                 i += 1
-                i = _parse_entity_block(lines, i, game, room_name, noun_name, ind)
+                i = _parse_entity_block(lines, i, game, room_name, obj_name, ind)
             else:
                 raise ParseError(i + 1, f"Unexpected line in entity block: {stripped}")
     return i
@@ -420,7 +420,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     if "+" in header_part:
         parts = [p.strip() for p in header_part.split("+")]
         verb = _require_stated_name(parts[0], source_line, "verb name")
-        extra_targets = [[_require_noun_ref(a.strip(), source_line, "target") for a in p.split("|")] for p in parts[1:]]
+        extra_targets = [[_require_object_ref(a.strip(), source_line, "target") for a in p.split("|")] for p in parts[1:]]
     else:
         verb = _require_stated_name(header_part, source_line, "verb name")
         extra_targets = []
@@ -553,18 +553,18 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
             source_line=arrow.source_line,
             trigger_room=room_name,
         ))
-        # Register any nouns that the cue arrows reveal in the target room
-        # Strip trailing __ (base-state-only marker) for noun registration
-        noun_room = target_room[:-2] if target_room.endswith("__") else target_room
+        # Register any room objects that the cue arrows reveal in the target room
+        # Strip trailing __ (base-state-only marker) for room object registration
+        obj_room = target_room[:-2] if target_room.endswith("__") else target_room
         for ca in cue_arrows:
             if ca.destination == "room":
                 subj = ca.subject
                 base, state = _split_name(subj)
-                key = f"{noun_room}::{subj}"
-                if key not in game.nouns:
-                    game.nouns[key] = Noun(subj, base, state, noun_room, discovered=True)
+                key = f"{obj_room}::{subj}"
+                if key not in game.objects:
+                    game.objects[key] = RoomObject(subj, base, state, obj_room, discovered=True)
                 else:
-                    game.nouns[key].discovered = True
+                    game.objects[key].discovered = True
         return i
 
     if dest == "trash":
@@ -582,7 +582,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
         target_room = dest[1:-1]
         subject = arrow.subject
         if subject == "player":
-            # player -> "Room" is movement, not a noun registration
+            # player -> "Room" is movement, not a room object registration
             unexpected = _unexpected_child_line(lines, i, child_indent)
             if unexpected is not None:
                 line_idx, stripped = unexpected
@@ -590,18 +590,18 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
             return i
         base, state = _split_name(subject)
         key = f"{target_room}::{subject}"
-        if key not in game.nouns:
-            game.nouns[key] = Noun(subject, base, state, target_room)
+        if key not in game.objects:
+            game.objects[key] = RoomObject(subject, base, state, target_room)
         return _parse_entity_block(lines, i, game, target_room, subject, child_indent - 1)
 
     if dest == "room":
         subject = arrow.subject
         base, state = _split_name(subject)
         key = f"{room_name}::{subject}"
-        if key not in game.nouns:
-            game.nouns[key] = Noun(subject, base, state, room_name, discovered=True)
+        if key not in game.objects:
+            game.objects[key] = RoomObject(subject, base, state, room_name, discovered=True)
         else:
-            game.nouns[key].discovered = True
+            game.objects[key].discovered = True
         return _parse_entity_block(lines, i, game, room_name, subject, child_indent - 1)
 
     # -> VERBNAME (verb reveal): skip, no children
@@ -635,8 +635,8 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
     else:
         base, state = _split_name(dest_name)
         key = f"{room_name}::{dest_name}"
-        if key not in game.nouns:
-            game.nouns[key] = Noun(dest_name, base, state, room_name)
+        if key not in game.objects:
+            game.objects[key] = RoomObject(dest_name, base, state, room_name)
         return _parse_entity_block(lines, i, game, room_name, dest_name, child_indent - 1, propagated_arrows=propagated_arrows)
 
 
@@ -664,14 +664,14 @@ def _parse_room_state_children(lines, i, game, room_state_name, child_indent, pr
                     lines, i, game, room_state_name, room_entity, child_indent - 1
                 )
             else:
-                noun_name = content
-                _require_stated_name(noun_name, i + 1, "noun name")
-                base, state = _split_name(noun_name)
-                game.nouns[f"{room_state_name}::{noun_name}"] = Noun(
-                    noun_name, base, state, room_state_name
+                obj_name = content
+                _require_stated_name(obj_name, i + 1, "room object name")
+                base, state = _split_name(obj_name)
+                game.objects[f"{room_state_name}::{obj_name}"] = RoomObject(
+                    obj_name, base, state, room_state_name
                 )
                 i += 1
-                i = _parse_entity_block(lines, i, game, room_state_name, noun_name, _indent(line, i + 1))
+                i = _parse_entity_block(lines, i, game, room_state_name, obj_name, _indent(line, i + 1))
         elif marker == "-":
             if _is_arrow(content):
                 arrow = _parse_arrow(_strip_trailing_comment(content), i + 1)
@@ -682,15 +682,15 @@ def _parse_room_state_children(lines, i, game, room_state_name, child_indent, pr
             else:
                 raise ParseError(i + 1, f"Unexpected line in room-state block: {stripped}")
         else:
-            # Bare name = noun in room state
-            noun_name = stripped
-            _require_stated_name(noun_name, i + 1, "noun name")
-            base, state = _split_name(noun_name)
-            game.nouns[f"{room_state_name}::{noun_name}"] = Noun(
-                noun_name, base, state, room_state_name
+            # Bare name = room object in room state
+            obj_name = stripped
+            _require_stated_name(obj_name, i + 1, "room object name")
+            base, state = _split_name(obj_name)
+            game.objects[f"{room_state_name}::{obj_name}"] = RoomObject(
+                obj_name, base, state, room_state_name
             )
             i += 1
-            i = _parse_entity_block(lines, i, game, room_state_name, noun_name, _indent(line, i + 1))
+            i = _parse_entity_block(lines, i, game, room_state_name, obj_name, _indent(line, i + 1))
     return i
 
 
@@ -771,7 +771,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
             header = line[:-1].strip()
             parts = [p.strip() for p in header.split("+")]
             verb = _require_stated_name(parts[0], i + 1, "verb name")
-            target_groups = [[_require_noun_ref(a.strip(), i + 1, "target") for a in p.split("|")] for p in parts[1:]]
+            target_groups = [[_require_object_ref(a.strip(), i + 1, "target") for a in p.split("|")] for p in parts[1:]]
             _validate_target_groups(target_groups, i + 1)
             source_line = i + 1
             i += 1

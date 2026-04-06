@@ -91,21 +91,21 @@ class GameWriter:
             # THING -> player
             elif dest == "player":
                 entity_id = self._get_id(subj, current_room)
-                # Check for item by exact name, then by base name
-                # (FUSE__FLOOR -> player registers item as FUSE)
+                # Check for inventory object by exact name, then by base name
+                # (FUSE__FLOOR -> player registers inventory object as FUSE)
                 base_name = subj.split("__")[0] if "__" in subj else subj
-                item = self.game.items.get(subj) or self.game.items.get(base_name)
-                if item:
-                    # Auto-item picked up via TAKE: player already computed the sum
-                    if ri.verb == "TAKE" and subj in self.game.auto_items:
+                inv_obj = self.game.inventory.get(subj) or self.game.inventory.get(base_name)
+                if inv_obj:
+                    # Auto-inventory object picked up via TAKE: player already computed the sum
+                    if ri.verb == "TAKE" and subj in self.game.auto_inventory:
                         instructions.append(
                             f"Cross out {dn(subj)} on this room sheet. "
-                            f"Write {dn(subj)} and your sum ({item.id}) on your Inventory."
+                            f"Write {dn(subj)} and your sum ({inv_obj.id}) on your Inventory."
                         )
                     else:
                         instructions.append(
                             f"Cross out {dn(subj)} on this room sheet. "
-                            f"Write {dn(subj)} and {item.id} on your Inventory."
+                            f"Write {dn(subj)} and {inv_obj.id} on your Inventory."
                         )
                 else:
                     instructions.append(
@@ -260,10 +260,10 @@ class GameWriter:
         return instructions
 
     def _initial_objects(self, room_name: str):
-        """Return visible objects in a room (excludes discovered-via-arrow objects)."""
+        """Return visible room objects in a room (excludes discovered-via-arrow objects)."""
         return [
-            n for n in self.game.nouns.values()
-            if n.room == room_name and n.state is None and not n.discovered
+            obj for obj in self.game.objects.values()
+            if obj.room == room_name and obj.state is None and not obj.discovered
         ]
 
     def _preprinted_actions(self, room_name: str):
@@ -290,8 +290,8 @@ class GameWriter:
             if rm.state is not None:
                 continue
             count = sum(
-                1 for n in self.game.nouns.values()
-                if n.room == room_name and n.state is None and n.discovered
+                1 for obj in self.game.objects.values()
+                if obj.room == room_name and obj.state is None and obj.discovered
             ) + sum(
                 1 for a in self.game.actions.values()
                 if a.room == room_name and a.discovered
@@ -317,18 +317,18 @@ class GameWriter:
         are always located on the Inventory. Otherwise, room nouns are
         checked first so that -> trash generates the correct sheet reference.
         """
-        if name in from_inventory and name in self.game.items:
-            return "Inventory", self.game.items[name].id
+        if name in from_inventory and name in self.game.inventory:
+            return "Inventory", self.game.inventory[name].id
         key = f"{room}::{name}"
-        if key in self.game.nouns:
-            return "room sheet", self.game.nouns[key].id
+        if key in self.game.objects:
+            return "room sheet", self.game.objects[key].id
         base_room = room.split("__", 1)[0]
-        for n in self.game.nouns.values():
-            noun_base_room = n.room.split("__", 1)[0]
-            if n.name == name and noun_base_room == base_room:
-                return "room sheet", n.id
-        if name in self.game.items:
-            return "Inventory", self.game.items[name].id
+        for obj in self.game.objects.values():
+            obj_base_room = obj.room.split("__", 1)[0]
+            if obj.name == name and obj_base_room == base_room:
+                return "room sheet", obj.id
+        if name in self.game.inventory:
+            return "Inventory", self.game.inventory[name].id
         return "sheet", 0
 
     def _get_id(self, name: str, room: str) -> int | None:
@@ -360,8 +360,8 @@ def print_build_summary(game: GameData, file=None):
     parts = [
         p(len(game.verbs), "verbs"),
         p(len(game.rooms), "rooms"),
-        p(len(game.nouns), "nouns"),
-        p(len(game.items), "items"),
+        p(len(game.objects), "objects"),
+        p(len(game.inventory), "inventory"),
         p(len(game.resolved) + action_count, "entries"),
         p(len(game.cues), "cues"),
         p(len(game.actions), "actions"),

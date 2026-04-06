@@ -14,7 +14,7 @@ You can define multiple rooms in one file if you prefer, but one room per file i
 
 ## Room descriptions
 
-A room-level interaction sits directly under the header — no `+` prefix, no noun name:
+A room-level interaction sits directly under the header — no `+` prefix, no room object name:
 
 ```markdown
 # Engine Room
@@ -23,9 +23,9 @@ LOOK: Pipes criss-cross the ceiling. The air is thick with steam.
 
 This is what players read when they LOOK at the room itself. It sets the scene.
 
-## Nouns
+## Room objects
 
-Nouns are objects inside a room. Write them as bare `ALL_CAPS` names on their own line:
+Room objects are objects inside a room. Write them as bare `ALL_CAPS` names on their own line:
 
 ```markdown
 # Engine Room
@@ -36,17 +36,17 @@ GAUGE
 TOOLBOX
 ```
 
-Each noun gets its own ID on the printed room sheet. Players can target nouns by adding verb + noun IDs.
+Each room object gets its own ID on the printed room sheet. Players can target room objects by adding verb + room object IDs.
 
 ### Naming rules
 
-Noun names must be `ALL_CAPS` with optional underscores: `VALVE`, `FUEL_TANK`, `CONTROL_PANEL`. This distinguishes them from narrative text.
+Room object names must be `ALL_CAPS` with optional underscores: `VALVE`, `FUEL_TANK`, `CONTROL_PANEL`. This distinguishes them from narrative text.
 
 The same name can appear in different rooms — the compiler treats them as separate entities.
 
 ## Interactions
 
-Interactions define what happens when a player uses a verb on a noun. They use the `+` prefix:
+Interactions define what happens when a player uses a verb on a room object. They use the `+` prefix:
 
 ```markdown
 TOOLBOX
@@ -72,7 +72,7 @@ or for longer responses:
 
 ### Multiple interactions
 
-A noun can respond to multiple verbs:
+A room object can respond to multiple verbs:
 
 ```markdown
 GAUGE
@@ -94,7 +94,7 @@ DOOR
 
 The player must calculate verb + noun1 + noun2 to reach this entry. If the key is in the player's inventory, its inventory ID is used instead of the room ID — the compiler handles both automatically.
 
-For interactions involving multiple nouns that don't belong naturally under a single noun's block, use a [`## Interactions` section](advanced.md#the-interactions-section).
+For interactions involving multiple room objects that don't belong naturally under a single room object's block, use a [`## Interactions` section](advanced.md#the-interactions-section).
 
 ### Inline vs. block narrative
 
@@ -126,7 +126,7 @@ Consecutive lines are joined into one paragraph. Separate paragraphs with a blan
 Addventure uses indentation to define structure. The hierarchy works like this:
 
 ```
-NOUN_NAME                    ← level 0: noun declaration
+ENTITY_NAME                  ← level 0: room object declaration
 + VERB:                      ← level 1: interaction
   Narrative text             ← level 2: narrative body
   - ENTITY -> destination    ← level 2: arrow (state change)
@@ -197,7 +197,7 @@ When the player uses the crowbar on the hatch, the instructions include "Write G
 
 ### Removing actions
 
-Actions can be removed with `-> trash`, just like nouns:
+Actions can be removed with `-> trash`, just like room objects:
 
 ```markdown
 LEVER
@@ -238,7 +238,7 @@ The content inside `::: fragment` is Typst markup. Plain prose works as-is. Basi
 
 ## Putting it together
 
-Here's a complete room with two interactive nouns, one of which changes state:
+Here's a complete room with two interactive room objects, one of which changes state:
 
 ```markdown
 # Storage Bay
@@ -264,6 +264,6 @@ CROWBAR
   - CROWBAR -> player
 ```
 
-This gives players two objects to interact with, a multi-target puzzle, and a state change that reveals new content when solved.
+This gives players two room objects to interact with, a multi-target puzzle, and a state change that reveals new content when solved.
 
 Next: [State & Transformation](state-and-transformation.md).

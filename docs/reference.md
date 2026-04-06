@@ -8,7 +8,7 @@ A game is a directory of `.md` files:
 
 | File | Purpose |
 |---|---|
-| `index.md` | Metadata (frontmatter), verb list, item list |
+| `index.md` | Metadata (frontmatter), verb list, inventory object list |
 | `*.md` (all others) | Room definitions, loaded alphabetically |
 
 ## Frontmatter
@@ -68,13 +68,13 @@ LOOK: Description of the room.
 
 No `+` prefix. Defines what happens when a verb targets the room itself.
 
-### Nouns
+### Room objects
 
 ```markdown
 NOUN_NAME
 ```
 
-Bare `ALL_CAPS` name on its own line. Declares an object in the room.
+Bare `ALL_CAPS` name on its own line. Declares a room object.
 
 ### Entity interactions
 
@@ -126,7 +126,7 @@ Nested under the arrow that creates the state.
 
 | Destination | Effect |
 |---|---|
-| `player` | Move to inventory (auto-creates item; inventory ID = TAKE + noun ID) |
+| `player` | Move to inventory (auto-creates inventory object; inventory ID = TAKE + room object ID) |
 | `trash` | Remove entity from the game |
 | `room` | Place entity in the current room |
 | `"Room Name"` | Move the player to another room |
@@ -152,7 +152,7 @@ Nested under the arrow that creates the state.
 
 ## Naming rules
 
-- Nouns, items, verbs, and actions: `ALL_CAPS` with optional single underscores between segments
+- Room objects, inventory objects, verbs, and actions: `ALL_CAPS` with optional single underscores between segments
 - States: `BASE__STATE` (double underscore)
 
 Plain identifiers may not contain `__`. Double underscore is reserved for state syntax only.
@@ -208,7 +208,7 @@ The compiler randomly assigns IDs from these ranges:
 | Entity type | Range | Excluded |
 |---|---|---|
 | Verbs | 11–99 | Multiples of 5 and 10 |
-| Entities (rooms, nouns, items) | 100–999 | Multiples of 5 and 10 |
+| Entities (rooms, room objects, inventory objects) | 100–999 | Multiples of 5 and 10 |
 
 IDs are re-randomized on each build.
 

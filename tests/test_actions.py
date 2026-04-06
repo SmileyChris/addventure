@@ -131,7 +131,7 @@ def test_plain_name_rejects_double_underscore_in_verbs():
 def test_plain_name_rejects_double_underscore_in_items():
     global_src = "# Verbs\nLOOK\n\n# Inventory\nKEY__CARD\n"
 
-    with pytest.raises(ParseError, match="Invalid item name: KEY__CARD"):
+    with pytest.raises(ParseError, match="Invalid inventory object name: KEY__CARD"):
         compile_game(global_src, ["# Room\nLOOK: A room.\n"])
 
 
@@ -166,7 +166,7 @@ BOX
 """
 
     game = compile_game(global_src, [room_src])
-    assert "Room::BOX__OPEN" in game.nouns
+    assert "Room::BOX__OPEN" in game.objects
 
 
 def test_trailing_comments_allowed_on_structural_lines():
@@ -195,8 +195,8 @@ BOX // comment
     game = compile_game(global_src, [room_src])
     assert "LOOK" in game.verbs
     assert "USE" in game.verbs
-    assert "KEY" in game.items
-    assert "Room::BOX__OPEN" in game.nouns
+    assert "KEY" in game.inventory
+    assert "Room::BOX__OPEN" in game.objects
 
 
 def test_narrative_text_preserves_double_slash():
@@ -641,7 +641,7 @@ FOUNTAIN
     assert "room sheet" in fountain_inst
 
     # The fountain ID should be from the Clearing room, not Forest
-    clearing_fountain = game.nouns.get("Clearing::FOUNTAIN")
+    clearing_fountain = game.objects.get("Clearing::FOUNTAIN")
     assert clearing_fountain is not None
     assert str(clearing_fountain.id) in fountain_inst
 

@@ -151,7 +151,7 @@ def _inventory_section(
     lines = ["## Inventory & Potentials"]
 
     # Inventory
-    slot_count = max(len(game.items) + 2, 6)
+    slot_count = max(len(game.inventory) + 2, 6)
     lines.append(
         "\n### Inventory\n"
         "\n*Record items you are carrying. Write the item name and its ID.*\n"

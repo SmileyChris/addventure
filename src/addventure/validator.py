@@ -44,9 +44,9 @@ def validate_reachability(game: GameData) -> list[str]:
 
     # Initial visible objects per room (not discovered via arrows/cues)
     initial_objects = set()
-    for key, n in game.nouns.items():
-        if n.state is None and not n.discovered:
-            initial_objects.add((n.room, n.name))
+    for key, obj in game.objects.items():
+        if obj.state is None and not obj.discovered:
+            initial_objects.add((obj.room, obj.name))
     # Pre-printed actions tracked with > prefix
     for key, action in game.actions.items():
         if not action.discovered:
@@ -263,7 +263,7 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
                 }
                 room_states.add((base, clean_dest))
             else:
-                # Noun state change
+                # Room object state change
                 objects.discard((room, subj))
                 objects.add((room, dest))
 

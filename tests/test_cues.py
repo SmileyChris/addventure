@@ -639,7 +639,7 @@ KEY
   - KEY -> player
 """
     game = compile_game(global_src, [room_src])
-    assert "KEY" in game.items
+    assert "KEY" in game.inventory
 
 
 def test_auto_register_requires_take_verb():
@@ -700,7 +700,7 @@ KEY
   - KEY -> player
 """
     game = compile_game(global_src, [room_src])
-    key_item = game.items["KEY"]
+    key_item = game.inventory["KEY"]
     # Explicit item keeps its own allocated ID (from entity pool, 100-999)
     assert 100 <= key_item.id <= 999
 
@@ -718,8 +718,8 @@ KEY
   - KEY -> player
 """
     game = compile_game(global_src, [room_src])
-    key_noun = game.nouns["Room::KEY"]
-    key_item = game.items["KEY"]
+    key_noun = game.objects["Room::KEY"]
+    key_item = game.inventory["KEY"]
     take_id = game.verbs["TAKE"].id
     assert key_item.id == take_id + key_noun.id
 
@@ -740,9 +740,9 @@ BOX
 + LOOK: A box.
 """
     game = compile_game(global_src, [room_src])
-    key_item = game.items["KEY"]
+    key_item = game.inventory["KEY"]
     all_entity_ids = set()
-    for n in game.nouns.values():
+    for n in game.objects.values():
         all_entity_ids.add(n.id)
     for r in game.rooms.values():
         all_entity_ids.add(r.id)
@@ -762,8 +762,8 @@ KEY
   - KEY -> player
 """
     game = compile_game(global_src, [room_src])
-    key_noun = game.nouns["Room::KEY"]
-    key_item = game.items["KEY"]
+    key_noun = game.objects["Room::KEY"]
+    key_item = game.inventory["KEY"]
     look_id = game.verbs["LOOK"].id
 
     # LOOK + noun_id should exist
@@ -813,10 +813,10 @@ DOOR
   - DOOR -> trash
 """
     game = compile_game(global_src, [room_src])
-    key_item = game.items["KEY"]
+    key_item = game.inventory["KEY"]
     use_id = game.verbs["USE"].id
-    door_id = game.nouns["Room::DOOR"].id
-    key_noun_id = game.nouns["Room::KEY"].id
+    door_id = game.objects["Room::DOOR"].id
+    key_noun_id = game.objects["Room::KEY"].id
 
     # USE + DOOR + KEY(noun) should exist
     noun_sum = use_id + door_id + key_noun_id
@@ -841,7 +841,7 @@ KEY
 """
     game = compile_game(global_src, [room_src])
     writer = GameWriter(game)
-    key_noun = game.nouns["Room::KEY"]
+    key_noun = game.objects["Room::KEY"]
 
     # Find the TAKE + KEY resolved interaction (using noun ID, not inventory ID)
     take_ri = [ri for ri in game.resolved
@@ -871,7 +871,7 @@ KEY
 """
     game = compile_game(global_src, [room_src])
     writer = GameWriter(game)
-    key_noun = game.nouns["Room::KEY"]
+    key_noun = game.objects["Room::KEY"]
 
     take_ri = [ri for ri in game.resolved
                if ri.verb == "TAKE" and "KEY" in ri.targets
@@ -900,7 +900,7 @@ GEM
 """
     game = compile_game(global_src, [room_src])
     writer = GameWriter(game)
-    gem_item = game.items["GEM"]
+    gem_item = game.inventory["GEM"]
 
     # Find USE + CRATE (which triggers GEM -> player)
     use_crate = [ri for ri in game.resolved

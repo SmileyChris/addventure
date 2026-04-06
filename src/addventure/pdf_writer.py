@@ -51,8 +51,8 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         ]
 
         disc_count = sum(
-            1 for n in game.nouns.values()
-            if n.room == room_name and n.state is None and n.discovered
+            1 for obj in game.objects.values()
+            if obj.room == room_name and obj.state is None and obj.discovered
         ) + sum(
             1 for a in game.actions.values()
             if a.room == room_name and a.discovered
@@ -142,7 +142,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         "jigsaw": False,
         "verbs": verbs,
         "rooms": rooms,
-        "inventory_slots": max(len(game.items) + 2, 6),
+        "inventory_slots": max(len(game.inventory) + 2, 6),
         "cue_slots": len(game.cues),
         "potentials": potentials,
         "ledger": ledger,
