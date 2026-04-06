@@ -217,11 +217,3 @@ Identifiers are authored in strict machine form (`GO_NORTH`, `WALL_PANEL`) and r
 | `upper_words` (default) | `GO_NORTH` → `GO NORTH` |
 | `title` | `GO_NORTH` → `Go North` |
 
-### ID ranges
-
-| Entity type | Range | Excluded |
-|---|---|---|
-| Verbs | 11–99 | Multiples of 5 and 10 |
-| Entities (rooms, room objects, inventory objects) | 100–999 | Multiples of 5 and 10 |
-
-IDs are re-randomized on each build.
