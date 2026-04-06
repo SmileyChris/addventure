@@ -1,6 +1,6 @@
 [project]
 site_name = "Addventure"
-site_description = "A compiler for interactive fiction and text adventures played on paper — addition is the parser"
+site_description = "Build text adventures where players solve puzzles by adding numbers. Print it out and play."
 site_url = "https://smileychris.github.io/addventure"
 site_dir = "site/build"
 extra_css = ["stylesheets/extra.css"]
