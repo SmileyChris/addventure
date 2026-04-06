@@ -35,7 +35,7 @@ Documentation = "https://smileychris.github.io/addventure/getting-started/"
 Repository = "https://github.com/SmileyChris/addventure"
 
 [project.scripts]
-adv = "addventure.cli:main"
+addventure = "addventure.cli:main"
 
 [dependency-groups]
 dev = [

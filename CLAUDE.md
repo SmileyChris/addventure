@@ -9,12 +9,12 @@ Addventure is a compiler and writer for paper-based text adventures where "addit
 ## Running
 
 ```bash
-uv run adv                       # Show help
-uv run adv build                 # Build game in cwd (or example if not in a game dir)
-uv run adv build games/example   # Explicit game directory
-uv run adv build --md             # Markdown output instead of PDF
-uv run adv new                   # Scaffold a new game (interactive)
-uv run adv new "My Game"         # Scaffold with defaults (oneshot)
+uv run addventure                       # Show help
+uv run addventure build                 # Build game in cwd (or example if not in a game dir)
+uv run addventure build games/example   # Explicit game directory
+uv run addventure build --md             # Markdown output instead of PDF
+uv run addventure new                   # Scaffold a new game (interactive)
+uv run addventure new "My Game"         # Scaffold with defaults (oneshot)
 ```
 
 Games are directories of `.md` files. Each game directory needs an `index.md` (metadata + verbs + items); all other `.md` files are room scripts loaded alphabetically.
@@ -22,11 +22,11 @@ Games are directories of `.md` files. Each game directory needs an `index.md` (m
 ## Project Structure
 
 ```
-pyproject.toml             # Package config — `uv run adv` entry point
+pyproject.toml             # Package config — `uv run addventure` entry point
 addventure.py              # Legacy entry point (delegates to cli.py)
 src/addventure/
   __init__.py              # Re-exports: compile_game, GameWriter, print_build_summary
-  cli.py                   # CLI: `adv build`, `adv new` subcommands
+  cli.py                   # CLI: `addventure build`, `addventure new` subcommands
   models.py                # All dataclasses (Verb, Noun, Item, Room, Arrow, Interaction, etc.)
   parser.py                # .md script parsing (markdown-based, indentation-sensitive)
   compiler.py              # ID allocation, inheritance, resolver, collision detection

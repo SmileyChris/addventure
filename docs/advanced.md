@@ -273,7 +273,7 @@ Entries are **not** merged when:
 
 **Name things clearly.** `RUSTY_KEY` is better than `KEY2`. Players see these names on their sheets.
 
-**Test by building often.** Run `uv run adv build --md` frequently as you write. The compiler catches errors (undefined entities, bad arrows) and reports them with line numbers.
+**Test by building often.** Run `uv run addventure build --md` frequently as you write. The compiler catches errors (undefined entities, bad arrows) and reports them with line numbers.
 
 **Think about the paper experience.** Every state change means the player has to cross something out and write something new. Complex chains of arrows create complex instructions — keep it manageable.
 

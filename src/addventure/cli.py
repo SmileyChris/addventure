@@ -1,5 +1,5 @@
 """
-Addventure CLI — `adv run [dir]` and `adv new [name]`.
+Addventure CLI — `addventure build [dir]` and `addventure new [name]`.
 """
 
 import re
@@ -28,7 +28,7 @@ def load_game(game_dir: Path) -> tuple[str, list[str]]:
 def cmd_build(args: list[str]):
     """Compile a game and output PDF (default) or markdown."""
     import argparse
-    parser = argparse.ArgumentParser(prog="adv build", description="Compile and output a game")
+    parser = argparse.ArgumentParser(prog="addventure build", description="Compile and output a game")
     parser.add_argument("game_dir", nargs="?", default=None,
                         help="Path to game directory (default: cwd if index.md exists, else games/example)")
     parser.add_argument("--markdown", "--md", action="store_true",
@@ -56,7 +56,7 @@ def cmd_build(args: list[str]):
         game_dir = Path("games/example")
     else:
         print("ERROR: No game directory specified and not in a game directory")
-        print("Usage: adv build [dir]")
+        print("Usage: addventure build [dir]")
         sys.exit(1)
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
@@ -98,7 +98,7 @@ def cmd_build(args: list[str]):
                   file=sys.stderr)
             print("  Install typst: https://github.com/typst/typst",
                   file=sys.stderr)
-            print("  Or use: adv build --md", file=sys.stderr)
+            print("  Or use: addventure build --md", file=sys.stderr)
             sys.exit(1)
 
         if parsed.output:
@@ -234,7 +234,7 @@ COMMANDS = {
 }
 
 USAGE = """\
-Usage: adv <command> [args]
+Usage: addventure <command> [args]
 
 Commands:
   build [dir] [--md] [-o FILE] [--theme NAME] [--paper SIZE] [--blind] [--no-cover] [--fragment MODE]

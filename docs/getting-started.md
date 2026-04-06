@@ -15,18 +15,14 @@ Install once with uv:
 uv tool install addventure
 ```
 
-This puts the `adv` command in your PATH. For a one-off run without installing:
+This puts the `addventure` command in your PATH. For a one-off run without installing, use `uvx addventure`.
 
-```bash
-uvx --from addventure adv build games/sunken-library
-```
-
-The rest of this guide uses `adv` for brevity.
+The rest of this guide uses `addventure`.
 
 ## Scaffold a new game
 
 ```bash
-adv new "Sunken Library"
+addventure new "Sunken Library"
 ```
 
 This creates a game directory with a starter `index.md`:
@@ -39,7 +35,7 @@ games/sunken-library/
 For an interactive setup (choose your own verbs, set an author name):
 
 ```bash
-adv new
+addventure new
 ```
 
 ## The index file
@@ -104,20 +100,20 @@ Let's break this down:
 Compile to PDF:
 
 ```bash
-adv build games/sunken-library
+addventure build games/sunken-library
 ```
 
 Or markdown if you don't have Typst:
 
 ```bash
-adv build games/sunken-library --md
+addventure build games/sunken-library --md
 ```
 
 You can also build from inside the game directory:
 
 ```bash
 cd games/sunken-library
-adv build
+addventure build
 ```
 
 The PDF contains all the sheets players need — print it out and play.
@@ -127,7 +123,7 @@ The PDF contains all the sheets players need — print it out and play.
 Addventure ships with a complete example game you can study:
 
 ```bash
-adv build games/example
+addventure build games/example
 ```
 
 Look at the files in `games/example/` to see a full game with entity states, multi-target interactions, verb states, and room transitions.
