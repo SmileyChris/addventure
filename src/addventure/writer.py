@@ -314,7 +314,7 @@ class GameWriter:
         """Return (sheet_name, id) for an entity.
 
         For inventory-duplicate interactions, entities in from_inventory
-        are always located on the Inventory. Otherwise, room nouns are
+        are always located on the Inventory. Otherwise, room objects are
         checked first so that -> trash generates the correct sheet reference.
         """
         if name in from_inventory and name in self.game.inventory:

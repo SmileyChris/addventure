@@ -28,7 +28,7 @@ KNIFE
     key_item = game.inventory["KNIFE"]
     look_id = game.verbs["LOOK"].id
 
-    # Inventory LOOK should use item-specific text, not the room noun text
+    # Inventory LOOK should use item-specific text, not the room object text
     inv_looks = [ri for ri in game.resolved
                  if ri.sum_id == look_id + key_item.id]
     assert len(inv_looks) == 1

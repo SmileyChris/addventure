@@ -213,7 +213,7 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
                 objects.discard((room, f">{subj}"))  # Action removal
 
         elif dest == "player":
-            # Move to inventory — use base name for stated nouns
+            # Move to inventory — use base name for stated room objects
             objects.discard((room, subj))
             base = subj.split("__")[0] if "__" in subj else subj
             inventory.add(base)

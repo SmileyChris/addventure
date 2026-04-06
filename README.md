@@ -110,7 +110,7 @@ Room-level interactions use `VERB: text` without the `+` prefix. Entity interact
 
 ### Interactions section
 
-Room files can have a `# Interactions` section for interactions that don't belong to a specific noun:
+Room files can have a `# Interactions` section for interactions that don't belong to a specific room object:
 
 ```markdown
 # Interactions

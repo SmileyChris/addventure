@@ -627,7 +627,7 @@ GATE
 
 
 def test_auto_register_item_from_player_arrow():
-    """A noun with -> player should auto-create an Item."""
+    """A room object with -> player should auto-create an Item."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
@@ -662,7 +662,7 @@ KEY
 
 
 def test_auto_register_name_collision_across_rooms():
-    """Two nouns with same name in different rooms both with -> player should error."""
+    """Two room objects with same name in different rooms both with -> player should error."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A.
@@ -750,7 +750,7 @@ BOX
 
 
 def test_interactions_duplicated_for_inventory_id():
-    """LOOK + noun and LOOK + inventory_id should both appear in resolved."""
+    """LOOK + room object and LOOK + inventory_id should both appear in resolved."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
@@ -766,7 +766,7 @@ KEY
     key_item = game.inventory["KEY"]
     look_id = game.verbs["LOOK"].id
 
-    # LOOK + noun_id should exist
+    # LOOK + room object_id should exist
     noun_look = [ri for ri in game.resolved
                  if ri.sum_id == look_id + key_noun.id and ri.narrative == "A brass key."]
     assert len(noun_look) == 1
@@ -778,7 +778,7 @@ KEY
 
 
 def test_take_interaction_is_not_duplicated_for_inventory_id():
-    """TAKE should only resolve against the room noun, not the inventory copy."""
+    """TAKE should only resolve against the room object, not the inventory copy."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
@@ -795,7 +795,7 @@ KEY
 
 
 def test_multi_target_duplicated_for_inventory_id():
-    """USE + DOOR + KEY should work with both noun and inventory KEY IDs."""
+    """USE + DOOR + KEY should work with both room object and inventory KEY IDs."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
@@ -818,7 +818,7 @@ DOOR
     door_id = game.objects["Room::DOOR"].id
     key_noun_id = game.objects["Room::KEY"].id
 
-    # USE + DOOR + KEY(noun) should exist
+    # USE + DOOR + KEY(room object) should exist
     noun_sum = use_id + door_id + key_noun_id
     assert any(ri.sum_id == noun_sum for ri in game.resolved)
 
@@ -828,7 +828,7 @@ DOOR
 
 
 def test_pickup_instruction_uses_inventory_id():
-    """The pickup instruction should reference the inventory ID, not the noun ID."""
+    """The pickup instruction should reference the inventory ID, not the room object ID."""
     global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
@@ -843,14 +843,14 @@ KEY
     writer = GameWriter(game)
     key_noun = game.objects["Room::KEY"]
 
-    # Find the TAKE + KEY resolved interaction (using noun ID, not inventory ID)
+    # Find the TAKE + KEY resolved interaction (using room object ID, not inventory ID)
     take_ri = [ri for ri in game.resolved
                if ri.verb == "TAKE" and "KEY" in ri.targets
                and ri.sum_id == game.verbs["TAKE"].id + key_noun.id]
     assert len(take_ri) == 1
     instructions = writer._generate_instructions(take_ri[0])
 
-    # Direct TAKE pickup should not restate the already-computed noun ID
+    # Direct TAKE pickup should not restate the already-computed room object ID
     assert any("Cross out KEY on this room sheet." in inst for inst in instructions)
     assert not any(str(key_noun.id) in inst for inst in instructions)
     # Should mention writing to Inventory
