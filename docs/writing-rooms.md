@@ -80,6 +80,22 @@ GAUGE
 + USE: You tap the glass. The needle doesn't budge.
 ```
 
+### Multi-target interactions
+
+An interaction can require the player to combine two things. Add extra targets with `+`:
+
+```markdown
+DOOR
++ USE + KEY:
+  The key turns smoothly. The door swings open.
+  - DOOR -> DOOR__OPEN
+  - KEY -> trash
+```
+
+The player must calculate verb + noun1 + noun2 to reach this entry. If the key is in the player's inventory, its inventory ID is used instead of the room ID — the compiler handles both automatically.
+
+For interactions involving multiple nouns that don't belong naturally under a single noun's block, use a [`## Interactions` section](advanced.md#the-interactions-section).
+
 ### Inline vs. block narrative
 
 Short responses can go on the same line as the verb:
@@ -156,19 +172,9 @@ Actions are direct ledger lookups — things the player can do without addition.
   - player -> "Village"
 ```
 
-Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). Author actions as identifiers like `GO_NORTH`; the writer renders them for display.
+Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). Write action names as identifiers like `GO_NORTH`; the compiler renders them with spaces for display ("GO NORTH").
 
-By default, identifiers render as upper-case words with spaces. You can change this globally with frontmatter metadata:
-
-```markdown
----
-name_style: title
----
-```
-
-That changes rendered names like `GO_NORTH` to `Go North`.
-
-Identifiers use `ALL_CAPS` with optional single underscores like `GO_NORTH` or `WALL_PANEL`. Double underscores are reserved for states, such as `DOOR__OPEN`.
+Identifiers use `ALL_CAPS` with optional single underscores: `GO_NORTH`, `WALL_PANEL`. Double underscores are reserved for states: `DOOR__OPEN`.
 
 Actions are ideal for directional navigation, but they can do anything an interaction does: narrative, arrows, state changes.
 
@@ -223,24 +229,41 @@ VAULT_DOOR
 
 When this entry fires, the ledger instruction tells the player which fragment to turn to (e.g. "Turn to Fragment Alpha"). Fragments are printed in a separate section at the back of the ledger, or as a separate document — see [Fragment modes](reference.md#fragment-modes).
 
-The content inside `::: fragment` is Typst markup. For most purposes, plain prose works as-is.
+The content inside `::: fragment` is Typst markup. Plain prose works as-is. Basic formatting:
+
+- `*bold text*` — bold
+- `_italic text_` — italic
+- Blank line between paragraphs
+- `\` at the end of a line — explicit line break (for verse, addresses, etc.)
 
 ## Putting it together
 
-Here's a complete room with two interactive nouns:
+Here's a complete room with two interactive nouns, one of which changes state:
 
 ```markdown
 # Storage Bay
-LOOK: Crates are stacked floor to ceiling. A forklift sits idle in the corner.
+LOOK: Crates are stacked floor to ceiling. A crowbar leans against the wall.
 
 CRATE
-+ LOOK: Shipping labels are torn off. Could be anything inside.
++ LOOK: A heavy wooden crate, nailed shut.
++ USE + CROWBAR:
+  You lever the lid off. Inside: a fuel canister.
+  - CROWBAR -> trash
+  - CRATE -> CRATE__OPEN
+    + LOOK: A splintered crate, lid off.
+  - FUEL -> room
+    + LOOK: A metal fuel canister. Smells fresh.
+    + TAKE:
+      You grab the canister.
+      - FUEL -> player
 
-FORKLIFT
-+ LOOK: Keys still in the ignition. Fuel gauge reads empty.
-+ USE: The engine sputters and dies. No fuel.
+CROWBAR
++ LOOK: A solid iron crowbar. Good for prying.
++ TAKE:
+  You pick up the crowbar.
+  - CROWBAR -> player
 ```
 
-This gives players a room to explore with two objects, each responding to LOOK, and one that also responds to USE. But nothing changes yet — for that, we need arrows and state changes.
+This gives players two objects to interact with, a multi-target puzzle, and a state change that reveals new content when solved.
 
 Next: [State & Transformation](state-and-transformation.md).
