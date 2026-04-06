@@ -120,13 +120,13 @@ The PDF contains all the sheets players need — print it out and play.
 
 ## Try the example game
 
-Addventure ships with a complete example game you can study:
+Addventure ships with a complete example game. If you have the source code checked out, build it with:
 
 ```bash
 addventure build games/example
 ```
 
-Look at the files in `games/example/` to see a full game with entity states, multi-target interactions, verb states, and room transitions.
+Browse the source files at [github.com/SmileyChris/addventure/tree/main/games/example](https://github.com/SmileyChris/addventure/tree/main/games/example) to see a full game with entity states, multi-target interactions, verb states, and room transitions.
 
 ## Next steps
 

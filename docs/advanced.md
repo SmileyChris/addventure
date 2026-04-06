@@ -297,7 +297,7 @@ Entries are **not** merged when:
 
 ## Design tips
 
-**Start small.** A good first game has 2-3 rooms with a few puzzles. The example game (`games/example/`) is a good template.
+**Start small.** A good first game has 2-3 rooms with a few puzzles. The [example game](https://github.com/SmileyChris/addventure/tree/main/games/example) is a good template.
 
 **Name things clearly.** `RUSTY_KEY` is better than `KEY2`. Players see these names on their sheets.
 
