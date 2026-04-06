@@ -57,7 +57,7 @@ start: Entrance Hall
 | `entry_prefix` | Prefix for ledger entry labels (default: none) |
 | `image` | Path to cover/watermark image |
 | `image_height` | Height of the cover image |
-| `name_style` | Identifier rendering style: `upper_words` (default) or `title` |
+| `name_style` | Identifier rendering style: `upper_words` (default) or `title` — see [Name style](advanced.md#name-style) |
 
 Unknown keys are accepted but produce a build warning.
 
@@ -188,9 +188,9 @@ Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-mo
 | Syntax | Meaning |
 |---|---|
 | `ENTITY__STATE` | Double-underscore separates base name from state |
-| `*` | Wildcard — matches all room objects in an interaction |
+| `*` | Wildcard — matches all room objects in an interaction (see [Wildcards](advanced.md#wildcards)) |
 | `//` | Comment — ignored by the compiler |
-| `## Interactions` | Section for freeform interactions in a room file |
+| `## Interactions` | Section for freeform interactions in a room file (see [The Interactions section](advanced.md#the-interactions-section)) |
 | `? -> "Room"` | Cue arrow — deferred effect in another room |
 | `? -> "Room__STATE"` | Cue targeting a specific room state |
 | `? -> "Room__"` | Cue targeting only the base room state |
@@ -210,7 +210,7 @@ Plain identifiers may not contain `__`. Double underscore is reserved for state 
 
 ### Name rendering
 
-Identifiers are authored in strict machine form (`GO_NORTH`, `WALL_PANEL`) and rendered for players with spaces by default (`GO NORTH`, `WALL PANEL`). Change with `name_style` in frontmatter:
+Identifiers are authored in strict machine form (`GO_NORTH`, `WALL_PANEL`) and rendered for players with spaces by default (`GO NORTH`, `WALL PANEL`). Change with `name_style` in frontmatter — see [Name style](advanced.md#name-style) for details.
 
 | Value | Example |
 |---|---|

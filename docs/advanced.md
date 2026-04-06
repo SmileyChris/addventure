@@ -164,7 +164,7 @@ The `# Inventory` section in `index.md` is only needed for inventory objects tha
 
 ## Name style
 
-By default, identifiers are rendered for players in upper words: `GO_NORTH` becomes **GO NORTH**, `RUSTY_KEY` becomes **RUSTY KEY**. You can change this with the `name_style` frontmatter key in `index.md`:
+By default, identifiers are rendered for players in upper words: `GO_NORTH` becomes **GO NORTH**, `RUSTY_KEY` becomes **RUSTY KEY**. You can change this with the `name_style` frontmatter key in `index.md` (see [Frontmatter](reference.md#frontmatter) for all available keys):
 
 ```markdown
 ---
