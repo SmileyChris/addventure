@@ -134,7 +134,7 @@ USE__RESTRAINED + *:
 
 This creates an interaction for every entity the player could target. It's useful for verb states that should block all normal actions, or for generic responses before a puzzle is solved.
 
-## Items vs. nouns
+## Inventory vs. nouns
 
 **Nouns** are room-bound. They appear on a specific room sheet and stay there unless an arrow moves them.
 
@@ -142,7 +142,7 @@ This creates an interaction for every entity the player could target. It's usefu
 
 When a noun has a `-> player` arrow, the compiler automatically creates an inventory version. The player crosses out the noun on their room sheet and writes the inventory ID on their inventory sheet. The inventory ID is derived from the TAKE verb: `TAKE ID + noun ID`.
 
-This means you don't need to declare items in `# Items` for things the player picks up — just write the noun in a room with a TAKE interaction:
+This means you don't need to declare items in `# Inventory` for things the player picks up — just write the noun in a room with a TAKE interaction:
 
 ```markdown
 KEYCARD
@@ -154,7 +154,7 @@ KEYCARD
 
 Most interactions on the noun (LOOK, multi-target USE, etc.) are duplicated for the inventory version, so the player can examine and use carried items. The exception is acquisition interactions — those where the only arrow is `-> player` (the sole purpose is picking the item up). These aren't duplicated since re-acquiring from inventory is meaningless.
 
-The `# Items` section in `index.md` is only needed for items that **never exist as room nouns**:
+The `# Inventory` section in `index.md` is only needed for items that **never exist as room nouns**:
 
 - Crafted items (combining two things produces a new item)
 - Abstract rewards or tokens

@@ -194,7 +194,7 @@ def _cmd_new_game(name: str | None):
     for v in verbs:
         lines.append(v)
     lines.append("")
-    lines.append("# Items")
+    lines.append("# Inventory")
     lines.append("")
 
     (game_dir / "index.md").write_text("\n".join(lines) + "\n")
@@ -220,7 +220,7 @@ def _cmd_new_chapter(name: str | None):
     lines = [
         f"# Verbs",
         "",
-        f"# Items",
+        f"# Inventory",
         "",
     ]
 

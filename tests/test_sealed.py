@@ -30,7 +30,7 @@ def test_gamedata_sealed_texts_default():
 
 
 def test_parse_sealed_block():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -51,7 +51,7 @@ KEY
     )
 
 def test_parse_sealed_block_no_outer_narrative():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -67,7 +67,7 @@ KEY
     assert ix.sealed_content == "Secret text only."
 
 def test_parse_sealed_fence_outside_interaction_rejected():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 
@@ -79,7 +79,7 @@ This should fail.
         compile_game(global_src, [room_src])
 
 def test_parse_multiple_sealed_blocks_rejected():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -97,7 +97,7 @@ KEY
         compile_game(global_src, [room_src])
 
 def test_sealed_text_created_with_ref():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -120,7 +120,7 @@ KEY
     assert st.ref == "Alpha"
 
 def test_sealed_text_refs_unique():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -144,7 +144,7 @@ CHEST
     assert len(refs) == 2  # unique
 
 def test_sealed_text_linked_to_entry():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -161,7 +161,7 @@ KEY
     assert st.entry_number == ri.entry_number
 
 def test_sealed_instruction_extended_ledger():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -179,7 +179,7 @@ KEY
     assert any(f"Turn to Fragment {st.ref}" in inst for inst in instructions)
 
 def test_sealed_instruction_jigsaw():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -197,7 +197,7 @@ KEY
     assert any(f"Assemble Fragment {st.ref}" in inst for inst in instructions)
 
 def test_markdown_sealed_section():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:
@@ -217,7 +217,7 @@ KEY
 
 
 def test_serialize_sealed_texts():
-    global_src = "# Verbs\nUSE\n\n# Items\n"
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
 + USE:

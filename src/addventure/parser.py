@@ -61,7 +61,7 @@ def _parse_header(line: str) -> tuple[str, str | None]:
     s = line.strip()
     name = s[3:].strip() if s.startswith("## ") else s[2:].strip()
     lower = name.lower()
-    if lower in ("verbs", "items", "interactions"):
+    if lower in ("verbs", "inventory", "interactions"):
         return lower, None
     return "room", name
 
@@ -234,12 +234,12 @@ def parse_global(source: str) -> GameData:
                         _require_name(w, i + 1, "verb name")
                         game.verbs[w] = Verb(w)
                     i += 1
-            elif sec == "items":
+            elif sec == "inventory":
                 while i < len(lines) and not _is_header(lines[i]):
                     w = _strip_trailing_comment(lines[i]).strip()
                     if w and not _is_comment(w):
                         if _indent(lines[i], i + 1) != 0:
-                            raise ParseError(i + 1, f"Unexpected indentation in # Items: {w}")
+                            raise ParseError(i + 1, f"Unexpected indentation in # Inventory: {w}")
                         if w.startswith(("+ ", "- ", "> ")) or _is_arrow(w):
                             raise ParseError(i + 1, f"Invalid item declaration: {w}")
                         _require_name(w, i + 1, "item name")

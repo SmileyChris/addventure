@@ -13,7 +13,7 @@ from addventure.writer import GameWriter
 
 
 def _make_game_with_cues(cue_count: int):
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_lines = ["# Room A", "LOOK: A."]
     for idx in range(1, cue_count + 1):
         room_lines.extend([
@@ -60,7 +60,7 @@ def test_gamedata_has_cues():
 
 
 def test_parse_cue_arrow():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -87,7 +87,7 @@ LOOK: B.
 
 
 def test_parse_multiple_cues():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -115,7 +115,7 @@ LOOK: C.
 
 
 def test_cue_gets_id_and_sum():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -139,7 +139,7 @@ LOOK: B.
 
 
 def test_cue_appears_in_resolved():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -167,7 +167,7 @@ LOOK: B.
 
 def test_cue_sum_in_collision_check():
     """Cue sums participate in collision detection."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -191,7 +191,7 @@ LOOK: B.
 
 def test_trigger_instruction_writes_cue():
     """The ledger entry that triggers a cue should say 'Write N in your Cue Checks.'"""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -222,7 +222,7 @@ LOOK: B.
 
 def test_resolution_instruction_crosses_out_cue():
     """The cue resolution ledger entry should say 'Cross out N from your Cue Checks.'"""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -252,7 +252,7 @@ LOOK: B.
 
 
 def test_inventory_sheet_has_cue_checks_when_cues_exist():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -274,7 +274,7 @@ LOOK: B.
 
 
 def test_inventory_sheet_no_cue_checks_without_cues():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\nKEY\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -321,7 +321,7 @@ def test_cue_checks_table_scales_cleanly(cue_count, expected_placeholders, expec
 
 
 def test_serialize_includes_cue_slots():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -344,7 +344,7 @@ LOOK: B.
 
 
 def test_serialize_no_cue_slots_without_cues():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\nKEY\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -359,7 +359,7 @@ BOX
 
 def test_cue_resolves_in_all_room_states():
     """A cue targeting 'Room B' resolves in base AND all states of Room B."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -409,7 +409,7 @@ LOOK: Water everywhere.
 
 def test_cue_targets_specific_room_state():
     """A cue targeting 'Room B__FLOODED' only resolves in that state."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -446,7 +446,7 @@ LOOK: Water everywhere.
 
 def test_cue_targets_base_state_only():
     """A cue targeting 'Room B__' only resolves in the base state."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -483,7 +483,7 @@ LOOK: Water everywhere.
 
 def test_cue_all_states_no_duplicate_ledger():
     """A cue resolving in multiple states should produce only one ledger entry."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -513,7 +513,7 @@ LOOK: Water everywhere.
 
 
 def test_room_sheet_no_alerts():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A room.
 
@@ -535,7 +535,7 @@ LOOK: B.
 
 
 def test_unknown_target_does_not_resolve_from_another_room():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A.
 
@@ -557,7 +557,7 @@ DOOR
 
 
 def test_compile_requires_positive_retry_budget():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = "# Room\nLOOK: A.\n"
     try:
         compile_game(global_src, [room_src], max_retries=0)
@@ -569,7 +569,7 @@ def test_compile_requires_positive_retry_budget():
 def test_reachability_applies_verb_reveals_from_cues():
     from addventure.validator import validate_reachability
 
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A.
 
@@ -597,7 +597,7 @@ CHEST
 
 
 def test_base_state_cue_objects_are_not_rendered_as_initial_objects():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A.
 
@@ -628,7 +628,7 @@ GATE
 
 def test_auto_register_item_from_player_arrow():
     """A noun with -> player should auto-create an Item."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -644,7 +644,7 @@ KEY
 
 def test_auto_register_requires_take_verb():
     """Compiler should error if -> player exists but no TAKE verb."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -663,7 +663,7 @@ KEY
 
 def test_auto_register_name_collision_across_rooms():
     """Two nouns with same name in different rooms both with -> player should error."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room A
 LOOK: A.
 
@@ -688,8 +688,8 @@ LEVER
 
 
 def test_explicit_item_skips_auto_register():
-    """If an item is declared in # Items, auto-registration is skipped."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\nKEY\n"
+    """If an item is declared in # Inventory, auto-registration is skipped."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\nKEY\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -707,7 +707,7 @@ KEY
 
 def test_auto_item_id_derived_from_take():
     """Auto-registered item ID should be TAKE_id + noun_id."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -726,7 +726,7 @@ KEY
 
 def test_auto_item_id_not_in_entity_ids():
     """The derived inventory ID should not collide with any other entity ID."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -751,7 +751,7 @@ BOX
 
 def test_interactions_duplicated_for_inventory_id():
     """LOOK + noun and LOOK + inventory_id should both appear in resolved."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -779,7 +779,7 @@ KEY
 
 def test_take_interaction_is_not_duplicated_for_inventory_id():
     """TAKE should only resolve against the room noun, not the inventory copy."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -796,7 +796,7 @@ KEY
 
 def test_multi_target_duplicated_for_inventory_id():
     """USE + DOOR + KEY should work with both noun and inventory KEY IDs."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -829,7 +829,7 @@ DOOR
 
 def test_pickup_instruction_uses_inventory_id():
     """The pickup instruction should reference the inventory ID, not the noun ID."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -859,7 +859,7 @@ KEY
 
 def test_pickup_via_take_says_write_your_sum():
     """When pickup is triggered by TAKE directly, use 'Write your sum'."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -885,7 +885,7 @@ KEY
 
 def test_pickup_via_other_verb_states_id_explicitly():
     """When pickup is triggered by a non-TAKE verb, state the inventory ID."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 

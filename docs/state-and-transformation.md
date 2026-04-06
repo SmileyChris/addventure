@@ -211,10 +211,10 @@ This prevents USE from being auto-duplicated, without creating a ledger entry.
 
 ### Pre-equipped items
 
-Items defined in `# Items` start directly in the player's inventory — they have no room noun and never need to be picked up. They can have their own interaction blocks:
+Items defined in `# Inventory` start directly in the player's inventory — they have no room noun and never need to be picked up. They can have their own interaction blocks:
 
 ````markdown
-# Items
+# Inventory
 
 COMPASS
   + LOOK: A brass compass, needle spinning wildly.

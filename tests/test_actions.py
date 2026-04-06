@@ -36,7 +36,7 @@ def test_gamedata_has_actions():
 
 
 def test_parse_room_level_action():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A dense forest.
 
@@ -60,35 +60,35 @@ LOOK: A sunlit clearing.
 
 
 def test_invalid_frontmatter_line_is_rejected():
-    global_src = "---\ntitle: Test\nbad frontmatter\n---\n# Verbs\nLOOK\n\n# Items\n"
+    global_src = "---\ntitle: Test\nbad frontmatter\n---\n# Verbs\nLOOK\n\n# Inventory\n"
 
     with pytest.raises(ParseError, match="Invalid frontmatter line"):
         compile_game(global_src, ["# Room\nLOOK: A room.\n"])
 
 
 def test_verbs_section_rejects_structural_lines():
-    global_src = "# Verbs\n  LOOK\n\n# Items\n"
+    global_src = "# Verbs\n  LOOK\n\n# Inventory\n"
 
     with pytest.raises(ParseError, match="Unexpected indentation in # Verbs"):
         compile_game(global_src, ["# Room\nLOOK: A room.\n"])
 
 
 def test_items_section_rejects_stray_indented_lines():
-    global_src = "# Verbs\nLOOK\n\n# Items\n  KEY\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n  KEY\n"
 
-    with pytest.raises(ParseError, match="Unexpected indentation in # Items"):
+    with pytest.raises(ParseError, match="Unexpected indentation in # Inventory"):
         compile_game(global_src, ["# Room\nLOOK: A room.\n"])
 
 
 def test_verbs_section_rejects_non_name_identifiers():
-    global_src = "# Verbs\nLook\n\n# Items\n"
+    global_src = "# Verbs\nLook\n\n# Inventory\n"
 
     with pytest.raises(ParseError, match="Invalid verb name: Look"):
         compile_game(global_src, ["# Room\nLOOK: A room.\n"])
 
 
 def test_action_name_must_be_name_identifier():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -105,7 +105,7 @@ LOOK: A clearing.
 
 
 def test_interaction_targets_must_be_name_identifiers():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -122,21 +122,21 @@ USE + Key:
 
 
 def test_plain_name_rejects_double_underscore_in_verbs():
-    global_src = "# Verbs\nGO__NORTH\n\n# Items\n"
+    global_src = "# Verbs\nGO__NORTH\n\n# Inventory\n"
 
     with pytest.raises(ParseError, match="Invalid verb name: GO__NORTH"):
         compile_game(global_src, ["# Room\nLOOK: A room.\n"])
 
 
 def test_plain_name_rejects_double_underscore_in_items():
-    global_src = "# Verbs\nLOOK\n\n# Items\nKEY__CARD\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\nKEY__CARD\n"
 
     with pytest.raises(ParseError, match="Invalid item name: KEY__CARD"):
         compile_game(global_src, ["# Room\nLOOK: A room.\n"])
 
 
 def test_plain_name_rejects_double_underscore_in_actions():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -153,7 +153,7 @@ LOOK: A clearing.
 
 
 def test_state_reference_still_allows_reserved_double_underscore():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -178,7 +178,7 @@ name_style: title // comment
 LOOK // comment
 USE // comment
 
-# Items
+# Inventory
 KEY // comment
 """
     room_src = """# Room
@@ -200,7 +200,7 @@ BOX // comment
 
 
 def test_narrative_text_preserves_double_slash():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: The panel reads // WARNING // in red light.
 """
@@ -211,7 +211,7 @@ LOOK: The panel reads // WARNING // in red light.
 
 
 def test_wildcard_allowed_as_entire_target_list():
-    global_src = "# Verbs\nLISTEN\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLISTEN\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LISTEN + *:
   You scan the room.
@@ -229,7 +229,7 @@ KEY
 
 
 def test_wildcard_rejected_in_multi_target_interaction():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\nKEY\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -246,7 +246,7 @@ USE + * + KEY:
 
 
 def test_wildcard_rejected_in_alternation_group():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -260,7 +260,7 @@ USE + BOX|*:
 
 
 def test_interaction_body_rejects_unexpected_plus_line():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -275,7 +275,7 @@ BOX
 
 
 def test_action_body_rejects_unexpected_line():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -288,7 +288,7 @@ LOOK: A room.
 
 
 def test_entity_block_rejects_unexpected_line():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -301,7 +301,7 @@ BOX
 
 
 def test_interactions_section_rejects_noun_declarations():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -315,7 +315,7 @@ ROCK
 
 
 def test_movement_arrow_cannot_have_children():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -335,7 +335,7 @@ LOOK: A clearing.
 
 
 def test_trash_arrow_cannot_have_children():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -352,7 +352,7 @@ BRANCH
 
 
 def test_verb_reveal_arrow_cannot_have_children():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -369,7 +369,7 @@ ALTAR
 
 
 def test_parse_discoverable_action():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -395,7 +395,7 @@ LOOK: A dark cave.
 
 
 def test_action_gets_ledger_id():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -413,7 +413,7 @@ LOOK: A clearing.
 
 def test_action_deduplication():
     """Actions with identical arrows and compatible narratives share ledger IDs."""
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -443,7 +443,7 @@ LOOK: A village.
 
 def test_action_dedup_different_narratives():
     """Actions with same arrows but different narratives get separate ledger IDs."""
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -472,7 +472,7 @@ LOOK: A village.
 
 
 def test_action_trash_instruction():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -498,7 +498,7 @@ LOOK: A clearing.
 
 def test_action_ledger_entry_instructions():
     """Actions generate ledger entries with instructions like regular interactions."""
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -522,7 +522,7 @@ LOOK: A clearing.
 
 
 def test_discoverable_action_counts_toward_discovery_slots():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -546,7 +546,7 @@ LOOK: A cave.
 def test_markdown_room_shows_actions():
     from addventure.md_writer import generate_markdown
 
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -566,7 +566,7 @@ LOOK: A clearing.
 
 
 def test_markdown_uses_title_name_style_metadata():
-    global_src = "---\nname_style: title\n---\n# Verbs\nLOOK\n\n# Items\n"
+    global_src = "---\nname_style: title\n---\n# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -590,7 +590,7 @@ LOOK: A clearing.
 def test_markdown_ledger_includes_action_entries():
     from addventure.md_writer import generate_markdown
 
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -611,7 +611,7 @@ LOOK: A clearing.
 
 def test_arrow_room_context_after_player_transition():
     """Arrows after player -> 'Room' should resolve against the destination room."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -648,7 +648,7 @@ FOUNTAIN
 
 def test_discoverable_action_instruction():
     """When an interaction reveals an action, the instruction says to write it on the room sheet."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -677,7 +677,7 @@ LOOK: A cave.
 
 
 def test_pdf_serialization_includes_actions():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -710,7 +710,7 @@ start: Village
 LOOK
 USE
 
-# Items
+# Inventory
 """
     room_src = """# Village
 LOOK: A quiet village.
@@ -795,7 +795,7 @@ LOOK: A small island.
 
 def test_blind_mode_actions():
     """In blind mode, actions merge into blank slot pool. LOOK reveals them."""
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -824,7 +824,7 @@ LOOK: A clearing.
 
 def test_freeform_interaction_with_action():
     """Actions declared inside # Interactions freeform section."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 
@@ -857,7 +857,7 @@ LOOK: A cave.
 
 
 def test_action_cannot_nest_under_action():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = """# Forest
 LOOK: A forest.
 

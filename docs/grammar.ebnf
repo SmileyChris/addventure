@@ -97,15 +97,15 @@ indent0         = "" ;
 (*  4. Global Sections                                      *)
 (* ══════════════════════════════════════════════════════════ *)
 
-global-section  = verbs-section | items-section ;
+global-section  = verbs-section | inventory-section ;
 
 verbs-section   = "# Verbs" , newline ,
                   { blank-line | comment-line | verb-line } ;
 
 verb-line       = indent0 , NAME , newline ;
 
-items-section   = "# Items" , newline ,
-                  { blank-line | comment-line | item-declaration } ;
+inventory-section = "# Inventory" , newline ,
+                    { blank-line | comment-line | item-declaration } ;
 
 item-declaration = indent0 , NAME , newline ,
                    [ entity-block(0) ] ;
@@ -303,7 +303,7 @@ freeform-body-line(m) = narrative-line(m)
 
    1. Tabs are not allowed in indentation.
    2. `# Verbs` lines must be unindented verb declarations only.
-   3. `# Items` lines must be unindented item declarations only.
+   3. `# Inventory` lines must be unindented item declarations only.
    4. `## Interactions` may contain freeform interactions only.
    5. Every child line in a block must be indented deeper than its header.
    6. `-> trash`, `player -> "Room"`, `-> VERB`, and verb-only arrows may not

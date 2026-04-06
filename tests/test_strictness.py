@@ -7,7 +7,7 @@ from addventure.parser import ParseError, parse_global, parse_room_file
 from addventure.models import GameData
 
 
-GLOBAL_SRC = "# Verbs\nLOOK\n\n# Items\n"
+GLOBAL_SRC = "# Verbs\nLOOK\n\n# Inventory\n"
 
 
 # ── Room root strictness ──────────────────────────────────────────────────────
@@ -89,33 +89,33 @@ def test_room_file_rejects_stray_line_between_rooms():
 
 
 def test_global_rejects_stray_line_between_sections():
-    """Stray text between # Verbs and # Items is caught by the verbs parser."""
-    global_src = "# Verbs\nLOOK\n\nstray text\n\n# Items\n"
+    """Stray text between # Verbs and # Inventory is caught by the verbs parser."""
+    global_src = "# Verbs\nLOOK\n\nstray text\n\n# Inventory\n"
     with pytest.raises(ParseError):
         parse_global(global_src)
 
 
 def test_global_rejects_stray_text_after_items():
-    """Stray text after # Items is caught by the items section parser."""
-    global_src = "# Verbs\nLOOK\n\n# Items\n\nstray text after sections\n"
+    """Stray text after # Inventory is caught by the items section parser."""
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n\nstray text after sections\n"
     with pytest.raises(ParseError):
         parse_global(global_src)
 
 
 def test_global_rejects_stray_arrow_after_items():
-    global_src = "# Verbs\nLOOK\n\n# Items\n\nFOO -> BAR\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n\nFOO -> BAR\n"
     with pytest.raises(ParseError, match="Invalid item declaration"):
         parse_global(global_src)
 
 
 def test_global_rejects_stray_action_after_items():
-    global_src = "# Verbs\nLOOK\n\n# Items\n\n> GO_NORTH\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n\n> GO_NORTH\n"
     with pytest.raises(ParseError, match="Invalid item declaration"):
         parse_global(global_src)
 
 
 def test_global_rejects_unknown_section():
-    global_src = "# Verbs\nLOOK\n\n# Items\n\n# Unknown\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Unknown\n"
     with pytest.raises(ParseError, match="Unknown global section"):
         parse_global(global_src)
 
@@ -124,13 +124,13 @@ def test_global_rejects_unknown_section():
 
 
 def test_unknown_frontmatter_key_warns():
-    global_src = "---\ntitle: Test\nfoobar: baz\n---\n# Verbs\nLOOK\n\n# Items\n"
+    global_src = "---\ntitle: Test\nfoobar: baz\n---\n# Verbs\nLOOK\n\n# Inventory\n"
     game = parse_global(global_src)
     assert any("Unknown frontmatter key: foobar" in w for w in game.warnings)
 
 
 def test_known_frontmatter_keys_no_warnings():
-    global_src = "---\ntitle: Test\nauthor: Me\nstart: Forest\nname_style: title\n---\n# Verbs\nLOOK\n\n# Items\n"
+    global_src = "---\ntitle: Test\nauthor: Me\nstart: Forest\nname_style: title\n---\n# Verbs\nLOOK\n\n# Inventory\n"
     game = parse_global(global_src)
     assert game.warnings == []
 
@@ -183,7 +183,7 @@ USE
 
 // a comment between sections
 
-# Items
+# Inventory
 KEY
 """
     game = parse_global(global_src)

@@ -43,7 +43,7 @@ LOOK
 USE
 TAKE
 
-# Items
+# Inventory
 CROWBAR
 KEYCARD
 ```

@@ -178,7 +178,7 @@ def auto_register_items(game: GameData):
             raise ParseError(
                 locations[0][1],
                 f"Noun '{name}' has -> player in multiple rooms ({', '.join(sorted(rooms))}). "
-                f"Use # Items to declare it explicitly, or rename one."
+                f"Use # Inventory to declare it explicitly, or rename one."
             )
         game.items[name] = Item(name)
         game.auto_items.add(name)

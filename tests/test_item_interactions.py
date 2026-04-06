@@ -13,7 +13,7 @@ def test_gamedata_has_suppressed_interactions():
 
 def test_player_arrow_parses_inline_look():
     """+ LOOK under -> player should create an item interaction."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -37,7 +37,7 @@ KNIFE
 
 def test_player_arrow_parses_inline_action():
     """+ USE with arrows under -> player should create an item interaction."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -62,13 +62,13 @@ KNIFE
 
 
 def test_items_section_parses_interactions():
-    """# Items with indented + lines should create item interactions."""
+    """# Inventory with indented + lines should create item interactions."""
     global_src = """# Verbs
 USE
 TAKE
 LOOK
 
-# Items
+# Inventory
 
 COMPASS
   + LOOK: A brass compass, needle spinning wildly.
@@ -93,8 +93,8 @@ LOOK: A room.
 
 
 def test_items_section_plain_names_still_work():
-    """# Items with just names (no interactions) should still work."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\nCOMPASS\nROPE\n"
+    """# Inventory with just names (no interactions) should still work."""
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\nCOMPASS\nROPE\n"
     room_src = """# Room
 LOOK: A room.
 """
@@ -105,7 +105,7 @@ LOOK: A room.
 
 def test_arbitrary_space_indentation_is_accepted():
     """Structure is based on deeper indentation, not 2-space buckets."""
-    global_src = "# Verbs\nLOOK\nTAKE\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\nTAKE\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -125,7 +125,7 @@ KEY
 
 
 def test_tab_indentation_is_rejected():
-    global_src = "# Verbs\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
     room_src = "# Room\nLOOK: A room.\n\nKEY\n\t+ LOOK: Invalid tab indent.\n"
 
     with pytest.raises(ParseError, match="Tabs are not allowed for indentation"):
@@ -134,7 +134,7 @@ def test_tab_indentation_is_rejected():
 
 def test_acquisition_interaction_not_duplicated():
     """An interaction with -> player arrow should not be duplicated to inventory."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -156,7 +156,7 @@ KNIFE
 
 def test_explicit_item_interaction_overrides_duplication():
     """An inline LOOK under -> player should replace the auto-duplicated one."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -179,7 +179,7 @@ KNIFE
 
 def test_partial_override_still_duplicates_other_verbs():
     """Defining LOOK under -> player should not prevent USE from being duplicated."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -212,7 +212,7 @@ KNIFE
 
 def test_empty_interaction_suppresses_duplication():
     """+ LOOK: with no text should prevent LOOK from being duplicated."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -235,7 +235,7 @@ KNIFE
 
 def test_stated_noun_to_player_registers_base_item():
     """KEY__HIDDEN -> player should register item as KEY, not KEY__HIDDEN."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -260,7 +260,7 @@ KEY__HIDDEN
 
 def test_stated_noun_direct_to_player_registers_base_item():
     """GEM__ROUGH -> player should register item as GEM."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -281,7 +281,7 @@ GEM__ROUGH
 def test_noun_revealed_under_entity_state_is_discovery():
     """Nouns revealed via -> room under an entity state transform should not
     appear as initial objects — they're discoveries."""
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\n"
     room_src = """# Room
 LOOK: A room.
 
@@ -319,7 +319,7 @@ NOTE
 
 def test_state_revert_generates_transform_instruction():
     """DOOR__LOCKED -> DOOR should generate a 'Change' instruction."""
-    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Items\nKEY\n"
+    global_src = "# Verbs\nUSE\nTAKE\nLOOK\n\n# Inventory\nKEY\n"
     room_src = """# Room
 LOOK: A room.
 

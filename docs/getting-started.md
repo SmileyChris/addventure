@@ -52,7 +52,7 @@ LOOK
 USE
 TAKE
 
-# Items
+# Inventory
 
 ```
 
@@ -64,7 +64,7 @@ This file defines three things:
 **Verbs** (under `# Verbs`)
 :   The actions players can perform. List one per line, in `ALL_CAPS`. Three verbs is a good starting point — you can always add more.
 
-**Items** (under `# Items`)
+**Items** (under `# Inventory`)
 :   Objects that live in the player's inventory. Items can be picked up, carried between rooms, and used in interactions. Leave this empty for now — we'll add items as we build out rooms.
 
 ## Create your first room

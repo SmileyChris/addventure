@@ -74,7 +74,7 @@ Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 
 Game scripts use markdown-based syntax:
 
-- `# Section` — headers for sections (`# Verbs`, `# Items`, `# Interactions`) and room names (`# Control Room`)
+- `# Section` — headers for sections (`# Verbs`, `# Inventory`, `## Interactions`) and room names (`# Control Room`)
 - `---` fences — YAML frontmatter for metadata (title, author, etc.) at top of `index.md`
 - `+ line` — additions: interactions and behaviors on an entity
 - `- line` — state changes: arrows (movement, destruction, transformation)

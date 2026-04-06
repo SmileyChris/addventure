@@ -8,7 +8,7 @@ from addventure.pdf_writer import serialize_game_data, find_typst, generate_pdf
 
 
 def _make_game():
-    global_src = "# Verbs\nUSE\nLOOK\n\n# Items\nKEY\n"
+    global_src = "# Verbs\nUSE\nLOOK\n\n# Inventory\nKEY\n"
     room_src = "# Room\nLOOK: A room.\n\nBOX\n+ LOOK: A box.\n+ USE + KEY:\n  You open it.\n  - BOX -> BOX__OPEN\n    + LOOK: An open box.\n  - KEY -> trash\n"
     return compile_game(global_src, [room_src])
 

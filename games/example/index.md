@@ -16,4 +16,4 @@ USE
 TAKE
 LOOK
 
-# Items
+# Inventory

@@ -47,7 +47,7 @@ USE
 TAKE
 LOOK
 
-# Items
+# Inventory
 CROWBAR
 KEYCARD
 KNIFE
