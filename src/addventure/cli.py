@@ -30,7 +30,7 @@ def cmd_build(args: list[str]):
     import argparse
     parser = argparse.ArgumentParser(prog="addventure build", description="Compile and output a game")
     parser.add_argument("game_dir", nargs="?", default=None,
-                        help="Path to game directory (default: cwd if index.md exists, else games/example)")
+                        help="Path to game directory (default: current directory if index.md exists)")
     parser.add_argument("--markdown", "--md", action="store_true",
                         help="Output markdown to stdout (use -o to write to file)")
     parser.add_argument("--output", "-o", type=str, default=None,
