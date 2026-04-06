@@ -166,17 +166,93 @@ Use `VERB -> trash` to permanently remove a verb:
 
 The ledger tells the player to cross out the verb on their verb sheet. Any interactions using that verb become inaccessible.
 
-## Cue checks (cross-room effects)
+## Rooms
+
+### Actions
+
+Actions are direct ledger lookups — things the player can do without addition. They're declared with the `>` marker:
+
+```markdown
+# Forest
+
+> GO_NORTH
+  You head north through the trees.
+  - player -> "Clearing"
+
+> GO_SOUTH
+  You retrace your steps to the village.
+  - player -> "Village"
+```
+
+Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). Action names use `ALL_CAPS` with optional single underscores. Actions can do anything an interaction does: narrative, arrows, state changes.
+
+#### Discoverable actions
+
+Nest an action under an interaction to make it discoverable. It won't appear on the room sheet until the parent interaction fires:
+
+```markdown
+HATCH
++ USE + CROWBAR:
+  You pry the hatch open.
+  - HATCH -> trash
+  - CROWBAR -> trash
+  > GO_DOWN
+    You descend into darkness.
+    - player -> "Basement"
+```
+
+When the player uses the crowbar on the hatch, the instructions include "Write GO DOWN (A-7) in a discovery slot."
+
+#### Removing actions
+
+Actions can be removed with `-> trash`, just like room objects:
+
+```markdown
+LEVER
++ USE:
+  The bridge collapses behind you!
+  - GO_BACK -> trash
+```
+
+### Fragments
+
+A `::: fragment` block inside an interaction adds long-form hidden content — finale text, reveals, or anything players shouldn't read until directed. The content is kept separate from the main game flow.
+
+```markdown
+VAULT_DOOR
++ OVERRIDE:
+  The door swings open. You step inside.
+  - player -> "Vault"
+
+  ::: fragment
+  Inside the vault you find the letter. You read it slowly.
+
+  *My dear,*
+
+  *By the time you find this, I'll be long gone...*
+  :::
+```
+
+When this entry fires, the ledger instruction tells the player which fragment to turn to (e.g. "Turn to Fragment Alpha"). Fragments are printed in a separate section at the back of the ledger, or as a separate document — see [Fragment modes](reference.md#fragment-modes).
+
+The content inside `::: fragment` is Typst markup. Plain prose works as-is. Basic formatting:
+
+- `*bold text*` — bold
+- `_italic text_` — italic
+- Blank line between paragraphs
+- `\` at the end of a line — explicit line break (for verse, addresses, etc.)
+
+### Cue checks (cross-room effects)
 
 Sometimes an action in one room should affect another room — pulling a lever that opens a gate elsewhere, flipping a switch that powers on a machine in the basement, etc. **Cue checks** handle this.
 
-### How it works
+#### How it works
 
 A cue is a number the player writes on their inventory sheet. When they enter any room, they add each cue number to the Room ID and check the Potentials List. If there's a match, a ledger entry fires — revealing entities, changing state, or whatever you need.
 
 The player never knows which room a cue is "for" until the sum matches. This preserves surprise.
 
-### Writing a cue
+#### Writing a cue
 
 Use `? -> "Room Name"` as the arrow subject, with the resolution content indented below it:
 
@@ -197,7 +273,7 @@ When the player triggers USE + LEVER:
 
 The indented block under `?` defines what happens when the cue resolves. It works like any interaction body: narrative text, then arrows for state changes.
 
-### Multiple cues from one interaction
+#### Multiple cues from one interaction
 
 A single interaction can trigger cues in multiple rooms:
 
@@ -212,7 +288,7 @@ A single interaction can trigger cues in multiple rooms:
     - PANEL -> room
 ```
 
-### Cues and room states
+#### Cues and room states
 
 By default, a cue resolves regardless of the target room's current state. If the Courtyard has base and `COURTYARD__NIGHT` states, `? -> "Courtyard"` fires in either.
 

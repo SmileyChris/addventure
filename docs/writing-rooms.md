@@ -158,83 +158,19 @@ Trailing comments are not stripped from narrative prose, so `//` inside story te
 
 ## Actions
 
-Actions are direct ledger lookups — things the player can do without addition. They're declared with the `>` marker:
+Actions are direct ledger lookups — navigation and other things the player can do without addition. Declare them with `>`:
 
 ```markdown
-# Forest
-
 > GO_NORTH
   You head north through the trees.
   - player -> "Clearing"
-
-> GO_SOUTH
-  You retrace your steps to the village.
-  - player -> "Village"
 ```
 
-Each action gets a ledger entry number printed directly on the room sheet (e.g. "GO NORTH ... A-12"). Write action names as identifiers like `GO_NORTH`; the compiler renders them with spaces for display ("GO NORTH").
-
-Identifiers use `ALL_CAPS` with optional single underscores: `GO_NORTH`, `WALL_PANEL`. Double underscores are reserved for states: `DOOR__OPEN`.
-
-Actions are ideal for directional navigation, but they can do anything an interaction does: narrative, arrows, state changes.
-
-### Discoverable actions
-
-Nest an action under an interaction to make it discoverable. It won't appear on the room sheet until the parent interaction fires:
-
-```markdown
-HATCH
-+ USE + CROWBAR:
-  You pry the hatch open.
-  - HATCH -> trash
-  - CROWBAR -> trash
-  > GO_DOWN
-    You descend into darkness.
-    - player -> "Basement"
-```
-
-When the player uses the crowbar on the hatch, the instructions include "Write GO DOWN (A-7) in a discovery slot."
-
-### Removing actions
-
-Actions can be removed with `-> trash`, just like room objects:
-
-```markdown
-LEVER
-+ USE:
-  The bridge collapses behind you!
-  - GO_BACK -> trash
-```
-
-This generates "Cross out GO BACK on this room sheet."
+Actions can also be discovered mid-game (nested under an interaction) or removed when they're no longer valid. See [Actions](advanced.md#actions) in Advanced Mechanics for full details.
 
 ## Fragments
 
-A `::: fragment` block inside an interaction adds long-form hidden content — finale text, reveals, or anything players shouldn't read until directed. The content is kept separate from the main game flow.
-
-```markdown
-VAULT_DOOR
-+ OVERRIDE:
-  The door swings open. You step inside.
-  - player -> "Vault"
-
-  ::: fragment
-  Inside the vault you find the letter. You read it slowly.
-
-  *My dear,*
-
-  *By the time you find this, I'll be long gone...*
-  :::
-```
-
-When this entry fires, the ledger instruction tells the player which fragment to turn to (e.g. "Turn to Fragment Alpha"). Fragments are printed in a separate section at the back of the ledger, or as a separate document — see [Fragment modes](reference.md#fragment-modes).
-
-The content inside `::: fragment` is Typst markup. Plain prose works as-is. Basic formatting:
-
-- `*bold text*` — bold
-- `_italic text_` — italic
-- Blank line between paragraphs
-- `\` at the end of a line — explicit line break (for verse, addresses, etc.)
+A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. See [Fragments](advanced.md#fragments) in Advanced Mechanics.
 
 ## Putting it together
 
