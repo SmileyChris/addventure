@@ -96,6 +96,15 @@ Longer narrative goes on indented lines below:
   revealing a narrow passage beyond. Cold air rushes past.
 ```
 
+Consecutive lines are joined into one paragraph. Separate paragraphs with a blank line:
+
+```markdown
++ USE:
+  You heave the door open.
+
+  The passage beyond is dark and cold. Something moves in the shadows.
+```
+
 ## Indentation
 
 Addventure uses indentation to define structure. The hierarchy works like this:
