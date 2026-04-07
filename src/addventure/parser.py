@@ -219,12 +219,16 @@ def _parse_signal_check_group(lines, i):
             if saw_otherwise:
                 raise ParseError(i + 1, "Duplicate otherwise? in signal check")
             saw_otherwise = True
-            signal_name = None
+            signal_names = []
             i += 1
-        elif stripped.endswith("?") and len(stripped) > 1 and _is_name(stripped[:-1]):
+        elif stripped.endswith("?") and len(stripped) > 1:
             if saw_otherwise:
                 raise ParseError(i + 1, "otherwise? must be the last branch in a signal check")
-            signal_name = stripped[:-1]
+            names_part = stripped[:-1].strip()
+            signal_names = [n.strip() for n in names_part.split("+")]
+            for n in signal_names:
+                if not _is_name(n):
+                    raise ParseError(i + 1, f"Invalid signal name: {n}")
             i += 1
         else:
             break
@@ -254,7 +258,7 @@ def _parse_signal_check_group(lines, i):
             i += 1
 
         narrative = "\n".join(narrative_lines)
-        checks.append(SignalCheck(signal_name=signal_name, narrative=narrative, arrows=arrows))
+        checks.append(SignalCheck(signal_names=signal_names, narrative=narrative, arrows=arrows))
 
     return i, checks
 
@@ -281,8 +285,10 @@ def parse_global(source: str) -> GameData:
         if not stripped or _is_comment(stripped):
             i += 1
             continue
-        # Check for signal check block: NAME? or otherwise?
-        if stripped == "otherwise?" or (stripped.endswith("?") and len(stripped) > 1 and _is_name(stripped[:-1])):
+        # Check for signal check block: NAME? or NAME + NAME? or otherwise?
+        if (stripped == "otherwise?" or
+              (stripped.endswith("?") and len(stripped) > 1 and
+               all(_is_name(n.strip()) for n in stripped[:-1].split("+")))):
             i, checks = _parse_signal_check_group(lines, i)
             game.signal_checks = checks
             # Consume remaining blank/comment lines before header
@@ -571,7 +577,8 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=current_indent)
             arrows.append(Arrow(f">{action_name}", "room", action_line))
         elif (bstripped == "otherwise?" or
-              (bstripped.endswith("?") and len(bstripped) > 1 and _is_name(bstripped[:-1]))):
+              (bstripped.endswith("?") and len(bstripped) > 1 and
+               all(_is_name(n.strip()) for n in bstripped[:-1].split("+")))):
             # Signal check block — parse it and break out of body loop
             i, signal_checks = _parse_signal_check_group(lines, i)
             break

@@ -61,9 +61,9 @@ def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
         from .compiler import signal_id as _signal_id
         parts = []
         for sc in game.signal_checks:
-            if sc.signal_name:
-                sid = _signal_id(sc.signal_name)
-                parts.append(f"**{sid}** → read {entry_prefix}-{sc.entry_number}")
+            if sc.signal_names:
+                sids = " + ".join(_signal_id(n) for n in sc.signal_names)
+                parts.append(f"**{sids}** → read {entry_prefix}-{sc.entry_number}")
             else:
                 parts.append(f"Otherwise → read {entry_prefix}-{sc.entry_number}")
         lines.append(f"\n*Check your signals: {'. '.join(parts)}.*")
@@ -183,11 +183,12 @@ def _inventory_section(
 
     # Signals
     # Count unique signal names from checks
-    check_names = {sc.signal_name for sc in game.signal_checks if sc.signal_name}
+    check_names = set()
+    for sc in game.signal_checks:
+        check_names.update(sc.signal_names)
     for ix in game.interactions:
         for sc in ix.signal_checks:
-            if sc.signal_name:
-                check_names.add(sc.signal_name)
+            check_names.update(sc.signal_names)
     signal_count = max(len(check_names), len(game.signal_emissions))
     if signal_count > 0:
         # If this chapter checks signals it doesn't emit, the player needs to carry them forward
@@ -302,9 +303,9 @@ def _ledger_section(
                 if ri.source_line == ix.source_line and ri.room == ix.room:
                     parts = []
                     for sc in ix.signal_checks:
-                        if sc.signal_name:
-                            sid = _signal_id(sc.signal_name)
-                            parts.append(f"**{sid}** → also read {entry_prefix}-{sc.entry_number}")
+                        if sc.signal_names:
+                            sids = " + ".join(_signal_id(n) for n in sc.signal_names)
+                            parts.append(f"**{sids}** → also read {entry_prefix}-{sc.entry_number}")
                         else:
                             parts.append(f"Otherwise → also read {entry_prefix}-{sc.entry_number}")
                     entry_signal_refs[ri.entry_number] = f"Check your signals: {'. '.join(parts)}."

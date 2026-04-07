@@ -98,7 +98,7 @@ class SealedText:
 
 @dataclass
 class SignalCheck:
-    signal_name: str | None  # None = otherwise
+    signal_names: list[str]  # Empty list = otherwise
     narrative: str
     arrows: list[Arrow] = field(default_factory=list)
     entry_number: int = 0

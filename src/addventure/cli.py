@@ -169,12 +169,12 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
     for label, game_data in compiled_chapters:
         # Collect signal names from signal checks (index-level and interaction-level)
         for sc in game_data.signal_checks:
-            if sc.signal_name:
-                all_checked.setdefault(sc.signal_name, label)
+            for sn in sc.signal_names:
+                all_checked.setdefault(sn, label)
         for ix in game_data.interactions:
             for sc in ix.signal_checks:
-                if sc.signal_name:
-                    all_checked.setdefault(sc.signal_name, label)
+                for sn in sc.signal_names:
+                    all_checked.setdefault(sn, label)
         for name in game_data.signal_emissions:
             all_emitted[name] = label
 

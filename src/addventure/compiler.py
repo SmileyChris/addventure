@@ -584,12 +584,10 @@ def compile_game(global_source: str, room_sources: list[str],
     # Validate signal names don't collide with game entities
     all_signal_names = set(game.signal_emissions)
     for sc in game.signal_checks:
-        if sc.signal_name:
-            all_signal_names.add(sc.signal_name)
+        all_signal_names.update(sc.signal_names)
     for ix in game.interactions:
         for sc in ix.signal_checks:
-            if sc.signal_name:
-                all_signal_names.add(sc.signal_name)
+            all_signal_names.update(sc.signal_names)
     entity_names = (
         set(game.verbs.keys())
         | {obj.name for obj in game.objects.values()}

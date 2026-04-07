@@ -7,17 +7,17 @@ from addventure.models import SignalCheck, Arrow, GameData
 
 def test_signal_check_dataclass():
     sc = SignalCheck(
-        signal_name="EVERYONE_OUT_ESCAPE",
+        signal_names=["EVERYONE_OUT_ESCAPE"],
         narrative="A companion appears.",
         arrows=[Arrow("COMPANION", '"Forest Road"', 5)],
     )
-    assert sc.signal_name == "EVERYONE_OUT_ESCAPE"
+    assert sc.signal_names == ["EVERYONE_OUT_ESCAPE"]
     assert sc.entry_number == 0  # default
 
 
 def test_signal_check_otherwise():
-    sc = SignalCheck(signal_name=None, narrative="You are alone.", arrows=[])
-    assert sc.signal_name is None
+    sc = SignalCheck(signal_names=[], narrative="You are alone.", arrows=[])
+    assert sc.signal_names == []
 
 
 def test_game_data_signal_fields():
@@ -113,11 +113,11 @@ def test_parse_index_signal_checks():
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
     assert "Common intro text." in game.metadata.get("description", "")
     assert len(game.signal_checks) == 3
-    assert game.signal_checks[0].signal_name == "SIGNAL_A"
+    assert game.signal_checks[0].signal_names == ["SIGNAL_A"]
     assert "Branch A" in game.signal_checks[0].narrative
     assert len(game.signal_checks[0].arrows) == 1
-    assert game.signal_checks[1].signal_name == "SIGNAL_B"
-    assert game.signal_checks[2].signal_name is None  # otherwise
+    assert game.signal_checks[1].signal_names == ["SIGNAL_B"]
+    assert game.signal_checks[2].signal_names == []  # otherwise
 
 
 def test_parse_index_signal_checks_no_otherwise():
@@ -130,7 +130,7 @@ def test_parse_index_signal_checks_no_otherwise():
     )
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
     assert len(game.signal_checks) == 1
-    assert game.signal_checks[0].signal_name == "SIGNAL_A"
+    assert game.signal_checks[0].signal_names == ["SIGNAL_A"]
 
 
 def test_parse_otherwise_before_signal_check_errors():
@@ -169,9 +169,9 @@ def test_parse_interaction_signal_checks():
     ix = use_interactions[0]
     assert "Common narrative" in ix.narrative
     assert len(ix.signal_checks) == 2
-    assert ix.signal_checks[0].signal_name == "SIGNAL_A"
+    assert ix.signal_checks[0].signal_names == ["SIGNAL_A"]
     assert "Branch A" in ix.signal_checks[0].narrative
-    assert ix.signal_checks[1].signal_name is None  # otherwise
+    assert ix.signal_checks[1].signal_names == []  # otherwise
 
 
 def test_interaction_signal_checks_with_unconditional_arrows():
@@ -416,3 +416,51 @@ def test_signal_name_collision_with_entity_warns():
     )
     game = compile_game(global_src, [room_src])
     assert any("collides with game entity" in w.lower() for w in game.warnings)
+
+
+def test_parse_and_signal_check():
+    global_src = (
+        "SIGNAL_A + SIGNAL_B?\n"
+        "  Both signals present.\n"
+        "otherwise?\n"
+        "  Neither.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    assert len(game.signal_checks) == 2
+    assert game.signal_checks[0].signal_names == ["SIGNAL_A", "SIGNAL_B"]
+    assert "Both" in game.signal_checks[0].narrative
+    assert game.signal_checks[1].signal_names == []  # otherwise
+
+
+def test_md_and_signal_check_rendered():
+    global_src = (
+        "SIGNAL_A + SIGNAL_B?\n"
+        "  Both signals.\n"
+        "otherwise?\n"
+        "  Default.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    sid_a = signal_id("SIGNAL_A")
+    sid_b = signal_id("SIGNAL_B")
+    # Both IDs should appear together with +
+    assert f"{sid_a} + {sid_b}" in md or f"{sid_b} + {sid_a}" in md
+
+
+def test_interaction_and_signal_check():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Common.\n"
+        "  SIGNAL_A + SIGNAL_B?\n"
+        "    Both present.\n"
+        "  otherwise?\n"
+        "    Default.\n"
+    )
+    game = compile_game(global_src, [room_src])
+    ix = [i for i in game.interactions if i.verb == "USE"][0]
+    assert ix.signal_checks[0].signal_names == ["SIGNAL_A", "SIGNAL_B"]
