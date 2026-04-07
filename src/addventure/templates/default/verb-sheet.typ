@@ -50,6 +50,25 @@
     ]
   ]
 
+  // Signal check instructions (only if game has index-level signal checks)
+  let signal-checks = data.at("signal_checks", default: ())
+  let prefix = data.at("ledger_prefix", default: "A")
+  if signal-checks.len() > 0 {
+    block(below: 1.2em)[
+      #text(size: 9pt, style: "italic")[
+        Check your signals: #for (i, sc) in signal-checks.enumerate() {
+          if sc.is_otherwise {
+            [Otherwise, read #prefix\-#str(sc.entry).]
+          } else if i == 0 {
+            [if you have *#str(sc.signal_id)*, read #prefix\-#str(sc.entry).]
+          } else {
+            [ Otherwise, if you have *#str(sc.signal_id)*, read #prefix\-#str(sc.entry).]
+          }
+        }
+      ]
+    ]
+  }
+
   for verb in data.verbs {
     block(
       width: 100%,

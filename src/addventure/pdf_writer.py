@@ -37,7 +37,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
                 break
         verbs.append({"name": writer.display_name(v.name), "id": start_id})
 
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
 
     rooms = []
     for room_name, rm in game.rooms.items():
@@ -78,7 +78,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             "discovery_slots": disc_count,
             "description": first_line,
             "actions": room_actions,
-            "entry_prefix": entry_prefix,
+            "ledger_prefix": entry_prefix,
         })
 
     potentials = sorted(
@@ -109,7 +109,51 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             "narrative": action.narrative,
             "instructions": instructions,
         })
+
+    # Signal check entries (index-level)
+    from .compiler import signal_id as _signal_id
+    for sc in game.signal_checks:
+        if sc.entry_number not in seen_entries:
+            seen_entries.add(sc.entry_number)
+            sc_instructions = writer._signal_check_instructions(sc.arrows, room=writer._start_room() or "")
+            ledger.append({
+                "entry": sc.entry_number,
+                "narrative": sc.narrative,
+                "instructions": sc_instructions,
+            })
+
+    # Signal check entries (interaction-level)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            if sc.entry_number not in seen_entries:
+                seen_entries.add(sc.entry_number)
+                sc_instructions = writer._signal_check_instructions(sc.arrows, room=ix.room)
+                ledger.append({
+                    "entry": sc.entry_number,
+                    "narrative": sc.narrative,
+                    "instructions": sc_instructions,
+                })
+
+    # Build signal check references for ledger entries
+    from .md_writer import _format_signal_check_instruction
+    entry_signal_refs = {}
+    for ix in game.interactions:
+        if ix.signal_checks:
+            for ri in game.resolved:
+                if ri.source_line == ix.source_line and ri.room == ix.room:
+                    # Strip markdown bold markers for plain-text PDF instructions
+                    ref = _format_signal_check_instruction(
+                        ix.signal_checks, entry_prefix, _signal_id, also=True
+                    )
+                    entry_signal_refs[ri.entry_number] = ref.replace("**", "")
+
     ledger.sort(key=lambda e: e["entry"])
+
+    # Add signal check refs to existing ledger entries
+    for entry in ledger:
+        ref = entry_signal_refs.get(entry["entry"])
+        if ref:
+            entry["instructions"] = list(entry["instructions"]) + [ref]
 
     start_room = writer._start_room()
 
@@ -134,16 +178,43 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         for st in sorted(game.sealed_texts, key=lambda s: s.ref)
     ]
 
+    # Signal checks (index-level) for verb sheet
+    index_signal_checks = []
+    for sc in game.signal_checks:
+        if sc.signal_names:
+            sid = " and ".join(_signal_id(n) for n in sc.signal_names)
+        else:
+            sid = None
+        index_signal_checks.append({
+            "signal_id": sid,
+            "entry": sc.entry_number,
+            "is_otherwise": not sc.signal_names,
+        })
+
+    # Signal slot count for inventory sheet
+    # Count unique signal names from checks
+    check_names = set()
+    for sc in game.signal_checks:
+        check_names.update(sc.signal_names)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            check_names.update(sc.signal_names)
+    signal_slots = max(len(check_names), len(game.signal_emissions))
+    signal_has_incoming = bool(check_names - game.signal_emissions)
+
     return {
         "metadata": dict(game.metadata),
         "start_room": start_room,
-        "entry_prefix": entry_prefix,
+        "ledger_prefix": entry_prefix,
         "blind": blind,
         "jigsaw": False,
         "verbs": verbs,
         "rooms": rooms,
         "inventory_slots": max(len(game.inventory) + 2, 6),
         "cue_slots": len(game.cues),
+        "signal_checks": index_signal_checks,
+        "signal_slots": signal_slots,
+        "signal_has_incoming": signal_has_incoming,
         "potentials": potentials,
         "ledger": ledger,
         "sealed_texts": sealed_texts,

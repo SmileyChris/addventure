@@ -311,6 +311,65 @@ To target *only* the base state (before any transformation), add a trailing `__`
 | `? -> "Room__STATE"` | Only that specific state |
 | `? -> "Room__"` | Only the base state |
 
+### Signals
+
+Signals let you branch narrative based on earlier decisions. A signal is a named flag — when the player triggers it, they write a numeric code on their sheet. Later, a signal check branches the story depending on which signals the player has.
+
+This works both within a single game (branching based on a choice the player made earlier) and across chapters (carrying consequences from one booklet to the next).
+
+#### Emitting a signal
+
+Use `NAME -> signal` as an arrow. The player writes the signal's numeric code on their sheet:
+
+```markdown
++ USE + PRISONER:
+  The prisoner cups their hands and you step up. Together, you escape through the vent.
+  - EVERYONE_OUT_ESCAPE -> signal
+```
+
+The ledger instruction: *"Write 64745 in your signals."*
+
+Signal names follow the same ALL_CAPS naming rules as other identifiers. Choose names that describe the decision or outcome, not the mechanic: `EVERYONE_OUT_ESCAPE` is clearer than `ENDING_A`.
+
+#### Checking signals
+
+Signal checks use `NAME?` syntax with `otherwise?` as the default. All matching branches fire — if the player has multiple signals, they read every matching entry. `otherwise?` fires only when no signal matches.
+
+In the index description (checked when starting the chapter):
+
+```markdown
+EVERYONE_OUT_ESCAPE?
+  A companion catches up behind you.
+WITNESS_ESCAPE?
+  You're alone.
+otherwise?
+  You keep walking.
+```
+
+In an interaction (checked during play):
+
+```markdown
+CONSOLE
++ USE:
+  You lift the microphone.
+  EVERYONE_OUT_ESCAPE?
+    Your companion leans close. "Tell them everything."
+  otherwise?
+    Your voice is the only one in the room.
+```
+
+Common narrative and arrows before the first `NAME?` block apply to all branches. Each `NAME?` and `otherwise?` block has its own narrative and arrows.
+
+On the printed sheet, signal checks render as: *"Check your signals: 64745 → read B-3. 92951 → read B-7. Otherwise → read B-12."*
+
+#### Signals across chapters
+
+When used between chapters, the sending chapter emits a signal and the receiving chapter checks it — no coordination needed. Signal IDs are derived from the name, so both chapters produce the same number independently.
+
+When building with `--all`, the compiler validates signal usage across chapters and warns about signals that are emitted but never checked, or checked but never emitted.
+
+See the [Signals reference](reference.md#signals) for the full syntax summary.
+
 ## Compiler
 
 ### Game sizing and ID allocation
@@ -357,6 +416,8 @@ addventure build my-game/the-escape  # builds just one chapter
 ```
 
 Use narrative handoffs at chapter boundaries: the ending ledger entry tells the player what they're carrying, and the next chapter's first entry sets up the new inventory with fresh IDs.
+
+Chapters can also carry narrative state between them using [signals](#signals).
 
 **The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ room objects per room stays well under 80 total.
 

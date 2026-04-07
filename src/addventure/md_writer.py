@@ -6,6 +6,26 @@ from .models import GameData, ResolvedInteraction
 from .writer import GameWriter
 
 
+def _format_signal_check_instruction(checks, entry_prefix, _signal_id, also=False):
+    """Format signal checks as an if/otherwise instruction string.
+
+    Returns e.g.: "Check your signals: if you have LLLT and HWZT, read A-2.
+    Otherwise, if you have LLLT, read A-5. Otherwise, read A-3."
+    """
+    read_word = "also read" if also else "read"
+    parts = []
+    for i, sc in enumerate(checks):
+        if sc.signal_names:
+            sids = " and ".join(f"**{_signal_id(n)}**" for n in sc.signal_names)
+            if i == 0:
+                parts.append(f"if you have {sids}, {read_word} {entry_prefix}-{sc.entry_number}")
+            else:
+                parts.append(f"Otherwise, if you have {sids}, {read_word} {entry_prefix}-{sc.entry_number}")
+        else:
+            parts.append(f"Otherwise, {read_word} {entry_prefix}-{sc.entry_number}")
+    return f"Check your signals: {'. '.join(parts)}."
+
+
 def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
     """Render placeholder table rows padded to a fixed column width."""
     total = max(count, width)
@@ -24,7 +44,7 @@ def generate_markdown(game: GameData, blind: bool = False, fragment: str = "incl
     fragment: "included" (default), "separate", or "jigsaw"
     """
     writer = GameWriter(game, blind=blind, jigsaw=(fragment == "jigsaw"))
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
     sections = []
 
     sections.append(_verb_section(game, writer, entry_prefix))
@@ -56,6 +76,10 @@ def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
     description = game.metadata.get("description")
     if description:
         lines.append(f"\n{description}")
+
+    if game.signal_checks:
+        from .compiler import signal_id as _signal_id
+        lines.append(f"\n*{_format_signal_check_instruction(game.signal_checks, entry_prefix, _signal_id)}*")
 
     lines.append(
         "\n*To take an action, calculate verb number + object number(s)."
@@ -123,7 +147,7 @@ def _room_section(
             lines.append("\n### Actions\n")
             lines.append("| Action | Entry |")
             lines.append("|--------|------:|")
-            entry_prefix_local = game.metadata.get("entry_prefix", "A")
+            entry_prefix_local = game.metadata.get("ledger_prefix", "A")
             for a in preprinted_actions:
                 lines.append(f"| {writer.display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
 
@@ -169,6 +193,29 @@ def _inventory_section(
         lines.append(rows[0])
         lines.append("| " + " | ".join("---:" for _ in range(6)) + " |")
         lines.extend(rows[1:])
+
+    # Signals
+    # Count unique signal names from checks
+    check_names = set()
+    for sc in game.signal_checks:
+        check_names.update(sc.signal_names)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            check_names.update(sc.signal_names)
+    signal_count = max(len(check_names), len(game.signal_emissions))
+    if signal_count > 0:
+        # If this chapter checks signals it doesn't emit, the player needs to carry them forward
+        incoming = check_names - game.signal_emissions
+        if incoming:
+            hint = "Copy any signals from the previous chapter, then write new ones when instructed."
+        else:
+            hint = "Write signal codes here when instructed."
+        lines.append(
+            "\n### Signals\n"
+            f"\n*{hint}*\n"
+        )
+        rows = _render_placeholder_rows(signal_count)
+        lines.extend(rows)
 
     # Master Potentials List
     lines.append(
@@ -241,13 +288,44 @@ def _ledger_section(
         instructions = writer._action_instructions(action)
         all_entries.append((action.ledger_id, action.narrative, instructions))
 
+    # Index-level signal check entries
+    for sc in game.signal_checks:
+        if sc.entry_number not in seen_entries and sc.entry_number not in seen_action_entries:
+            seen_entries.add(sc.entry_number)
+            sc_instructions = writer._signal_check_instructions(sc.arrows, room=writer._start_room() or "")
+            all_entries.append((sc.entry_number, sc.narrative, sc_instructions))
+
+    # Interaction-level signal check entries
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            if sc.entry_number not in seen_entries and sc.entry_number not in seen_action_entries:
+                seen_entries.add(sc.entry_number)
+                sc_instructions = writer._signal_check_instructions(sc.arrows, room=ix.room)
+                all_entries.append((sc.entry_number, sc.narrative, sc_instructions))
+
     all_entries.sort(key=lambda e: e[0])
+
+    # Build signal check references for ledger entries
+    # Map: entry_number -> signal check reference instruction
+    from .compiler import signal_id as _signal_id
+    entry_signal_refs = {}
+    for ix in game.interactions:
+        if ix.signal_checks:
+            # Find the entry numbers for resolved interactions from this interaction
+            for ri in game.resolved:
+                if ri.source_line == ix.source_line and ri.room == ix.room:
+                    entry_signal_refs[ri.entry_number] = _format_signal_check_instruction(
+                        ix.signal_checks, entry_prefix, _signal_id, also=True
+                    )
 
     for entry_num, narrative, instructions in all_entries:
         lines.append(f"\n{entry_prefix}-{entry_num}")
         body = narrative
-        if instructions:
-            body += "\n\n" + "\n".join(f"- *{inst}*" for inst in instructions)
+        all_instructions = list(instructions)
+        if entry_num in entry_signal_refs:
+            all_instructions.append(entry_signal_refs[entry_num])
+        if all_instructions:
+            body += "\n\n" + "\n".join(f"- *{inst}*" for inst in all_instructions)
         lines.append(indent(body, ": ", lambda line: True))
 
     return "\n".join(lines)

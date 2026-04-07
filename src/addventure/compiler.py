@@ -1,3 +1,4 @@
+import hashlib
 import random
 from itertools import combinations, product as cart_product
 
@@ -5,6 +6,24 @@ from .models import (
     GameData, Verb, RoomObject, InventoryObject, Interaction, ResolvedInteraction, Cue, Action, SealedText,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
+
+
+_SIGNAL_CHARS = "BCDFGHJKLMNPQRSTVWXZ"  # consonants minus Y — can't form words
+
+
+def signal_id(name: str) -> str:
+    """Derive a deterministic 4-character code from a signal name.
+
+    Uses 20 consonants (no vowels, no Y), giving 160,000 possible codes.
+    Codes are visually distinct from numeric entity IDs.
+    """
+    h = hashlib.sha256(name.encode()).hexdigest()
+    n = int(h[:8], 16)
+    chars = []
+    for _ in range(4):
+        chars.append(_SIGNAL_CHARS[n % 20])
+        n //= 20
+    return "".join(chars)
 
 
 # ── ID Allocation ───────────────────────────────────────────────────────────
@@ -552,6 +571,32 @@ def compile_game(global_source: str, room_sources: list[str],
 
     resolve_cues(game)
 
+    # Collect signal emissions from all resolved interactions
+    for ri in game.resolved:
+        for arrow in ri.arrows:
+            if arrow.signal_name:
+                game.signal_emissions.add(arrow.signal_name)
+    for action in game.actions.values():
+        for arrow in action.arrows:
+            if arrow.signal_name:
+                game.signal_emissions.add(arrow.signal_name)
+
+    # Validate signal names don't collide with game entities
+    all_signal_names = set(game.signal_emissions)
+    for sc in game.signal_checks:
+        all_signal_names.update(sc.signal_names)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            all_signal_names.update(sc.signal_names)
+    entity_names = (
+        set(game.verbs.keys())
+        | {obj.name for obj in game.objects.values()}
+        | {rm.name for rm in game.rooms.values()}
+        | set(game.inventory.keys())
+    )
+    for name in all_signal_names & entity_names:
+        game.warnings.append(f"Signal name collides with game entity: {name}")
+
     # Renumber entries. Deduplicate entries with identical content:
     # - Cue aliases (same cue, different room state) share entry numbers
     # - Interactions with same narrative + arrows (e.g. wildcard expansions)
@@ -608,6 +653,17 @@ def compile_game(global_source: str, room_sources: list[str],
             action.ledger_id = entry_num
             action_content[arrows_key] = (entry_num, action)
 
+    # Assign entry numbers to signal checks (index-level)
+    for sc in game.signal_checks:
+        entry_num += 1
+        sc.entry_number = entry_num
+
+    # Assign entry numbers to signal checks (interaction-level)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            entry_num += 1
+            sc.entry_number = entry_num
+
     # Shuffle entry numbers so ledger order doesn't reveal game structure.
     # Deterministic: seeded by random.seed(attempt) in the allocation loop.
     unique_entries = list(range(1, entry_num + 1))
@@ -618,6 +674,11 @@ def compile_game(global_source: str, room_sources: list[str],
     for action in game.actions.values():
         action.ledger_id = remap[action.ledger_id]
     cue_primary_entry = {k: remap[v] for k, v in cue_primary_entry.items()}
+    for sc in game.signal_checks:
+        sc.entry_number = remap[sc.entry_number]
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            sc.entry_number = remap[sc.entry_number]
 
     # Copy entry numbers back to cue objects
     for cue in game.cues:

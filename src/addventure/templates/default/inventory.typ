@@ -51,6 +51,26 @@
     )
   }
 
+  // Signals section (only if game has signals)
+  let signal-slots = data.at("signal_slots", default: 0)
+  if signal-slots > 0 {
+    v(1.5em)
+    section-title("Signals")
+    block(below: 0.6em)[
+      #text(size: 9pt, style: "italic")[#if data.at("signal_has_incoming", default: false) [Copy any signals from the previous chapter, then write new ones when instructed.] else [Write signal codes here when instructed.]]
+    ]
+    v(0.4em)
+    let slot-count = calc.max(signal-slots, 4)
+    grid(
+      columns: (auto,) * 4,
+      column-gutter: 0.8em,
+      row-gutter: 0.6em,
+      ..for i in range(slot-count) {
+        (id-box(hide[0000]),)
+      }
+    )
+  }
+
   v(1.5em)
 
   // Master Potentials List
@@ -63,7 +83,7 @@
 
   // Potentials grid — columns adapt to page width
   let pots = data.potentials
-  let prefix = data.at("entry_prefix", default: "A")
+  let prefix = data.at("ledger_prefix", default: "A")
 
   context {
     let pot-cols = calc.max(3, calc.min(6, int(page.width / 1.4in)))

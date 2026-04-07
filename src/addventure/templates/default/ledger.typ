@@ -34,7 +34,7 @@
     ]
   ]
 
-  let prefix = data.at("entry_prefix", default: "A")
+  let prefix = data.at("ledger_prefix", default: "A")
 
   columns(2, gutter: 1.5em)[
     #for entry in data.ledger {

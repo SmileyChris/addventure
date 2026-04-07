@@ -137,13 +137,13 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
     # Check for prefix conflicts
     prefix_map: dict[str, list[str]] = {}
     for d in all_dirs:
-        prefix = _read_entry_prefix(d / "index.md") or "A"
+        prefix = _read_ledger_prefix(d / "index.md") or "A"
         label = d.name if d != game_dir else str(game_dir)
         prefix_map.setdefault(prefix, []).append(label)
     for prefix, dirs in prefix_map.items():
         if len(dirs) > 1:
             names = ", ".join(dirs)
-            print(f"⚠ Prefix conflict: {names} share entry_prefix \"{prefix}\"",
+            print(f"⚠ Prefix conflict: {names} share ledger_prefix \"{prefix}\"",
                   file=sys.stderr)
 
     if not chapters:
@@ -152,19 +152,53 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
         _build_single(game_dir, parsed)
         return
 
+    # Compile all chapters first so we can do cross-chapter validation
+    compiled_chapters: list[tuple[str, object]] = []
+    for d in all_dirs:
+        global_source, room_sources = load_game(d)
+        game = compile_game(global_source, room_sources)
+        for warning in game.warnings:
+            print(f"⚠ {warning}", file=sys.stderr)
+        label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
+        compiled_chapters.append((label, game))
+
+    # Cross-chapter signal validation
+    all_checked = {}   # signal_name -> chapter_label (from signal checks)
+    all_emitted = {}   # signal_name -> chapter_label
+
+    for label, game_data in compiled_chapters:
+        # Collect signal names from signal checks (index-level and interaction-level)
+        for sc in game_data.signal_checks:
+            for sn in sc.signal_names:
+                all_checked.setdefault(sn, label)
+        for ix in game_data.interactions:
+            for sc in ix.signal_checks:
+                for sn in sc.signal_names:
+                    all_checked.setdefault(sn, label)
+        for name in game_data.signal_emissions:
+            all_emitted[name] = label
+
+    for name in all_emitted:
+        if name not in all_checked:
+            print(
+                f"⚠ Signal {name} is emitted but not checked in any chapter",
+                file=sys.stderr,
+            )
+    for name in all_checked:
+        if name not in all_emitted:
+            print(
+                f"⚠ Signal {name} is checked but not emitted by any chapter",
+                file=sys.stderr,
+            )
+
     if parsed.markdown:
         # Concatenate markdown outputs
         all_md = []
-        for d in all_dirs:
-            global_source, room_sources = load_game(d)
-            game = compile_game(global_source, room_sources)
-            for warning in game.warnings:
-                print(f"⚠ {warning}", file=sys.stderr)
+        for label, game in compiled_chapters:
             md, writer_warnings = generate_markdown(game, blind=parsed.blind, fragment=parsed.fragment)
             for warning in writer_warnings:
                 print(f"⚠ {warning}", file=sys.stderr)
             all_md.append(md)
-            label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
             print(f"Built chapter: {label}", file=sys.stderr)
         combined = "\n\n---\n\n".join(all_md)
         if parsed.output:
@@ -184,12 +218,8 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
         # Build each chapter as a separate PDF, then merge
         chapter_pdfs = []
         try:
-            for i, d in enumerate(all_dirs):
-                global_source, room_sources = load_game(d)
-                game = compile_game(global_source, room_sources)
-                for warning in game.warnings:
-                    print(f"⚠ {warning}", file=sys.stderr)
-
+            for i, (label, game) in enumerate(compiled_chapters):
+                d = all_dirs[i]
                 tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
                 tmp.close()
                 tmp_path = Path(tmp.name)
@@ -206,7 +236,6 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
                     print(f"⚠ {warning}", file=sys.stderr)
                 if success:
                     chapter_pdfs.append(tmp_path)
-                label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
                 print(f"Built chapter: {label}", file=sys.stderr)
 
             if not chapter_pdfs:
@@ -218,9 +247,7 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
                 output_path = Path(parsed.output)
             else:
                 # Use parent game title
-                global_source, _ = load_game(game_dir)
-                from .parser import parse_global
-                parent_game = parse_global(global_source)
+                _, parent_game = compiled_chapters[0]
                 name = parent_game.metadata.get("title") or game_dir.resolve().name
                 output_path = Path(f"{_slugify(name)}.pdf")
 
@@ -316,8 +343,8 @@ def _cmd_new_game(name: str | None):
     print(f"\nCreated game: {game_dir / 'index.md'}")
 
 
-def _read_entry_prefix(index_path: Path) -> str | None:
-    """Read entry_prefix from a chapter's index.md frontmatter."""
+def _read_ledger_prefix(index_path: Path) -> str | None:
+    """Read ledger_prefix from a chapter's index.md frontmatter."""
     try:
         content = index_path.read_text()
     except OSError:
@@ -328,7 +355,7 @@ def _read_entry_prefix(index_path: Path) -> str | None:
     if end == -1:
         return None
     for line in content[3:end].splitlines():
-        if line.strip().startswith("entry_prefix:"):
+        if line.strip().startswith("ledger_prefix:"):
             return line.split(":", 1)[1].strip()
     return None
 
@@ -351,7 +378,7 @@ def _next_chapter_prefix(game_dir: Path) -> str:
     """Determine the next available chapter prefix letter."""
     used = {"A"}  # Parent game is always A
     for chapter_dir in _find_chapters(game_dir):
-        prefix = _read_entry_prefix(chapter_dir / "index.md")
+        prefix = _read_ledger_prefix(chapter_dir / "index.md")
         if prefix:
             used.add(prefix.upper())
     for letter in "BCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -380,7 +407,7 @@ def _cmd_new_chapter(name: str | None):
 
     lines = [
         "---",
-        f"entry_prefix: {prefix}",
+        f"ledger_prefix: {prefix}",
         "---",
         "",
         "# Verbs",

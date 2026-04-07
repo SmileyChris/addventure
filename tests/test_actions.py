@@ -560,7 +560,7 @@ LOOK: A clearing.
     game = compile_game(global_src, [room_src])
     md, warnings = generate_markdown(game)
     assert "GO NORTH" in md
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
     action = game.actions["Forest::GO_NORTH"]
     assert f"{entry_prefix}-{action.ledger_id}" in md
 
@@ -604,7 +604,7 @@ LOOK: A clearing.
     game = compile_game(global_src, [room_src])
     md, warnings = generate_markdown(game)
     action = game.actions["Forest::GO_NORTH"]
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
     assert f"{entry_prefix}-{action.ledger_id}" in md
     assert "You head north." in md
 
@@ -669,7 +669,7 @@ LOOK: A cave.
     ri = next(ri for ri in game.resolved if ri.verb == "USE" and "OLD_TREE" in ri.targets)
     instructions = writer._generate_instructions(ri)
     action = game.actions["Forest::HIDDEN_PATH"]
-    prefix = game.metadata.get("entry_prefix", "A")
+    prefix = game.metadata.get("ledger_prefix", "A")
     assert any(
         "HIDDEN PATH" in inst and f"{prefix}-{action.ledger_id}" in inst and "discovery" in inst.lower()
         for inst in instructions
@@ -788,7 +788,7 @@ LOOK: A small island.
     assert "GO WEST" in md
 
     # Ledger entries exist for actions
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
     for action in game.actions.values():
         assert f"{entry_prefix}-{action.ledger_id}" in md
 
@@ -809,7 +809,7 @@ LOOK: A clearing.
     game = compile_game(global_src, [room_src])
     md, warnings = generate_markdown(game, blind=True)
     action = game.actions["Forest::GO_NORTH"]
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
     # Action entry should be in ledger
     assert f"{entry_prefix}-{action.ledger_id}" in md
     # No separate "Actions" section in blind mode
@@ -852,7 +852,7 @@ LOOK: A cave.
     writer = GameWriter(game)
     ri = next(ri for ri in game.resolved if ri.verb == "USE" and "ROCK" in ri.targets)
     instructions = writer._generate_instructions(ri)
-    prefix = game.metadata.get("entry_prefix", "A")
+    prefix = game.metadata.get("ledger_prefix", "A")
     assert any("TUNNEL" in inst and f"{prefix}-{action.ledger_id}" in inst for inst in instructions)
 
 

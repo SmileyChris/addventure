@@ -201,6 +201,7 @@ subject          = object-ref
 destination      = "trash"
                  | "player"
                  | "room"
+                 | "signal"
                  | quoted-room
                  | object-state-ref
                  | NAME
@@ -295,6 +296,27 @@ freeform-body-line(m) = narrative-line(m)
 
 
 (* ══════════════════════════════════════════════════════════ *)
+(*  13b. Signals                                            *)
+(* ══════════════════════════════════════════════════════════ *)
+
+(* ── Signals ────────────────────────────────────────────────────────────── *)
+
+(* Signals are derived from emission arrows and signal check blocks.
+   No declaration section is needed. *)
+
+signal_names        = NAME { " + " NAME } ;
+signal_check        = signal_names "?" newline indented_block ;
+otherwise_check     = "otherwise?" newline indented_block ;
+signal_check_group  = { signal_check } [ otherwise_check ] ;
+
+(* Signal emission: NAME -> signal (subject is the signal name, destination is `signal`)
+   Signal check groups can appear in:
+   - The description block (between frontmatter and `# Verbs`) — fires at chapter start
+   - Interaction bodies (after narrative and arrows) — fires during play
+   First matching branch wins — the player reads the first check that matches. *)
+
+
+(* ══════════════════════════════════════════════════════════ *)
 (*  14. Validation Rules                                    *)
 (* ══════════════════════════════════════════════════════════ *)
 
@@ -334,5 +356,5 @@ freeform-body-line(m) = narrative-line(m)
    18. The global file is strict outside sections: only section headers, blank
        lines, and comments are allowed between (and after) global sections.
    19. Unknown frontmatter keys are syntactically valid but produce build
-       warnings. Known keys: title, author, start, entry_prefix, image,
+       warnings. Known keys: title, author, start, ledger_prefix, image,
        image_height, name_style. *)

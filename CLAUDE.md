@@ -18,7 +18,7 @@ uv run addventure new "My Game"         # Scaffold with defaults (oneshot)
 uv run addventure build --all           # Build parent + all chapter subdirs into one PDF
 ```
 
-Games are directories of `.md` files. Each game directory needs an `index.md` (metadata + verbs + inventory objects); all other `.md` files are room scripts loaded alphabetically. Subdirectories with their own `index.md` are chapters — each gets an auto-assigned `entry_prefix` (B, C, D...) so ledger entries don't collide.
+Games are directories of `.md` files. Each game directory needs an `index.md` (metadata + verbs + inventory objects); all other `.md` files are room scripts loaded alphabetically. Subdirectories with their own `index.md` are chapters — each gets an auto-assigned `ledger_prefix` (B, C, D...) so ledger entries don't collide.
 
 ## Project Structure
 

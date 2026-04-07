@@ -32,6 +32,7 @@ class Arrow:
     subject: str
     destination: str
     source_line: int = 0
+    signal_name: str | None = None  # Set when subject is NAME and destination is `signal`
     def __repr__(self):
         return f"{self.subject} -> {self.destination}"
 
@@ -44,6 +45,7 @@ class Interaction:
     source_line: int = 0
     room: str = ""
     sealed_content: str | None = None
+    signal_checks: list['SignalCheck'] = field(default_factory=list)
 
     @property
     def label(self):
@@ -95,6 +97,13 @@ class SealedText:
     entry_number: int = 0  # The ledger entry that triggers this
 
 @dataclass
+class SignalCheck:
+    signal_names: list[str]  # Empty list = otherwise
+    narrative: str
+    arrows: list[Arrow] = field(default_factory=list)
+    entry_number: int = 0
+
+@dataclass
 class GameData:
     metadata: dict[str, str] = field(default_factory=dict)
     verbs: dict[str, Verb] = field(default_factory=dict)
@@ -110,3 +119,5 @@ class GameData:
     actions: dict[str, Action] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     sealed_texts: list[SealedText] = field(default_factory=list)
+    signal_checks: list[SignalCheck] = field(default_factory=list)  # Index-level
+    signal_emissions: set[str] = field(default_factory=set)

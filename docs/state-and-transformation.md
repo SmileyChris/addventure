@@ -251,4 +251,11 @@ CELL_DOOR
   - player -> "Corridor"
 ```
 
+## Beyond arrows
+
+Arrows handle immediate, local state changes. For effects that reach further:
+
+- **Cue checks** trigger deferred effects in other rooms — pull a lever here, open a gate there. See [Cue checks](advanced.md#cue-checks-cross-room-effects).
+- **Signals** branch the narrative based on earlier decisions — choose an ending, and a later scene plays out differently. Signals work within a single game or across chapters. See [Signals](advanced.md#signals).
+
 Next: [Advanced Mechanics](advanced.md) covers multi-target interactions, verb states, wildcards, and more.

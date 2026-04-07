@@ -28,7 +28,7 @@ addventure build [dir] --all           # Build all chapters into one output
 
 If no directory is given, looks for `index.md` in the current directory.
 
-`--all` discovers chapter subdirectories (those containing `index.md` with a `# Verbs` header), builds each independently, and combines them into a single PDF or markdown output. Warns if any chapters share the same `entry_prefix`.
+`--all` discovers chapter subdirectories (those containing `index.md` with a `# Verbs` header), builds each independently, and combines them into a single PDF or markdown output. Warns if any chapters share the same `ledger_prefix`.
 
 #### Fragment modes
 
@@ -72,7 +72,7 @@ start: Entrance Hall
 | `title` | Game title, shown on printed sheets |
 | `author` | Author name, shown in footers |
 | `start` | Starting room name (must match a `#` header) |
-| `entry_prefix` | Prefix for ledger entry labels (default: `A`). Auto-assigned by `addventure new` for chapters |
+| `ledger_prefix` | Prefix for ledger entry labels (default: `A`). Auto-assigned by `addventure new` for chapters |
 | `image` | Path to cover/watermark image |
 | `image_height` | Height of the cover image |
 | `name_style` | Identifier rendering style: `upper_words` (default) or `title` — see [Name rendering](#name-rendering) |
@@ -200,6 +200,57 @@ Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-mo
 | `VERB -> trash` | Remove a verb from the player's verb sheet |
 | `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
 | `ACTION_NAME -> trash` | Remove an action from the room sheet |
+| `NAME -> signal` | Emit a signal (player writes the signal ID) |
+
+### Signals
+
+Signals branch narrative based on earlier decisions. A signal is a named flag — when the player triggers it, they write a numeric code on their sheet. Later, a signal check directs them to different ledger entries depending on which signals they have. This works within a single game or across chapters.
+
+Signal IDs are derived automatically from the name (deterministic hash). No declaration section is needed — the compiler derives signal info from `NAME -> signal` arrows and `NAME?` blocks.
+
+See [Signals (Advanced)](advanced.md#signals) for design guidance and examples.
+
+#### Emitting signals
+
+Use a signal arrow on any interaction:
+
+```
++ USE + AIR_DUCT:
+  You escape through the vent...
+  - EVERYONE_OUT_ESCAPE -> signal
+```
+
+The player instruction: "Write 64745 in your signals."
+
+#### Signal checks
+
+Signal checks branch narrative based on which signals the player has. They use `NAME?` syntax with `otherwise?` as the default.
+
+In the index description (fires at chapter start):
+
+```
+EVERYONE_OUT_ESCAPE?
+  A companion catches up to you...
+WITNESS_ESCAPE?
+  You're alone.
+otherwise?
+  Default text.
+```
+
+In interaction bodies (fires during play):
+
+```
++ USE:
+  Common narrative.
+  EVERYONE_OUT_ESCAPE?
+    Branch A text.
+  otherwise?
+    Default text.
+```
+
+All matching branches fire — if the player has multiple signals, they read every matching entry. `otherwise?` fires only when no signal matches.
+
+On the printed sheet, signal checks render as: "Check your signals: **64745** → read B-3. **92951** → read B-7. Otherwise → read B-12."
 
 ### Special syntax
 

@@ -43,13 +43,35 @@ USE + FREQUENCY_DIAL + FREQUENCY_NOTE:
     + LOOK: The display reads 47.3 MHz. A steady carrier tone hums from the speaker. The microphone waits in its cradle.
     + USE:
       You lift the microphone. Your thumb finds the transmit button.
+      EVERYONE_OUT_ESCAPE?
+        Your companion leans close. "Tell them how many. Tell them everything."
 
-      "This is — " Your voice cracks. You start again. "This is someone who just escaped a facility north of here. There are people still inside. A lot of people. Send help."
+        You press transmit. "This is someone who just escaped a detention facility north of here. We freed dozens of people — they're still coming out. There are more inside. Send everyone you have."
 
-      Static. Five seconds. Ten. You're about to try again when a voice cuts through, distant but clear: "Copy that. Search and rescue en route to your position. Stay on this frequency. Do not move. Help is coming."
+        Static. Five seconds. Ten. Then a voice, distant but clear: "Copy that. Multiple units en route. Stay on this frequency."
 
-      You set the microphone down carefully, as if it might break. Through the window the pines are swaying. The sky is the colour of tin. Somewhere far off — or maybe you're imagining it — the thud of rotor blades.
+        Your companion exhales. You set the microphone down. Through the window the pines are swaying. Somewhere far off, the thud of rotor blades.
 
-      You sit on the floor with your back against the console. You close your eyes.
+        You sit on the floor. Your companion sits beside you. Neither of you speaks.
 
-      For the first time in hours, you breathe.
+        For the first time in hours, you breathe.
+      WITNESS_ESCAPE?
+        You press transmit. "This is — " Your voice cracks. You start again. "I escaped a facility north of here. There are people still inside. A lot of people. I couldn't get them out. Send help. Please."
+
+        Static. Five seconds. Ten. You're about to try again when a voice cuts through, distant but clear: "Copy that. Search and rescue en route. Stay on this frequency. Do not move."
+
+        You set the microphone down carefully, as if it might break. Through the window the pines are swaying. The sky is the colour of tin.
+
+        You sit on the floor with your back against the console. You close your eyes. You think about the faces at the windows. You'll call the journalist next. You'll tell them everything.
+
+        For the first time in hours, you breathe.
+      otherwise?
+        You press transmit. "This is someone requesting emergency assistance. There is a facility north of this location. People are being held inside. Send help."
+
+        Static. Five seconds. Ten. Then a voice, distant but clear: "Copy that. Search and rescue en route to your position. Stay on this frequency. Help is coming."
+
+        You set the microphone down. Through the window the pines are swaying. The sky is the colour of tin. Somewhere far off — or maybe you're imagining it — the thud of rotor blades.
+
+        You sit on the floor with your back against the console. You close your eyes.
+
+        For the first time in hours, you breathe.
