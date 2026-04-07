@@ -204,11 +204,15 @@ Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-mo
 
 ### Signals
 
-Signals carry narrative state between chapters. A signal is a named flag — the player writes its numeric ID at the end of one chapter and checks it at the start of the next. Signal IDs are derived automatically from the name (deterministic hash). No declaration section is needed — the compiler derives signal info from `NAME -> signal` arrows (emissions) and `NAME?` blocks (checks).
+Signals branch narrative based on earlier decisions. A signal is a named flag — when the player triggers it, they write a numeric code on their sheet. Later, a signal check directs them to different ledger entries depending on which signals they have. This works within a single game or across chapters.
+
+Signal IDs are derived automatically from the name (deterministic hash). No declaration section is needed — the compiler derives signal info from `NAME -> signal` arrows and `NAME?` blocks.
+
+See [Signals (Advanced)](advanced.md#signals) for design guidance and examples.
 
 #### Emitting signals
 
-In the sending chapter, use a signal arrow:
+Use a signal arrow on any interaction:
 
 ```
 + USE + AIR_DUCT:
