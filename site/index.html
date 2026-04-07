@@ -268,11 +268,34 @@
       z-index: 1;
       letter-spacing: 0.08em;
       animation: fadeIn 1s ease-out 0.3s both;
+      cursor: default;
     }
 
     .hero-title-add {
       display: inline-block;
-      animation: slideUp 1s ease-out 0.3s both;
+      animation: slideUp 1s ease-out 0.3s backwards;
+    }
+
+    .hero-title-add-inner {
+      display: inline-block;
+      transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .hero-brand {
+      cursor: default;
+    }
+
+    .footer-add-inner {
+      display: inline-block;
+      transition: transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .site-footer span:hover .footer-add-inner {
+      transform: translateY(2px);
+    }
+
+    .hero-brand:hover .hero-title-add-inner {
+      transform: translateY(4px);
     }
 
     @keyframes fadeIn {
@@ -1405,8 +1428,10 @@
        HERO
        ═══════════════════════════════════════════ -->
   <section class="hero">
-    <img src="assets/images/logo.png" alt="Addventure logo" class="hero-logo">
-    <h1 class="hero-title"><span class="hero-title-add">Add</span>venture</h1>
+    <div class="hero-brand">
+      <img src="assets/images/logo.png" alt="Addventure logo" class="hero-logo">
+      <h1 class="hero-title"><span class="hero-title-add"><span class="hero-title-add-inner">Add</span></span>venture</h1>
+    </div>
     <p class="hero-tagline">Write interactive fiction played with pencil, paper, and&nbsp;addition.</p>
     <div class="hero-cta">
       <a href="#try-it" class="btn btn-primary">Try It Live</a>
@@ -1772,7 +1797,7 @@
        FOOTER
        ═══════════════════════════════════════════ -->
   <footer class="site-footer">
-    <span style="font-family:var(--font-title);font-weight:900;text-transform:uppercase;letter-spacing:0.08em;font-size:0.8rem;color:var(--parchment-dark)">Addventure</span> &mdash; add+numbers, add+venture
+    <span style="font-family:var(--font-title);font-weight:900;text-transform:uppercase;letter-spacing:0.08em;font-size:0.8rem;color:var(--parchment-dark);cursor:default"><span class="footer-add-inner">Add</span>venture</span> &ensp; add+numbers, add+venture
   </footer>
 
   <!-- ═══════════════════════════════════════════
