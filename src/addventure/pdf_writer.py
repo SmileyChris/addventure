@@ -109,7 +109,53 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             "narrative": action.narrative,
             "instructions": instructions,
         })
+
+    # Signal check entries (index-level)
+    from .compiler import signal_id as _signal_id
+    for sc in game.signal_checks:
+        if sc.entry_number not in seen_entries:
+            seen_entries.add(sc.entry_number)
+            sc_instructions = writer._signal_check_instructions(sc.arrows, room=writer._start_room() or "")
+            ledger.append({
+                "entry": sc.entry_number,
+                "narrative": sc.narrative,
+                "instructions": sc_instructions,
+            })
+
+    # Signal check entries (interaction-level)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            if sc.entry_number not in seen_entries:
+                seen_entries.add(sc.entry_number)
+                sc_instructions = writer._signal_check_instructions(sc.arrows, room=ix.room)
+                ledger.append({
+                    "entry": sc.entry_number,
+                    "narrative": sc.narrative,
+                    "instructions": sc_instructions,
+                })
+
+    # Build signal check references for ledger entries
+    entry_signal_refs = {}
+    for ix in game.interactions:
+        if ix.signal_checks:
+            for ri in game.resolved:
+                if ri.source_line == ix.source_line and ri.room == ix.room:
+                    parts = []
+                    for sc in ix.signal_checks:
+                        if sc.signal_name:
+                            sid = _signal_id(sc.signal_name)
+                            parts.append(f"{sid} → also read {entry_prefix}-{sc.entry_number}")
+                        else:
+                            parts.append(f"Otherwise → also read {entry_prefix}-{sc.entry_number}")
+                    entry_signal_refs[ri.entry_number] = "Check your signals: " + ". ".join(parts) + "."
+
     ledger.sort(key=lambda e: e["entry"])
+
+    # Add signal check refs to existing ledger entries
+    for entry in ledger:
+        ref = entry_signal_refs.get(entry["entry"])
+        if ref:
+            entry["instructions"] = list(entry["instructions"]) + [ref]
 
     start_room = writer._start_room()
 
@@ -134,6 +180,18 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         for st in sorted(game.sealed_texts, key=lambda s: s.ref)
     ]
 
+    # Signal checks (index-level) for verb sheet
+    index_signal_checks = []
+    for sc in game.signal_checks:
+        index_signal_checks.append({
+            "signal_id": _signal_id(sc.signal_name) if sc.signal_name else None,
+            "entry": sc.entry_number,
+            "is_otherwise": sc.signal_name is None,
+        })
+
+    # Signal slot count for inventory sheet
+    signal_slots = max(len(game.signals), len(game.signal_emissions))
+
     return {
         "metadata": dict(game.metadata),
         "start_room": start_room,
@@ -144,6 +202,8 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         "rooms": rooms,
         "inventory_slots": max(len(game.inventory) + 2, 6),
         "cue_slots": len(game.cues),
+        "signal_checks": index_signal_checks,
+        "signal_slots": signal_slots,
         "potentials": potentials,
         "ledger": ledger,
         "sealed_texts": sealed_texts,

@@ -51,6 +51,26 @@
     )
   }
 
+  // Signals section (only if game has signals)
+  let signal-slots = data.at("signal_slots", default: 0)
+  if signal-slots > 0 {
+    v(1.5em)
+    section-title("Signals")
+    block(below: 0.6em)[
+      #text(size: 9pt, style: "italic")[Track signal states here. Fill in a box when a signal fires; cross it out when consumed.]
+    ]
+    v(0.4em)
+    let slot-count = calc.max(signal-slots, 4)
+    grid(
+      columns: (auto,) * 4,
+      column-gutter: 0.8em,
+      row-gutter: 0.6em,
+      ..for i in range(slot-count) {
+        (id-box(hide[000], crossable: true),)
+      }
+    )
+  }
+
   v(1.5em)
 
   // Master Potentials List

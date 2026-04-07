@@ -50,6 +50,20 @@
     ]
   ]
 
+  // Signal check instructions (only if game has index-level signal checks)
+  let signal-checks = data.at("signal_checks", default: ())
+  let prefix = data.at("entry_prefix", default: "A")
+  if signal-checks.len() > 0 {
+    block(below: 1.2em)[
+      #text(size: 9pt, style: "italic")[
+        Check your signals: #for sc in signal-checks {
+          if sc.is_otherwise [Otherwise] else [#str(sc.signal_id)]
+          [ → read #prefix\-#str(sc.entry). ]
+        }
+      ]
+    ]
+  }
+
   for verb in data.verbs {
     block(
       width: 100%,
