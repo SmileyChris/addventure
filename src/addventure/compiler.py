@@ -562,6 +562,16 @@ def compile_game(global_source: str, room_sources: list[str],
 
     resolve_cues(game)
 
+    # Collect signal emissions from all resolved interactions
+    for ri in game.resolved:
+        for arrow in ri.arrows:
+            if arrow.signal_name:
+                game.signal_emissions.add(arrow.signal_name)
+    for action in game.actions.values():
+        for arrow in action.arrows:
+            if arrow.signal_name:
+                game.signal_emissions.add(arrow.signal_name)
+
     # Renumber entries. Deduplicate entries with identical content:
     # - Cue aliases (same cue, different room state) share entry numbers
     # - Interactions with same narrative + arrows (e.g. wildcard expansions)

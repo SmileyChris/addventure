@@ -78,3 +78,36 @@ def test_parse_signals_rejects_invalid_names():
     global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\nlowercase\n"
     with pytest.raises(ParseError, match="Invalid signal name"):
         compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+
+
+def test_signal_emission_arrow():
+    global_src = "# Verbs\nLOOK\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  You do it.\n"
+        "  - -> signal EVERYONE_OUT_ESCAPE\n"
+    )
+    game = compile_game(global_src, [room_src])
+    assert "EVERYONE_OUT_ESCAPE" in game.signal_emissions
+    # The arrow should be on the resolved interaction
+    ri = [r for r in game.resolved if r.verb == "USE"][0]
+    signal_arrows = [a for a in ri.arrows if a.signal_name]
+    assert len(signal_arrows) == 1
+    assert signal_arrows[0].signal_name == "EVERYONE_OUT_ESCAPE"
+
+
+def test_signal_emission_rejects_invalid_name():
+    import pytest
+    from addventure.parser import ParseError
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Text.\n"
+        "  - -> signal lowercase_bad\n"
+    )
+    with pytest.raises(ParseError, match="Invalid signal name"):
+        compile_game(global_src, [room_src])

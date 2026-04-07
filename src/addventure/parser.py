@@ -76,7 +76,10 @@ def _parse_arrow(text: str, ln: int) -> Arrow:
     if subject:
         _validate_arrow_endpoint(subject, ln, "arrow subject")
     _validate_arrow_endpoint(destination, ln, "arrow destination")
-    return Arrow(subject, destination, ln)
+    signal_name = None
+    if destination.startswith("signal "):
+        signal_name = destination[7:].strip()
+    return Arrow(subject, destination, ln, signal_name=signal_name)
 
 def _strip_marker(s: str) -> tuple[str, str]:
     """Strip leading + or - marker. Returns (marker, content)."""
@@ -140,6 +143,11 @@ def _validate_arrow_endpoint(value: str, ln: int, what: str) -> None:
         return
     if value.startswith("room__"):
         _require_name(value.split("__", 1)[1], ln, f"{what} room state")
+        return
+    if value.startswith("signal "):
+        sig_name = value[7:].strip()
+        if not _is_name(sig_name):
+            raise ParseError(ln, f"Invalid signal name: {sig_name}")
         return
     _require_object_ref(value, ln, what)
 
