@@ -33,7 +33,7 @@ def test_game_data_signal_fields():
     assert game.signal_emissions == set()
 
 
-from addventure.compiler import signal_id
+from addventure.compiler import compile_game, signal_id
 
 
 def test_signal_id_deterministic():
@@ -52,3 +52,29 @@ def test_signal_id_different_names_differ():
     a = signal_id("EVERYONE_OUT_ESCAPE")
     b = signal_id("WITNESS_ESCAPE")
     assert a != b
+
+
+def test_parse_signals_section():
+    global_src = (
+        "# Verbs\nLOOK\n\n"
+        "# Inventory\n\n"
+        "# Signals\nEVERYONE_OUT_ESCAPE\nWITNESS_ESCAPE\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    assert "EVERYONE_OUT_ESCAPE" in game.signals
+    assert "WITNESS_ESCAPE" in game.signals
+    assert game.signals["EVERYONE_OUT_ESCAPE"].id == signal_id("EVERYONE_OUT_ESCAPE")
+
+
+def test_parse_signals_section_empty():
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\n"
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    assert game.signals == {}
+
+
+def test_parse_signals_rejects_invalid_names():
+    import pytest
+    from addventure.parser import ParseError
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\nlowercase\n"
+    with pytest.raises(ParseError, match="Invalid signal name"):
+        compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])

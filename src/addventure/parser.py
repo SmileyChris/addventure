@@ -1,6 +1,6 @@
 import re
 from .models import (
-    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action,
+    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action, Signal,
 )
 
 
@@ -61,7 +61,7 @@ def _parse_header(line: str) -> tuple[str, str | None]:
     s = line.strip()
     name = s[3:].strip() if s.startswith("## ") else s[2:].strip()
     lower = name.lower()
-    if lower in ("verbs", "inventory", "interactions"):
+    if lower in ("verbs", "inventory", "interactions", "signals"):
         return lower, None
     return "room", name
 
@@ -249,6 +249,17 @@ def parse_global(source: str) -> GameData:
                         i = _parse_entity_block(lines, i, game, room_name="", entity_name=w, entity_indent=item_indent)
                     else:
                         i += 1
+            elif sec == "signals":
+                while i < len(lines) and not _is_header(lines[i]):
+                    w = _strip_trailing_comment(lines[i]).strip()
+                    if w and not _is_comment(w):
+                        if _indent(lines[i], i + 1) != 0:
+                            raise ParseError(i + 1, f"Unexpected indentation in # Signals: {w}")
+                        if not _is_name(w):
+                            raise ParseError(i + 1, f"Invalid signal name: {w}")
+                        from .compiler import signal_id as _signal_id
+                        game.signals[w] = Signal(w, _signal_id(w))
+                    i += 1
             else:
                 raise ParseError(i, f"Unknown global section: {sec}")
         else:
