@@ -197,6 +197,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             if sc.signal_name:
                 check_names.add(sc.signal_name)
     signal_slots = max(len(check_names), len(game.signal_emissions))
+    signal_has_incoming = bool(check_names - game.signal_emissions)
 
     return {
         "metadata": dict(game.metadata),
@@ -210,6 +211,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         "cue_slots": len(game.cues),
         "signal_checks": index_signal_checks,
         "signal_slots": signal_slots,
+        "signal_has_incoming": signal_has_incoming,
         "potentials": potentials,
         "ledger": ledger,
         "sealed_texts": sealed_texts,

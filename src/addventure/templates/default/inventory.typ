@@ -57,7 +57,7 @@
     v(1.5em)
     section-title("Signals")
     block(below: 0.6em)[
-      #text(size: 9pt, style: "italic")[Track signal states here. Fill in a box when a signal fires; cross it out when consumed.]
+      #text(size: 9pt, style: "italic")[#if data.at("signal_has_incoming", default: false) [Copy any signals from the previous chapter, then write new ones when instructed.] else [Write signal codes here when instructed.]]
     ]
     v(0.4em)
     let slot-count = calc.max(signal-slots, 4)

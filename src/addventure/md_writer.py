@@ -190,9 +190,15 @@ def _inventory_section(
                 check_names.add(sc.signal_name)
     signal_count = max(len(check_names), len(game.signal_emissions))
     if signal_count > 0:
+        # If this chapter checks signals it doesn't emit, the player needs to carry them forward
+        incoming = check_names - game.signal_emissions
+        if incoming:
+            hint = "Copy any signals from the previous chapter, then write new ones when instructed."
+        else:
+            hint = "Write signal codes here when instructed."
         lines.append(
             "\n### Signals\n"
-            "\n*Write signal codes here when instructed.*\n"
+            f"\n*{hint}*\n"
         )
         rows = _render_placeholder_rows(signal_count)
         lines.extend(rows)
