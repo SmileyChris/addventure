@@ -49,7 +49,7 @@ class GameWriter:
             if arrow.signal_name:
                 from .compiler import signal_id as _signal_id
                 sid = _signal_id(arrow.signal_name)
-                instructions.append(f"Write {sid} in your signals.")
+                instructions.append(f"Write *{sid}* in your signals.")
                 continue
 
             # -> VERB (verb reveal)

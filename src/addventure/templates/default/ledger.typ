@@ -18,7 +18,7 @@
       v(0.3em)
       for instr in entry.instructions {
         block(below: 0.2em)[
-          #text(size: 8pt, style: "italic")[→ #instr]
+          #text(size: 8pt, style: "italic")[→ #eval(instr, mode: "markup")]
         ]
       }
     }
