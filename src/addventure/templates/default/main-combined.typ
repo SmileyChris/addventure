@@ -19,6 +19,7 @@
 #let page-paper = sys.inputs.at("paper", default: default-paper)
 #let logo-path = "addventure.jpg"
 #let section-label = state("section-label", "")
+#let footer-title = state("footer-title", game-title)
 
 #set page(
   paper: page-paper,
@@ -30,7 +31,7 @@
     let label = section-label.get()
     if label != "" {
       let author = data.metadata.at("author", default: none)
-      text(font: title-font, size: 7pt, weight: "bold", fill: luma(150))[#game-title]
+      text(font: title-font, size: 7pt, weight: "bold", fill: luma(150))[#footer-title.get()]
       if author != none [
         #text(size: 7pt, fill: luma(150))[ — #author]
       ]
@@ -63,6 +64,7 @@
 
   // Title page (intro, signal checks, cues, potentials)
   pagebreak()
+  footer-title.update(display-title)
   section-label.update(display-title)
   title-page(chapter, display-title)
 
