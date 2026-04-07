@@ -201,6 +201,64 @@ Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-mo
 | `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
 | `ACTION_NAME -> trash` | Remove an action from the room sheet |
 
+### Signals
+
+Signals carry narrative state between chapters. A signal is a named flag — the player writes its numeric ID at the end of one chapter and checks it at the start of the next.
+
+#### Defining signals
+
+In the receiving chapter's `index.md`:
+
+```
+# Signals
+EVERYONE_OUT_ESCAPE
+WITNESS_ESCAPE
+```
+
+Signal IDs are derived automatically from the name (deterministic hash).
+
+#### Emitting signals
+
+In the sending chapter, use a signal arrow:
+
+```
++ USE + AIR_DUCT:
+  You escape through the vent...
+  - -> signal EVERYONE_OUT_ESCAPE
+```
+
+The player instruction: "Write 64745 in your signals."
+
+#### Signal checks
+
+Signal checks branch narrative based on which signals the player has. They use `NAME?` syntax with `otherwise?` as the default.
+
+In the index description (fires at chapter start):
+
+```
+EVERYONE_OUT_ESCAPE?
+  A companion catches up to you...
+WITNESS_ESCAPE?
+  You're alone.
+otherwise?
+  Default text.
+```
+
+In interaction bodies (fires during play):
+
+```
++ USE:
+  Common narrative.
+  EVERYONE_OUT_ESCAPE?
+    Branch A text.
+  otherwise?
+    Default text.
+```
+
+All matching branches fire — if the player has multiple signals, they read every matching entry. `otherwise?` fires only when no signal matches.
+
+On the printed sheet, signal checks render as: "Check your signals: **64745** → read B-3. **92951** → read B-7. Otherwise → read B-12."
+
 ### Special syntax
 
 | Syntax | Meaning |

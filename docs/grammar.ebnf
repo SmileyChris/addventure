@@ -204,7 +204,8 @@ destination      = "trash"
                  | quoted-room
                  | object-state-ref
                  | NAME
-                 | room-state-ref ;
+                 | room-state-ref
+                 | signal-arrow ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -292,6 +293,26 @@ freeform-body(n)     = freeform-body-line(n+1) ,
 freeform-body-line(m) = narrative-line(m)
                       | arrow-line(m)
                       | action-line(m) ;
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  13b. Signals                                            *)
+(* ══════════════════════════════════════════════════════════ *)
+
+(* ── Signals ────────────────────────────────────────────────────────────── *)
+
+signals_section     = "# Signals" newline { signal_decl } ;
+signal_decl         = IDENTIFIER newline ;
+
+signal_arrow        = "->" "signal" IDENTIFIER ;
+
+signal_check        = IDENTIFIER "?" newline indented_block ;
+otherwise_check     = "otherwise?" newline indented_block ;
+signal_check_group  = { signal_check } [ otherwise_check ] ;
+
+(* Signal check groups can appear in:
+   - The description block (between frontmatter and `# Verbs`) — fires at chapter start
+   - Interaction bodies (after narrative and arrows) — fires during play *)
 
 
 (* ══════════════════════════════════════════════════════════ *)

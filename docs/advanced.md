@@ -358,6 +358,12 @@ addventure build my-game/the-escape  # builds just one chapter
 
 Use narrative handoffs at chapter boundaries: the ending ledger entry tells the player what they're carrying, and the next chapter's first entry sets up the new inventory with fresh IDs.
 
+#### Signals between chapters
+
+Chapters can carry narrative consequences using signals. The sending chapter emits a signal (the player writes a code), and the receiving chapter checks for it and branches the narrative. See the [Signals reference](reference.md#signals) for syntax.
+
+When building with `--all`, the compiler validates signal usage across chapters and warns about orphaned signals (emitted but never declared, or declared but never emitted).
+
 **The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ room objects per room stays well under 80 total.
 
 ### Ledger entry deduplication
