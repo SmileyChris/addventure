@@ -572,33 +572,6 @@ def compile_game(global_source: str, room_sources: list[str],
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
 
-    # Signal validation
-    declared_signals = set(game.signals.keys())
-
-    # Warn about unknown signal checks (index-level)
-    for sc in game.signal_checks:
-        if sc.signal_name and sc.signal_name not in declared_signals:
-            game.warnings.append(f"Signal check references unknown signal: {sc.signal_name}")
-
-    # Warn about unknown signal checks (interaction-level)
-    for ix in game.interactions:
-        for sc in ix.signal_checks:
-            if sc.signal_name and sc.signal_name not in declared_signals:
-                game.warnings.append(f"Signal check references unknown signal: {sc.signal_name}")
-
-    # Warn if chapter both emits and receives same signal
-    for name in game.signal_emissions & declared_signals:
-        game.warnings.append(f"Chapter both emits and receives signal: {name}")
-
-    # Check for hash collisions within chapter
-    seen_ids = {}
-    for name, sig in game.signals.items():
-        if sig.id in seen_ids:
-            raise RuntimeError(
-                f"Signal hash collision: {name} and {seen_ids[sig.id]} both resolve to ID {sig.id}"
-            )
-        seen_ids[sig.id] = name
-
     # Renumber entries. Deduplicate entries with identical content:
     # - Cue aliases (same cue, different room state) share entry numbers
     # - Interactions with same narrative + arrows (e.g. wildcard expansions)

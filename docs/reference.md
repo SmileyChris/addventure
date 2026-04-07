@@ -200,22 +200,11 @@ Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-mo
 | `VERB -> trash` | Remove a verb from the player's verb sheet |
 | `? -> "Room"` | Cue: deferred cross-room effect (see [Advanced](advanced.md#cue-checks-cross-room-effects)) |
 | `ACTION_NAME -> trash` | Remove an action from the room sheet |
+| `NAME -> signal` | Emit a signal (player writes the signal ID) |
 
 ### Signals
 
-Signals carry narrative state between chapters. A signal is a named flag — the player writes its numeric ID at the end of one chapter and checks it at the start of the next.
-
-#### Defining signals
-
-In the receiving chapter's `index.md`:
-
-```
-# Signals
-EVERYONE_OUT_ESCAPE
-WITNESS_ESCAPE
-```
-
-Signal IDs are derived automatically from the name (deterministic hash).
+Signals carry narrative state between chapters. A signal is a named flag — the player writes its numeric ID at the end of one chapter and checks it at the start of the next. Signal IDs are derived automatically from the name (deterministic hash). No declaration section is needed — the compiler derives signal info from `NAME -> signal` arrows (emissions) and `NAME?` blocks (checks).
 
 #### Emitting signals
 
@@ -224,7 +213,7 @@ In the sending chapter, use a signal arrow:
 ```
 + USE + AIR_DUCT:
   You escape through the vent...
-  - -> signal EVERYONE_OUT_ESCAPE
+  - EVERYONE_OUT_ESCAPE -> signal
 ```
 
 The player instruction: "Write 64745 in your signals."

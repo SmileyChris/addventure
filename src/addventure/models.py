@@ -32,7 +32,7 @@ class Arrow:
     subject: str
     destination: str
     source_line: int = 0
-    signal_name: str | None = None  # Set when destination is `signal NAME`
+    signal_name: str | None = None  # Set when subject is NAME and destination is `signal`
     def __repr__(self):
         return f"{self.subject} -> {self.destination}"
 
@@ -97,11 +97,6 @@ class SealedText:
     entry_number: int = 0  # The ledger entry that triggers this
 
 @dataclass
-class Signal:
-    name: str
-    id: int = 0  # Hash-derived, set during parsing
-
-@dataclass
 class SignalCheck:
     signal_name: str | None  # None = otherwise
     narrative: str
@@ -124,6 +119,5 @@ class GameData:
     actions: dict[str, Action] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     sealed_texts: list[SealedText] = field(default_factory=list)
-    signals: dict[str, Signal] = field(default_factory=dict)
     signal_checks: list[SignalCheck] = field(default_factory=list)  # Index-level
     signal_emissions: set[str] = field(default_factory=set)

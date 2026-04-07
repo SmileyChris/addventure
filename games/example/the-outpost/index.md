@@ -23,7 +23,3 @@ USE
 TAKE
 
 # Inventory
-
-# Signals
-EVERYONE_OUT_ESCAPE
-WITNESS_ESCAPE

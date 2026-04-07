@@ -301,10 +301,10 @@ freeform-body-line(m) = narrative-line(m)
 
 (* ── Signals ────────────────────────────────────────────────────────────── *)
 
-signals_section     = "# Signals" newline { signal_decl } ;
-signal_decl         = IDENTIFIER newline ;
+(* Signals are derived from emission arrows and signal check blocks.
+   No declaration section is needed. *)
 
-signal_arrow        = "->" "signal" IDENTIFIER ;
+signal_arrow        = NAME "->" "signal" ;
 
 signal_check        = IDENTIFIER "?" newline indented_block ;
 otherwise_check     = "otherwise?" newline indented_block ;

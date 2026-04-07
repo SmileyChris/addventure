@@ -362,7 +362,7 @@ Use narrative handoffs at chapter boundaries: the ending ledger entry tells the 
 
 Chapters can carry narrative consequences using signals. The sending chapter emits a signal (the player writes a code), and the receiving chapter checks for it and branches the narrative. See the [Signals reference](reference.md#signals) for syntax.
 
-When building with `--all`, the compiler validates signal usage across chapters and warns about orphaned signals (emitted but never declared, or declared but never emitted).
+When building with `--all`, the compiler validates signal usage across chapters and warns about orphaned signals (emitted but never checked, or checked but never emitted).
 
 **The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ room objects per room stays well under 80 total.
 

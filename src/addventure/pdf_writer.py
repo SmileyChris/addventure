@@ -190,7 +190,13 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         })
 
     # Signal slot count for inventory sheet
-    signal_slots = max(len(game.signals), len(game.signal_emissions))
+    # Count unique signal names from checks
+    check_names = {sc.signal_name for sc in game.signal_checks if sc.signal_name}
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            if sc.signal_name:
+                check_names.add(sc.signal_name)
+    signal_slots = max(len(check_names), len(game.signal_emissions))
 
     return {
         "metadata": dict(game.metadata),

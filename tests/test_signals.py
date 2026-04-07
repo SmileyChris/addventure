@@ -2,13 +2,7 @@
 
 import hashlib
 
-from addventure.models import Signal, SignalCheck, Arrow, GameData
-
-
-def test_signal_dataclass():
-    s = Signal(name="EVERYONE_OUT_ESCAPE", id=10347)
-    assert s.name == "EVERYONE_OUT_ESCAPE"
-    assert s.id == 10347
+from addventure.models import SignalCheck, Arrow, GameData
 
 
 def test_signal_check_dataclass():
@@ -28,7 +22,6 @@ def test_signal_check_otherwise():
 
 def test_game_data_signal_fields():
     game = GameData()
-    assert game.signals == {}
     assert game.signal_checks == []
     assert game.signal_emissions == set()
 
@@ -54,32 +47,6 @@ def test_signal_id_different_names_differ():
     assert a != b
 
 
-def test_parse_signals_section():
-    global_src = (
-        "# Verbs\nLOOK\n\n"
-        "# Inventory\n\n"
-        "# Signals\nEVERYONE_OUT_ESCAPE\nWITNESS_ESCAPE\n"
-    )
-    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
-    assert "EVERYONE_OUT_ESCAPE" in game.signals
-    assert "WITNESS_ESCAPE" in game.signals
-    assert game.signals["EVERYONE_OUT_ESCAPE"].id == signal_id("EVERYONE_OUT_ESCAPE")
-
-
-def test_parse_signals_section_empty():
-    global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\n"
-    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
-    assert game.signals == {}
-
-
-def test_parse_signals_rejects_invalid_names():
-    import pytest
-    from addventure.parser import ParseError
-    global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\nlowercase\n"
-    with pytest.raises(ParseError, match="Invalid signal name"):
-        compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
-
-
 def test_signal_emission_arrow():
     global_src = "# Verbs\nLOOK\nUSE\n\n# Inventory\n"
     room_src = (
@@ -87,7 +54,7 @@ def test_signal_emission_arrow():
         "THING\n"
         "+ USE:\n"
         "  You do it.\n"
-        "  - -> signal EVERYONE_OUT_ESCAPE\n"
+        "  - EVERYONE_OUT_ESCAPE -> signal\n"
     )
     game = compile_game(global_src, [room_src])
     assert "EVERYONE_OUT_ESCAPE" in game.signal_emissions
@@ -107,9 +74,24 @@ def test_signal_emission_rejects_invalid_name():
         "THING\n"
         "+ USE:\n"
         "  Text.\n"
-        "  - -> signal lowercase_bad\n"
+        "  - lowercase_bad -> signal\n"
     )
-    with pytest.raises(ParseError, match="Invalid signal name"):
+    with pytest.raises(ParseError, match="Invalid arrow subject"):
+        compile_game(global_src, [room_src])
+
+
+def test_signal_emission_rejects_missing_subject():
+    import pytest
+    from addventure.parser import ParseError
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Text.\n"
+        "  - -> signal\n"
+    )
+    with pytest.raises(ParseError, match="Signal arrow requires a subject"):
         compile_game(global_src, [room_src])
 
 
@@ -125,8 +107,7 @@ def test_parse_index_signal_checks():
         "otherwise?\n"
         "  Default text.\n\n"
         "# Verbs\nLOOK\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\nSIGNAL_B\n"
+        "# Inventory\n"
     )
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
     assert "Common intro text." in game.metadata.get("description", "")
@@ -144,8 +125,7 @@ def test_parse_index_signal_checks_no_otherwise():
         "SIGNAL_A?\n"
         "  Branch A.\n\n"
         "# Verbs\nLOOK\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\n"
+        "# Inventory\n"
     )
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
     assert len(game.signal_checks) == 1
@@ -160,7 +140,7 @@ def test_parse_otherwise_before_signal_check_errors():
         "  Default first.\n"
         "SIGNAL_A?\n"
         "  Branch A.\n\n"
-        "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\nSIGNAL_A\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
     )
     with pytest.raises(ParseError, match="otherwise\\? must be the last branch"):
         compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
@@ -169,8 +149,7 @@ def test_parse_otherwise_before_signal_check_errors():
 def test_parse_interaction_signal_checks():
     global_src = (
         "# Verbs\nLOOK\nUSE\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\n"
+        "# Inventory\n"
     )
     room_src = (
         "# Room\n\n"
@@ -197,8 +176,7 @@ def test_parse_interaction_signal_checks():
 def test_interaction_signal_checks_with_unconditional_arrows():
     global_src = (
         "# Verbs\nUSE\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\n"
+        "# Inventory\n"
     )
     room_src = (
         "# Room\n\n"
@@ -221,20 +199,6 @@ def test_interaction_signal_checks_with_unconditional_arrows():
     assert ix.signal_checks[0].arrows[0].subject == "BONUS"
 
 
-def test_signal_ids_reserved_no_collision():
-    """Signal IDs should not be assigned to any entity or verb."""
-    global_src = (
-        "# Verbs\nLOOK\nUSE\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\nSIGNAL_B\n"
-    )
-    room_src = "# Room\n\nTHING\n+ LOOK: A thing.\n"
-    game = compile_game(global_src, [room_src])
-    sig_ids = {s.id for s in game.signals.values()}
-    entity_ids = {o.id for o in game.objects.values()} | {v.id for v in game.verbs.values()} | {r.id for r in game.rooms.values()}
-    assert sig_ids.isdisjoint(entity_ids)
-
-
 def test_signal_checks_get_entry_numbers():
     global_src = (
         "---\ntitle: Test\n---\n\n"
@@ -244,8 +208,7 @@ def test_signal_checks_get_entry_numbers():
         "otherwise?\n"
         "  Default text.\n\n"
         "# Verbs\nLOOK\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\n"
+        "# Inventory\n"
     )
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
     assert len(game.signal_checks) == 2
@@ -257,8 +220,7 @@ def test_signal_checks_get_entry_numbers():
 def test_interaction_signal_checks_get_entry_numbers():
     global_src = (
         "# Verbs\nUSE\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\n"
+        "# Inventory\n"
     )
     room_src = (
         "# Room\n\n"
@@ -277,31 +239,6 @@ def test_interaction_signal_checks_get_entry_numbers():
     assert ix.signal_checks[1].entry_number > 0
 
 
-def test_signal_check_unknown_signal_warns():
-    global_src = (
-        "UNKNOWN_SIGNAL?\n"
-        "  Branch text.\n\n"
-        "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\n"
-    )
-    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
-    assert any("unknown signal" in w.lower() for w in game.warnings)
-
-
-def test_signal_emit_and_receive_same_chapter_warns():
-    global_src = (
-        "# Verbs\nUSE\n\n# Inventory\n\n# Signals\nSIGNAL_A\n"
-    )
-    room_src = (
-        "# Room\n\n"
-        "THING\n"
-        "+ USE:\n"
-        "  Text.\n"
-        "  - -> signal SIGNAL_A\n"
-    )
-    game = compile_game(global_src, [room_src])
-    assert any("both emits and receives" in w.lower() for w in game.warnings)
-
-
 from addventure.writer import GameWriter
 from addventure.md_writer import generate_markdown
 
@@ -313,7 +250,7 @@ def test_writer_signal_emission_instruction():
         "THING\n"
         "+ USE:\n"
         "  You do it.\n"
-        "  - -> signal EVERYONE_OUT_ESCAPE\n"
+        "  - EVERYONE_OUT_ESCAPE -> signal\n"
     )
     game = compile_game(global_src, [room_src])
     writer = GameWriter(game)
@@ -333,8 +270,7 @@ def test_md_index_signal_checks_rendered():
         "otherwise?\n"
         "  Default.\n\n"
         "# Verbs\nLOOK\n\n"
-        "# Inventory\n\n"
-        "# Signals\nSIGNAL_A\n"
+        "# Inventory\n"
     )
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
     md, _ = generate_markdown(game)
@@ -344,11 +280,30 @@ def test_md_index_signal_checks_rendered():
 
 
 def test_md_signals_section_on_inventory_sheet():
+    """Signal checks should cause the Signals section to appear on the inventory sheet."""
     global_src = (
-        "# Verbs\nLOOK\n\n# Inventory\n\n"
-        "# Signals\nSIGNAL_A\nSIGNAL_B\n"
+        "SIGNAL_A?\n"
+        "  Branch A.\n"
+        "SIGNAL_B?\n"
+        "  Branch B.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
     )
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    assert "Signals" in md
+
+
+def test_md_signals_section_for_emissions():
+    """Signal emissions should cause the Signals section to appear."""
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  You do it.\n"
+        "  - MY_SIGNAL -> signal\n"
+    )
+    game = compile_game(global_src, [room_src])
     md, _ = generate_markdown(game)
     assert "Signals" in md
 
@@ -368,7 +323,7 @@ def test_md_signal_emission_in_ledger():
         "THING\n"
         "+ USE:\n"
         "  You do it.\n"
-        "  - -> signal MY_SIGNAL\n"
+        "  - MY_SIGNAL -> signal\n"
     )
     game = compile_game(global_src, [room_src])
     md, _ = generate_markdown(game)
@@ -379,7 +334,7 @@ def test_md_signal_emission_in_ledger():
 
 def test_md_interaction_signal_checks_in_ledger():
     global_src = (
-        "# Verbs\nUSE\n\n# Inventory\n\n# Signals\nSIGNAL_A\n"
+        "# Verbs\nUSE\n\n# Inventory\n"
     )
     room_src = (
         "# Room\n\n"
@@ -399,7 +354,7 @@ def test_md_interaction_signal_checks_in_ledger():
 
 
 def test_cross_chapter_orphaned_emission_warns(tmp_path):
-    """Building --all should warn about signals emitted but never declared."""
+    """Building --all should warn about signals emitted but never checked."""
     import sys
     import io
 
@@ -409,7 +364,7 @@ def test_cross_chapter_orphaned_emission_warns(tmp_path):
         "# Verbs\nUSE\n\n# Inventory\n"
     )
     (parent / "room.md").write_text(
-        "# Room\n\nTHING\n+ USE:\n  Text.\n  - -> signal ORPHANED_SIGNAL\n"
+        "# Room\n\nTHING\n+ USE:\n  Text.\n  - ORPHANED_SIGNAL -> signal\n"
     )
     # Chapter with no signals
     ch = parent / "chapter-b"
@@ -436,3 +391,12 @@ def test_cross_chapter_orphaned_emission_warns(tmp_path):
         sys.stderr = old_stderr
         sys.stdout = old_stdout
     assert "ORPHANED_SIGNAL" in warnings
+
+
+def test_signals_section_is_now_rejected():
+    """# Signals section should now be rejected as an unknown section."""
+    import pytest
+    from addventure.parser import ParseError
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\nFOO\n"
+    with pytest.raises(ParseError, match="Unknown global section"):
+        compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])

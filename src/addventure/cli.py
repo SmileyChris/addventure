@@ -163,33 +163,31 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
         compiled_chapters.append((label, game))
 
     # Cross-chapter signal validation
-    all_declared = {}  # signal_name -> chapter_label
+    all_checked = {}   # signal_name -> chapter_label (from signal checks)
     all_emitted = {}   # signal_name -> chapter_label
-    all_signal_ids = {}  # signal_id -> signal_name
 
     for label, game_data in compiled_chapters:
-        for name, sig in game_data.signals.items():
-            all_declared[name] = label
-            if sig.id in all_signal_ids and all_signal_ids[sig.id] != name:
-                print(
-                    f"⚠ Cross-chapter signal hash collision: {name} and "
-                    f"{all_signal_ids[sig.id]} both resolve to ID {sig.id}",
-                    file=sys.stderr,
-                )
-            all_signal_ids[sig.id] = name
+        # Collect signal names from signal checks (index-level and interaction-level)
+        for sc in game_data.signal_checks:
+            if sc.signal_name:
+                all_checked.setdefault(sc.signal_name, label)
+        for ix in game_data.interactions:
+            for sc in ix.signal_checks:
+                if sc.signal_name:
+                    all_checked.setdefault(sc.signal_name, label)
         for name in game_data.signal_emissions:
             all_emitted[name] = label
 
     for name in all_emitted:
-        if name not in all_declared:
+        if name not in all_checked:
             print(
-                f"⚠ Signal {name} is emitted but not declared in any chapter",
+                f"⚠ Signal {name} is emitted but not checked in any chapter",
                 file=sys.stderr,
             )
-    for name in all_declared:
+    for name in all_checked:
         if name not in all_emitted:
             print(
-                f"⚠ Signal {name} is declared but not emitted by any chapter",
+                f"⚠ Signal {name} is checked but not emitted by any chapter",
                 file=sys.stderr,
             )
 

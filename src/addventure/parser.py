@@ -1,6 +1,6 @@
 import re
 from .models import (
-    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action, Signal, SignalCheck,
+    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action, SignalCheck,
 )
 
 
@@ -61,7 +61,7 @@ def _parse_header(line: str) -> tuple[str, str | None]:
     s = line.strip()
     name = s[3:].strip() if s.startswith("## ") else s[2:].strip()
     lower = name.lower()
-    if lower in ("verbs", "inventory", "interactions", "signals"):
+    if lower in ("verbs", "inventory", "interactions"):
         return lower, None
     return "room", name
 
@@ -77,8 +77,12 @@ def _parse_arrow(text: str, ln: int) -> Arrow:
         _validate_arrow_endpoint(subject, ln, "arrow subject")
     _validate_arrow_endpoint(destination, ln, "arrow destination")
     signal_name = None
-    if destination.startswith("signal "):
-        signal_name = destination[7:].strip()
+    if destination == "signal":
+        if not subject:
+            raise ParseError(ln, "Signal arrow requires a subject: NAME -> signal")
+        if not _is_name(subject):
+            raise ParseError(ln, f"Invalid signal name: {subject}")
+        signal_name = subject
     return Arrow(subject, destination, ln, signal_name=signal_name)
 
 def _strip_marker(s: str) -> tuple[str, str]:
@@ -144,10 +148,7 @@ def _validate_arrow_endpoint(value: str, ln: int, what: str) -> None:
     if value.startswith("room__"):
         _require_name(value.split("__", 1)[1], ln, f"{what} room state")
         return
-    if value.startswith("signal "):
-        sig_name = value[7:].strip()
-        if not _is_name(sig_name):
-            raise ParseError(ln, f"Invalid signal name: {sig_name}")
+    if value == "signal":
         return
     _require_object_ref(value, ln, what)
 
@@ -327,17 +328,6 @@ def parse_global(source: str) -> GameData:
                         i = _parse_entity_block(lines, i, game, room_name="", entity_name=w, entity_indent=item_indent)
                     else:
                         i += 1
-            elif sec == "signals":
-                while i < len(lines) and not _is_header(lines[i]):
-                    w = _strip_trailing_comment(lines[i]).strip()
-                    if w and not _is_comment(w):
-                        if _indent(lines[i], i + 1) != 0:
-                            raise ParseError(i + 1, f"Unexpected indentation in # Signals: {w}")
-                        if not _is_name(w):
-                            raise ParseError(i + 1, f"Invalid signal name: {w}")
-                        from .compiler import signal_id as _signal_id
-                        game.signals[w] = Signal(w, _signal_id(w))
-                    i += 1
             else:
                 raise ParseError(i, f"Unknown global section: {sec}")
         else:

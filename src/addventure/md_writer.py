@@ -182,7 +182,13 @@ def _inventory_section(
         lines.extend(rows[1:])
 
     # Signals
-    signal_count = max(len(game.signals), len(game.signal_emissions))
+    # Count unique signal names from checks
+    check_names = {sc.signal_name for sc in game.signal_checks if sc.signal_name}
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            if sc.signal_name:
+                check_names.add(sc.signal_name)
+    signal_count = max(len(check_names), len(game.signal_emissions))
     if signal_count > 0:
         lines.append(
             "\n### Signals\n"

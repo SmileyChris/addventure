@@ -12,31 +12,19 @@ Signals appear on the printed inventory/potentials sheet in a small **Signals** 
 
 ## Script syntax
 
-### Defining signals (receiving chapter)
-
-In the receiving chapter's `index.md`, a new `# Signals` section declares the signal names this chapter responds to:
-
-```
-# Signals
-EVERYONE_OUT_ESCAPE
-WITNESS_ESCAPE
-```
-
-The compiler hashes each name to a fixed numeric ID and reserves it (excluded from random entity/verb allocation).
-
 ### Emitting signals (sending chapter)
 
-In the sending chapter's room files, a new arrow destination emits a signal:
+In the sending chapter's room files, a signal arrow emits a signal:
 
 ```
 + USE + AIR_DUCT:
   You haul yourself into the vent...
-  - -> signal EVERYONE_OUT_ESCAPE
+  - EVERYONE_OUT_ESCAPE -> signal
 ```
 
-The compiler hashes the name to the same fixed ID. The arrow renders as a player instruction: *"Write 10347 in your signals."*
+The compiler hashes the name to a fixed numeric ID. The arrow renders as a player instruction: *"Write 10347 in your signals."*
 
-The sending chapter does not need to declare the signal in a `# Signals` section — it only needs the arrow. The hash function is deterministic, so both chapters produce the same ID from the same name.
+No declaration section is needed. The compiler derives signal info from `NAME -> signal` arrows (emissions) and `NAME?` blocks (checks). The hash function is deterministic, so both chapters produce the same ID from the same name.
 
 ### Signal checks at chapter start
 
@@ -117,8 +105,7 @@ Here `RADIO -> RADIO__ACTIVE` fires unconditionally. `COMPANION_VOICE -> room` o
 
 | Context | Syntax | Meaning |
 |---|---|---|
-| `# Signals` section in `index.md` | `SIGNAL_NAME` | Declare a signal this chapter responds to |
-| Arrow in interaction | `- -> signal SIGNAL_NAME` | Emit a signal (player writes the ID) |
+| Arrow in interaction | `- SIGNAL_NAME -> signal` | Emit a signal (player writes the ID) |
 | Index description or interaction body | `SIGNAL_NAME?` | Conditional: if player has this signal |
 | Index description or interaction body | `otherwise?` | Default branch when no signal matches |
 
@@ -246,7 +233,7 @@ New productions:
 signals_section   = "# Signals" newline { signal_decl } ;
 signal_decl       = IDENTIFIER newline ;
 
-signal_arrow      = "-> signal" IDENTIFIER ;
+signal_arrow      = NAME "->" "signal" ;
 
 signal_check      = IDENTIFIER "?" newline indented_block ;
 otherwise_check   = "otherwise?" newline indented_block ;
