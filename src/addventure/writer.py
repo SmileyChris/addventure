@@ -73,7 +73,18 @@ class GameWriter:
                     current_room = room_name
                 else:
                     # Not a room in this game — chapter transition
-                    instructions.append(f"Continue to {room_name}.")
+                    if self.game.metadata.get("combined_build"):
+                        instructions.append(f"Turn to the next chapter: {room_name}.")
+                    else:
+                        title = self.game.metadata.get("title", "")
+                        parent = self.game.metadata.get("parent_title")
+                        if parent:
+                            full_name = f"{parent} — {room_name}"
+                        elif title:
+                            full_name = f"{title} — {room_name}"
+                        else:
+                            full_name = room_name
+                        instructions.append(f"Continue with the addventure booklet: {full_name}.")
 
             # THING -> trash
             elif dest == "trash":

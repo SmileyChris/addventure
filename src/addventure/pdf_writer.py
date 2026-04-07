@@ -9,7 +9,6 @@ from .jigsaw import checkerboard_flips, compute_grid, detect_empty_cells, interl
 from .models import GameData, ResolvedInteraction
 from .writer import GameWriter
 
-
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 MEASURE_MARGIN_MM = 2
@@ -466,6 +465,98 @@ def generate_pdf(
         return True, writer.warnings
     except subprocess.CalledProcessError as e:
         print(f"Typst error:\n{e.stderr}", file=__import__('sys').stderr)
+        raise
+    finally:
+        Path(json_path).unlink(missing_ok=True)
+
+
+def generate_combined_pdf(
+    chapters: list[tuple[str, GameData, Path]],
+    output_path: Path,
+    theme: str = "default",
+    paper: str | None = None,
+    blind: bool = False,
+    cover: bool = True,
+    fragment: str = "included",
+) -> tuple[bool, list[str]]:
+    """Generate a single combined PDF from multiple chapters.
+
+    chapters: list of (label, GameData, game_dir) tuples.
+    Returns (success, all_warnings).
+    """
+    import sys as _sys
+    typst_bin = find_typst()
+    if typst_bin is None:
+        return False, []
+
+    theme_dir = TEMPLATES_DIR / theme
+    if not theme_dir.exists():
+        raise FileNotFoundError(f"Theme not found: {theme}")
+
+    all_warnings = []
+
+    # Serialize each chapter and build combined data
+    chapter_data_list = []
+    for label, game, game_dir in chapters:
+        jigsaw = fragment == "jigsaw"
+        writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
+        data = serialize_game_data(game, writer, blind=blind)
+        all_warnings.extend(writer.warnings)
+
+        # Resolve cover image
+        image_rel = game.metadata.get("image")
+        if image_rel and game_dir is not None:
+            image_path = (game_dir / image_rel).resolve()
+            if image_path.is_file():
+                data["metadata"]["image"] = str(image_path)
+
+        data["chapter_label"] = label
+        chapter_data_list.append(data)
+
+    # Build combined JSON: shared data from first chapter + chapters array
+    first = chapter_data_list[0]
+
+    # Collect signal slots across all chapters
+    all_check_names = set()
+    all_emissions = set()
+    for _, game, _ in chapters:
+        for sc in game.signal_checks:
+            all_check_names.update(sc.signal_names)
+        for ix in game.interactions:
+            for sc in ix.signal_checks:
+                all_check_names.update(sc.signal_names)
+        all_emissions.update(game.signal_emissions)
+    signal_slots = max(len(all_check_names), len(all_emissions))
+
+    # Max inventory slots
+    max_inv = max(max(len(g.inventory) + 2, 6) for _, g, _ in chapters)
+
+    combined = {
+        "metadata": first["metadata"],
+        "game_title": first["metadata"].get("title", "Addventure"),
+        "verbs": first["verbs"],
+        "inventory_slots": max_inv,
+        "signal_slots": signal_slots,
+        "signal_has_incoming": False,  # not relevant for combined
+        "blind": blind,
+        "chapters": chapter_data_list,
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(combined, f)
+        json_path = f.name
+
+    try:
+        main_typ = theme_dir / "main-combined.typ"
+        output_path = Path(output_path)
+        normalized_paper = PAPER_ALIASES.get(paper, paper) if paper else None
+        _run_typst(typst_bin, main_typ, output_path, theme_dir, json_path,
+                   paper=normalized_paper, cover=cover)
+        from .fillable import make_fillable
+        make_fillable(output_path)
+        return True, all_warnings
+    except subprocess.CalledProcessError as e:
+        print(f"Typst error:\n{e.stderr}", file=_sys.stderr)
         raise
     finally:
         Path(json_path).unlink(missing_ok=True)

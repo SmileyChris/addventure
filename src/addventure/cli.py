@@ -191,6 +191,7 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
         game = compile_game(global_source, room_sources)
         for warning in game.warnings:
             print(f"⚠ {warning}", file=sys.stderr)
+        game.metadata["combined_build"] = "true"
         if d == game_dir:
             parent_title = game.metadata.get("title", str(game_dir))
         elif parent_title:
@@ -228,15 +229,46 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
             )
 
     if parsed.markdown:
-        # Concatenate markdown outputs
-        all_md = []
+        from .md_writer import (
+            _title_section, _room_section, _ledger_section, _sealed_section,
+            _shared_actions_inventory_section,
+        )
+        from .writer import GameWriter
+
+        all_games = [game for _, game in compiled_chapters]
+        sections = []
+
+        # Shared Actions & Inventory (verbs + inventory + signals)
+        first_game = compiled_chapters[0][1]
+        first_writer = GameWriter(first_game, blind=parsed.blind)
+        sections.append(_shared_actions_inventory_section(first_writer, all_games))
+
+        # Per-chapter: title page (intro + cues + potentials), rooms, ledger
         for label, game in compiled_chapters:
-            md, writer_warnings = generate_markdown(game, blind=parsed.blind, fragment=parsed.fragment)
-            for warning in writer_warnings:
+            writer = GameWriter(game, blind=parsed.blind, jigsaw=(parsed.fragment == "jigsaw"))
+            entry_prefix = game.metadata.get("ledger_prefix", "A")
+            for warning in writer.warnings:
                 print(f"⚠ {warning}", file=sys.stderr)
-            all_md.append(md)
+
+            sections.append(_title_section(game, writer, entry_prefix))
+
+            start_room = writer._start_room()
+            room_names = [name for name, rm in game.rooms.items() if rm.state is None]
+            if start_room and start_room in room_names:
+                sections.append(_room_section(game, writer, start_room, is_start=True, blind=parsed.blind))
+            for name in room_names:
+                if name != start_room:
+                    sections.append(_room_section(game, writer, name, is_start=False, blind=parsed.blind))
+
+            sections.append(_ledger_section(game, writer, entry_prefix))
+
+            fragments = _sealed_section(game)
+            if fragments:
+                sections.append(fragments)
+
             print(f"Built chapter: {label}", file=sys.stderr)
-        combined = "\n\n---\n\n".join(all_md)
+
+        combined = "\n\n---\n\n".join(sections) + "\n"
         if parsed.output:
             Path(parsed.output).write_text(combined)
             print(f"Markdown written to {parsed.output}", file=sys.stderr)
@@ -251,47 +283,33 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
             print("  Or use: addventure build --all --md", file=sys.stderr)
             sys.exit(1)
 
-        # Build each chapter as a separate PDF, then merge
-        chapter_pdfs = []
-        try:
-            for i, (label, game) in enumerate(compiled_chapters):
-                d = all_dirs[i]
-                tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-                tmp.close()
-                tmp_path = Path(tmp.name)
+        from .pdf_writer import generate_combined_pdf
 
-                # Only show cover on first chapter
-                cover = (not parsed.no_cover) and (i == 0)
-                success, writer_warnings = generate_pdf(
-                    game, tmp_path, theme=parsed.theme,
-                    game_dir=d.resolve(), paper=parsed.paper,
-                    blind=parsed.blind, cover=cover,
-                    fragment=parsed.fragment,
-                )
-                for warning in writer_warnings:
-                    print(f"⚠ {warning}", file=sys.stderr)
-                if success:
-                    chapter_pdfs.append(tmp_path)
-                print(f"Built chapter: {label}", file=sys.stderr)
+        # Build combined PDF with shared verbs/inventory and per-chapter sections
+        chapter_tuples = [
+            (label, game, all_dirs[i].resolve())
+            for i, (label, game) in enumerate(compiled_chapters)
+        ]
 
-            if not chapter_pdfs:
-                print("ERROR: No chapters built successfully", file=sys.stderr)
-                sys.exit(1)
+        if parsed.output:
+            output_path = Path(parsed.output)
+        else:
+            _, parent_game = compiled_chapters[0]
+            name = parent_game.metadata.get("title") or game_dir.resolve().name
+            output_path = Path(f"{_slugify(name)}.pdf")
 
-            # Determine output path
-            if parsed.output:
-                output_path = Path(parsed.output)
-            else:
-                # Use parent game title
-                _, parent_game = compiled_chapters[0]
-                name = parent_game.metadata.get("title") or game_dir.resolve().name
-                output_path = Path(f"{_slugify(name)}.pdf")
-
-            _merge_pdfs(chapter_pdfs, output_path)
+        success, writer_warnings = generate_combined_pdf(
+            chapter_tuples, output_path,
+            theme=parsed.theme, paper=parsed.paper,
+            blind=parsed.blind, cover=not parsed.no_cover,
+            fragment=parsed.fragment,
+        )
+        for warning in writer_warnings:
+            print(f"⚠ {warning}", file=sys.stderr)
+        if success:
             print(f"Combined PDF written to {output_path}", file=sys.stderr)
-        finally:
-            for p in chapter_pdfs:
-                p.unlink(missing_ok=True)
+        for label, _ in compiled_chapters:
+            print(f"Built chapter: {label}", file=sys.stderr)
 
 
 def _slugify(name: str) -> str:

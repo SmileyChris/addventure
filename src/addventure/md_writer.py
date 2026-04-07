@@ -47,21 +47,27 @@ def generate_markdown(game: GameData, blind: bool = False, fragment: str = "incl
     entry_prefix = game.metadata.get("ledger_prefix", "A")
     sections = []
 
-    sections.append(_verb_section(game, writer, entry_prefix))
+    # 1. Title page: intro, signal checks, cues, potentials
+    sections.append(_title_section(game, writer, entry_prefix))
 
+    # 2. Actions & Inventory: verbs, inventory slots, signals
+    sections.append(_actions_inventory_section(game, writer))
+
+    # 3. Rooms
     start_room = writer._start_room()
     room_names = [
         name for name, rm in game.rooms.items() if rm.state is None
     ]
     if start_room and start_room in room_names:
         sections.append(_room_section(game, writer, start_room, is_start=True, blind=blind))
-    sections.append(_inventory_section(game, writer, entry_prefix))
     for name in room_names:
         if name != start_room:
             sections.append(_room_section(game, writer, name, is_start=False, blind=blind))
 
+    # 4. Ledger
     sections.append(_ledger_section(game, writer, entry_prefix))
 
+    # 5. Fragments
     fragments = _sealed_section(game)
     if fragments:
         sections.append(fragments)
@@ -69,13 +75,17 @@ def generate_markdown(game: GameData, blind: bool = False, fragment: str = "incl
     return "\n\n---\n\n".join(sections) + "\n", writer.warnings
 
 
-def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
+def _game_title(game: GameData) -> str:
     title = game.metadata.get("title", "Addventure")
     parent_title = game.metadata.get("parent_title")
     if parent_title:
-        lines = [f"# {parent_title} — {title}"]
-    else:
-        lines = [f"# {title}"]
+        return f"{parent_title} — {title}"
+    return title
+
+
+def _title_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
+    """Title page: intro, signal checks, cues, potentials."""
+    lines = [f"# {_game_title(game)}"]
 
     description = game.metadata.get("description")
     if description:
@@ -85,13 +95,23 @@ def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
         from .compiler import signal_id as _signal_id
         lines.append(f"\n*{_format_signal_check_instruction(game.signal_checks, entry_prefix, _signal_id)}*")
 
+    lines.extend(_cue_section(game))
+    lines.extend(_potentials_table(game, entry_prefix))
+
+    return "\n".join(lines)
+
+
+def _actions_inventory_section(game: GameData, writer: GameWriter) -> str:
+    """Actions & Inventory: how-to-play, verbs, inventory slots, signals."""
+    lines = ["## Actions & Inventory"]
+
     lines.append(
         "\n*To take an action, calculate verb number + object number(s)."
         " Look up the resulting sum in the Potentials List."
         " If listed, read the matching Ledger entry. If not listed, nothing happens.*"
     )
 
-    lines.append("\n## Verbs\n")
+    lines.append("\n### Verbs\n")
     lines.append("| Verb | ID |")
     lines.append("|------|---:|")
     for v in game.verbs.values():
@@ -101,6 +121,9 @@ def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
     lines.append("\n*If instructed, record new verbs here.*\n")
     for _ in range(3):
         lines.append("- ______________ `[____]`")
+
+    lines.extend(_inventory_slots(game, writer))
+    lines.extend(_signal_slots(game))
 
     return "\n".join(lines)
 
@@ -173,12 +196,62 @@ def _room_section(
     return "\n".join(lines)
 
 
-def _inventory_section(
-    game: GameData, writer: GameWriter, entry_prefix: str,
-) -> str:
-    lines = ["## Inventory & Potentials"]
 
-    # Inventory
+def _shared_actions_inventory_section(writer: 'GameWriter', games: list[GameData]) -> str:
+    """Shared Actions & Inventory for --all builds: verbs, inventory, signals."""
+    lines = ["## Actions & Inventory"]
+
+    lines.append(
+        "\n*To take an action, calculate verb number + object number(s)."
+        " Look up the resulting sum in the Potentials List."
+        " If listed, read the matching Ledger entry. If not listed, nothing happens.*"
+    )
+
+    # Verbs from first chapter
+    game = games[0]
+    lines.append("\n### Verbs\n")
+    lines.append("| Verb | ID |")
+    lines.append("|------|---:|")
+    for v in game.verbs.values():
+        if "__" not in v.name and v.name not in game.auto_verbs:
+            lines.append(f"| {writer.display_name(v.name)} | {v.id} |")
+    lines.append("\n*If instructed, record new verbs here.*\n")
+    for _ in range(3):
+        lines.append("- ______________ `[____]`")
+
+    # Inventory slots: max across all chapters
+    max_inv = max(max(len(g.inventory) + 2, 6) for g in games)
+    lines.append(
+        "\n### Inventory\n"
+        "\n*Record items you are carrying. Write the item name and its ID.*\n"
+    )
+    for _ in range(max_inv):
+        lines.append("- ______________ `[____]`")
+
+    # Signal slots: collect across all chapters
+    all_check_names = set()
+    all_emissions = set()
+    for g in games:
+        for sc in g.signal_checks:
+            all_check_names.update(sc.signal_names)
+        for ix in g.interactions:
+            for sc in ix.signal_checks:
+                all_check_names.update(sc.signal_names)
+        all_emissions.update(g.signal_emissions)
+    signal_count = max(len(all_check_names), len(all_emissions))
+    if signal_count > 0:
+        lines.append(
+            "\n### Signals\n"
+            "\n*Write signal codes here when instructed.*\n"
+        )
+        rows = _render_placeholder_rows(signal_count)
+        lines.extend(rows)
+
+    return "\n".join(lines)
+
+
+def _inventory_slots(game: GameData, writer: GameWriter) -> list[str]:
+    lines = []
     slot_count = max(len(game.inventory) + 2, 6)
     lines.append(
         "\n### Inventory\n"
@@ -186,8 +259,11 @@ def _inventory_section(
     )
     for _ in range(slot_count):
         lines.append("- ______________ `[____]`")
+    return lines
 
-    # Cue Checks
+
+def _cue_section(game: GameData) -> list[str]:
+    lines = []
     if game.cues:
         lines.append(
             "\n### Cue Checks\n"
@@ -197,9 +273,11 @@ def _inventory_section(
         lines.append(rows[0])
         lines.append("| " + " | ".join("---:" for _ in range(6)) + " |")
         lines.extend(rows[1:])
+    return lines
 
-    # Signals
-    # Count unique signal names from checks
+
+def _signal_slots(game: GameData) -> list[str]:
+    lines = []
     check_names = set()
     for sc in game.signal_checks:
         check_names.update(sc.signal_names)
@@ -208,7 +286,6 @@ def _inventory_section(
             check_names.update(sc.signal_names)
     signal_count = max(len(check_names), len(game.signal_emissions))
     if signal_count > 0:
-        # If this chapter checks signals it doesn't emit, the player needs to carry them forward
         incoming = check_names - game.signal_emissions
         if incoming:
             hint = "Copy any signals from the previous chapter, then write new ones when instructed."
@@ -220,8 +297,11 @@ def _inventory_section(
         )
         rows = _render_placeholder_rows(signal_count)
         lines.extend(rows)
+    return lines
 
-    # Master Potentials List
+
+def _potentials_table(game: GameData, entry_prefix: str) -> list[str]:
+    lines = []
     lines.append(
         "\n### Master Potentials List\n"
         "\n*Calculate verb number + object number(s) and look up the sum below."
@@ -245,8 +325,7 @@ def _inventory_section(
             else:
                 cells.append(" | ")
         lines.append(f"| {' | '.join(cells)} |")
-
-    return "\n".join(lines)
+    return lines
 
 
 def _sealed_section(game: GameData) -> str:

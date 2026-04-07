@@ -1,39 +1,29 @@
-// main.typ — Entry point: reads JSON and assembles all pages
+// main.typ — Single-chapter entry point
+// Layout: Cover, Title page, Actions & Inventory, Rooms, Ledger, Fragments
 #import "style.typ": page-paper as default-paper, page-margin, body-font, title-font
 #import "cover.typ": cover-page
-#import "verb-sheet.typ": verb-sheet
+#import "section-title-page.typ": title-page
+#import "section-actions.typ": actions-inventory
 #import "room-sheet.typ": room-sheet
-#import "inventory.typ": inventory-sheet
 #import "ledger.typ": story-ledger
 #import "sealed-ledger.typ": sealed-ledger
 #import "sealed-jigsaw.typ": sealed-jigsaw
 
-// Read JSON data from --input data=<path>
+// Read JSON data
 #let data-path = sys.inputs.at("data")
 #let data = json(data-path)
 
-// Game title from metadata (falls back to "ADDVENTURE")
 #let chapter-title = upper(data.metadata.at("title", default: "Addventure"))
 #let parent-title = data.metadata.at("parent_title", default: none)
 #let game-title = if parent-title != none { upper(parent-title) + " — " + chapter-title } else { chapter-title }
 #let start-room = data.at("start_room", default: none)
 #let blind = data.at("blind", default: false)
 
-// Paper size: CLI --paper overrides template default
 #let page-paper = sys.inputs.at("paper", default: default-paper)
-
-// Watermark logo
 #let logo-path = "addventure.jpg"
-
-// Section label state for footer
 #let section-label = state("section-label", "")
-// Counter for multi-page sections
-#let section-page = counter("section-page")
-
-// sealed_only=1: render only the sealed texts section (used for --sealed separate)
 #let sealed-only = sys.inputs.at("sealed_only", default: "0") == "1"
 
-// Page and text defaults
 #set page(
   paper: page-paper,
   margin: page-margin,
@@ -56,7 +46,7 @@
 #set text(font: body-font, size: 10pt, lang: "en")
 #set par(leading: 0.65em)
 
-// 0. Optional cover page
+// 0. Cover
 #if not sealed-only {
   let cover-logo = sys.inputs.at("cover", default: none)
   if cover-logo != none {
@@ -66,64 +56,54 @@
   }
 }
 
-// 1. Verb sheet (with game description and start room instruction)
+// 1. Title page (intro, signal checks, cues, potentials)
 #if not sealed-only {
-  section-label.update("Verbs")
-  verb-sheet(data, game-title, start-room)
+  section-label.update(game-title)
+  title-page(data, game-title)
 }
 
-// 2. Start room (first, so the player sees it right after verbs)
+// 2. Actions & Inventory (verbs, inventory, signals)
+#if not sealed-only {
+  pagebreak()
+  section-label.update("Actions & Inventory")
+  actions-inventory(data)
+}
+
+// 3. Rooms
 #if not sealed-only and start-room != none {
   for room in data.rooms {
     if room.name == start-room {
       pagebreak()
-      if blind {
-        section-label.update("Room " + str(room.id))
-      } else {
-        section-label.update("Room: " + room.name)
-      }
+      if blind { section-label.update("Room " + str(room.id)) }
+      else { section-label.update("Room: " + room.name) }
       room-sheet(room, is-start: true, blind: blind)
     }
   }
 }
-
-// 3. Inventory & Potentials
-#if not sealed-only {
-  pagebreak()
-  section-label.update("Inventory & Potentials")
-  inventory-sheet(data, game-title)
-}
-
-// 4. Remaining rooms (skip start room, already printed)
 #if not sealed-only {
   for room in data.rooms {
     if room.name != start-room {
       pagebreak()
-      if blind {
-        section-label.update("Room " + str(room.id))
-      } else {
-        section-label.update("Room: " + room.name)
-      }
+      if blind { section-label.update("Room " + str(room.id)) }
+      else { section-label.update("Room: " + room.name) }
       room-sheet(room, is-start: false, blind: blind)
     }
   }
 }
 
-// 5. Story Ledger (last — player references it during play)
+// 4. Ledger
 #if not sealed-only {
   pagebreak()
   section-label.update("Ledger")
   story-ledger(data, game-title)
 }
 
-// 6. Sealed texts (extended ledger or sealed-only mode)
+// 5. Fragments
 #if not data.at("jigsaw", default: false) and data.at("sealed_texts", default: ()).len() > 0 {
   if not sealed-only { pagebreak(weak: true) }
   section-label.update("Fragments")
   sealed-ledger(data)
 }
-
-// 7. Sealed texts (jigsaw mode)
 #if not sealed-only and data.at("jigsaw", default: false) and data.at("jigsaw_data", default: none) != none {
   pagebreak(weak: true)
   section-label.update("Cut Pages")
