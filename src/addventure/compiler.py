@@ -1,3 +1,4 @@
+import hashlib
 import random
 from itertools import combinations, product as cart_product
 
@@ -5,6 +6,15 @@ from .models import (
     GameData, Verb, RoomObject, InventoryObject, Interaction, ResolvedInteraction, Cue, Action, SealedText,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
+
+
+def signal_id(name: str) -> int:
+    """Derive a deterministic numeric ID from a signal name.
+
+    Range: 10010–99999 (avoids entity/verb ID ranges).
+    """
+    h = hashlib.sha256(name.encode()).hexdigest()
+    return int(h[:8], 16) % 89990 + 10010
 
 
 # ── ID Allocation ───────────────────────────────────────────────────────────

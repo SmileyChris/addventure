@@ -31,3 +31,24 @@ def test_game_data_signal_fields():
     assert game.signals == {}
     assert game.signal_checks == []
     assert game.signal_emissions == set()
+
+
+from addventure.compiler import signal_id
+
+
+def test_signal_id_deterministic():
+    a = signal_id("EVERYONE_OUT_ESCAPE")
+    b = signal_id("EVERYONE_OUT_ESCAPE")
+    assert a == b
+
+
+def test_signal_id_in_range():
+    for name in ["FOO", "EVERYONE_OUT_ESCAPE", "WITNESS_ESCAPE", "A_VERY_LONG_SIGNAL_NAME"]:
+        sid = signal_id(name)
+        assert 10010 <= sid <= 99999, f"{name} -> {sid} out of range"
+
+
+def test_signal_id_different_names_differ():
+    a = signal_id("EVERYONE_OUT_ESCAPE")
+    b = signal_id("WITNESS_ESCAPE")
+    assert a != b
