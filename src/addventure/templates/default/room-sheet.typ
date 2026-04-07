@@ -53,9 +53,13 @@
   v(0.3em)
   block(below: 1.5em)[
     #if is-start and room.description != "" {
-      box(width: 100%, height: 1.2em, stroke: (bottom: 0.5pt + luma(200)))[
-        #text(size: 11pt)[#eval(room.description, mode: "markup")]
+      block(width: 100%, below: 0.3em)[
+        #set text(size: 11pt)
+        #set par(leading: 0.55em)
+        #eval(room.description, mode: "markup")
       ]
+      line(length: 100%, stroke: 0.3pt + luma(200))
+      // Solid ruled line for manual additions
       write-slot(uppercase: false)
     } else {
       write-slot(uppercase: false)
