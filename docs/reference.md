@@ -1,15 +1,31 @@
 # Reference
 
-## File structure
+`addventure` is the [CLI tool](#cli-commands) providing commands:
+
+- `new` — scaffold a game
+- `build` — compile to PDF or markdown
 
 A game is a directory of `.md` files:
 
-| File | Purpose |
-|---|---|
-| `index.md` | Metadata (frontmatter), verb list, inventory object list |
-| `*.md` (all others) | Room definitions, loaded alphabetically |
+- [`index.md`](#index-files) — metadata, verb list, and inventory object list
+- [Room files](#room-files) — one `.md` per location, loaded alphabetically
+
+Room files use a [scripting syntax](#script-reference) consisting of interactions, arrows, actions, signals, and more.
 
 ## CLI commands
+
+See [Getting Started](getting-started.md) for installation instructions.
+
+### new
+
+Scaffold a new game directory with a starter `index.md`.
+
+```bash
+addventure new [name]   # Scaffold with defaults (oneshot)
+addventure new          # Interactive setup (choose verbs, set author name)
+```
+
+Run from inside an existing game directory to scaffold a new chapter subdirectory instead. The chapter is automatically assigned the next available ledger prefix (B, C, D...).
 
 ### build
 
@@ -37,21 +53,10 @@ The `--fragment` flag controls how `::: fragment` blocks are output:
 | Mode | Effect |
 |------|--------|
 | `included` | Fragments appended at the back of the main PDF (default) |
+| `jigsaw` | Fragments sliced into shuffled rectangular pieces across cut pages, appended to the main PDF |
 | `separate` | Fragments emitted as `<name>-fragments.pdf`; main PDF has none |
-| `jigsaw` | Fragments sliced into shuffled rectangular pieces across cut pages |
 
 `--fragment separate` is useful when you want to print and distribute fragments as physical notes — cut them out and hand them to players in envelopes labelled with the ref (e.g. `Alpha`).
-
-### new
-
-Scaffold a new game directory with a starter `index.md`.
-
-```bash
-addventure new [name]   # Scaffold with defaults (oneshot)
-addventure new          # Interactive setup (choose verbs, set author name)
-```
-
-Run from inside an existing game directory to scaffold a new chapter subdirectory instead. The chapter is automatically assigned the next available ledger prefix (B, C, D...).
 
 ## Index files
 
@@ -73,11 +78,15 @@ start: Entrance Hall
 | `author` | Author name, shown in footers |
 | `start` | Starting room name (must match a `#` header) |
 | `ledger_prefix` | Prefix for ledger entry labels (default: `A`). Auto-assigned by `addventure new` for chapters |
-| `image` | Path to cover/watermark image |
-| `image_height` | Height of the cover image |
+| `image` | Path to an image shown on the title page alongside the description |
+| `image_height` | Height of the title page image |
 | `name_style` | Identifier rendering style: `upper_words` (default) or `title` — see [Name rendering](#name-rendering) |
 
 Unknown keys are accepted but produce a build warning.
+
+### Description
+
+Body text between the frontmatter and the first `#` header is used as the game description, shown on the title page alongside the `image` (if set).
 
 ### Sections
 
@@ -185,6 +194,8 @@ Room-level interactions not tied to a specific room object. Goes at the bottom o
 Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-modes).
 
 ## Script reference
+
+Most scripting concepts are explained in [Writing Rooms](writing-rooms.md) and [State & Transformation](state-and-transformation.md). This section covers the quick-reference tables.
 
 ### Arrow destinations
 
