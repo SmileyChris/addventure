@@ -152,19 +152,55 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
         _build_single(game_dir, parsed)
         return
 
+    # Compile all chapters first so we can do cross-chapter validation
+    compiled_chapters: list[tuple[str, object]] = []
+    for d in all_dirs:
+        global_source, room_sources = load_game(d)
+        game = compile_game(global_source, room_sources)
+        for warning in game.warnings:
+            print(f"⚠ {warning}", file=sys.stderr)
+        label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
+        compiled_chapters.append((label, game))
+
+    # Cross-chapter signal validation
+    all_declared = {}  # signal_name -> chapter_label
+    all_emitted = {}   # signal_name -> chapter_label
+    all_signal_ids = {}  # signal_id -> signal_name
+
+    for label, game_data in compiled_chapters:
+        for name, sig in game_data.signals.items():
+            all_declared[name] = label
+            if sig.id in all_signal_ids and all_signal_ids[sig.id] != name:
+                print(
+                    f"⚠ Cross-chapter signal hash collision: {name} and "
+                    f"{all_signal_ids[sig.id]} both resolve to ID {sig.id}",
+                    file=sys.stderr,
+                )
+            all_signal_ids[sig.id] = name
+        for name in game_data.signal_emissions:
+            all_emitted[name] = label
+
+    for name in all_emitted:
+        if name not in all_declared:
+            print(
+                f"⚠ Signal {name} is emitted but not declared in any chapter",
+                file=sys.stderr,
+            )
+    for name in all_declared:
+        if name not in all_emitted:
+            print(
+                f"⚠ Signal {name} is declared but not emitted by any chapter",
+                file=sys.stderr,
+            )
+
     if parsed.markdown:
         # Concatenate markdown outputs
         all_md = []
-        for d in all_dirs:
-            global_source, room_sources = load_game(d)
-            game = compile_game(global_source, room_sources)
-            for warning in game.warnings:
-                print(f"⚠ {warning}", file=sys.stderr)
+        for label, game in compiled_chapters:
             md, writer_warnings = generate_markdown(game, blind=parsed.blind, fragment=parsed.fragment)
             for warning in writer_warnings:
                 print(f"⚠ {warning}", file=sys.stderr)
             all_md.append(md)
-            label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
             print(f"Built chapter: {label}", file=sys.stderr)
         combined = "\n\n---\n\n".join(all_md)
         if parsed.output:
@@ -184,12 +220,8 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
         # Build each chapter as a separate PDF, then merge
         chapter_pdfs = []
         try:
-            for i, d in enumerate(all_dirs):
-                global_source, room_sources = load_game(d)
-                game = compile_game(global_source, room_sources)
-                for warning in game.warnings:
-                    print(f"⚠ {warning}", file=sys.stderr)
-
+            for i, (label, game) in enumerate(compiled_chapters):
+                d = all_dirs[i]
                 tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
                 tmp.close()
                 tmp_path = Path(tmp.name)
@@ -206,7 +238,6 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
                     print(f"⚠ {warning}", file=sys.stderr)
                 if success:
                     chapter_pdfs.append(tmp_path)
-                label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
                 print(f"Built chapter: {label}", file=sys.stderr)
 
             if not chapter_pdfs:
@@ -218,9 +249,7 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
                 output_path = Path(parsed.output)
             else:
                 # Use parent game title
-                global_source, _ = load_game(game_dir)
-                from .parser import parse_global
-                parent_game = parse_global(global_source)
+                _, parent_game = compiled_chapters[0]
                 name = parent_game.metadata.get("title") or game_dir.resolve().name
                 output_path = Path(f"{_slugify(name)}.pdf")
 

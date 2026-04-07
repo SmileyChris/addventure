@@ -396,3 +396,43 @@ def test_md_interaction_signal_checks_in_ledger():
     assert "Check your signals" in md
     assert "Branch A" in md
     assert "Default" in md
+
+
+def test_cross_chapter_orphaned_emission_warns(tmp_path):
+    """Building --all should warn about signals emitted but never declared."""
+    import sys
+    import io
+
+    # Parent emits a signal
+    parent = tmp_path
+    (parent / "index.md").write_text(
+        "# Verbs\nUSE\n\n# Inventory\n"
+    )
+    (parent / "room.md").write_text(
+        "# Room\n\nTHING\n+ USE:\n  Text.\n  - -> signal ORPHANED_SIGNAL\n"
+    )
+    # Chapter with no signals
+    ch = parent / "chapter-b"
+    ch.mkdir()
+    (ch / "index.md").write_text(
+        "---\nentry_prefix: B\n---\n\n# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    (ch / "room.md").write_text("# Room\n\nTHING\n+ LOOK: A thing.\n")
+
+    from addventure.cli import _cmd_build_all
+    import argparse
+    parsed = argparse.Namespace(
+        markdown=True, output=None, theme="default", paper=None,
+        blind=False, no_cover=True, fragment="included",
+    )
+    old_stderr = sys.stderr
+    sys.stderr = io.StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        _cmd_build_all(parent, parsed)
+        warnings = sys.stderr.getvalue()
+    finally:
+        sys.stderr = old_stderr
+        sys.stdout = old_stdout
+    assert "ORPHANED_SIGNAL" in warnings
