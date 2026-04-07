@@ -202,7 +202,7 @@ def _unexpected_child_line(lines, i, child_indent):
 
 # ── Signal Check Parser ─────────────────────────────────────────────────────
 
-def _parse_signal_check_group(lines, i):
+def _parse_signal_check_group(lines, i, game=None, room_name=""):
     """Parse a group of NAME? / otherwise? blocks. Returns (next_i, list[SignalCheck])."""
     checks = []
     saw_otherwise = False
@@ -233,7 +233,7 @@ def _parse_signal_check_group(lines, i):
         else:
             break
 
-        # Parse indented body: narrative lines and arrows
+        # Parse indented body: narrative lines and arrows (reusing arrow children parsing)
         narrative_lines = []
         arrows = []
         block_indent = None
@@ -252,10 +252,17 @@ def _parse_signal_check_group(lines, i):
                 break
             if line_stripped.startswith("- ") and _is_arrow(line_stripped[2:]):
                 arrow = _parse_arrow(_strip_trailing_comment(line_stripped[2:]), i + 1)
+                if arrow.subject == "room" and room_name:
+                    arrow.subject = f"@{room_name}"
                 arrows.append(arrow)
+                arr_indent = ind
+                i += 1
+                # Process arrow children (cues, state transforms, etc.)
+                if game is not None:
+                    i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=arrows)
             else:
                 narrative_lines.append(line_stripped)
-            i += 1
+                i += 1
 
         narrative = "\n".join(narrative_lines)
         checks.append(SignalCheck(signal_names=signal_names, narrative=narrative, arrows=arrows))
@@ -289,7 +296,8 @@ def parse_global(source: str) -> GameData:
         if (stripped == "otherwise?" or
               (stripped.endswith("?") and len(stripped) > 1 and
                all(_is_name(n.strip()) for n in stripped[:-1].split("+")))):
-            i, checks = _parse_signal_check_group(lines, i)
+            start = game.metadata.get("start", "")
+            i, checks = _parse_signal_check_group(lines, i, game=game, room_name=start)
             game.signal_checks = checks
             # Consume remaining blank/comment lines before header
             while i < len(lines) and not _is_header(lines[i]) and not _strip_trailing_comment(lines[i]).strip():
@@ -580,7 +588,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
               (bstripped.endswith("?") and len(bstripped) > 1 and
                all(_is_name(n.strip()) for n in bstripped[:-1].split("+")))):
             # Signal check block — parse it and break out of body loop
-            i, signal_checks = _parse_signal_check_group(lines, i)
+            i, signal_checks = _parse_signal_check_group(lines, i, game=game, room_name=room_name)
             break
         elif _is_narrative(bstripped) and not narrative:
             narrative = bstripped
