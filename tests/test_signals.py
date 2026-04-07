@@ -445,8 +445,8 @@ def test_md_and_signal_check_rendered():
     md, _ = generate_markdown(game)
     sid_a = signal_id("SIGNAL_A")
     sid_b = signal_id("SIGNAL_B")
-    # Both IDs should appear together with +
-    assert f"{sid_a} + {sid_b}" in md or f"{sid_b} + {sid_a}" in md
+    # Both IDs should appear together
+    assert f"{sid_a}** and **{sid_b}" in md
 
 
 def test_interaction_and_signal_check():

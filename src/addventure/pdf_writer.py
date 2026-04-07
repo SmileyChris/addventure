@@ -135,19 +135,17 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
                 })
 
     # Build signal check references for ledger entries
+    from .md_writer import _format_signal_check_instruction
     entry_signal_refs = {}
     for ix in game.interactions:
         if ix.signal_checks:
             for ri in game.resolved:
                 if ri.source_line == ix.source_line and ri.room == ix.room:
-                    parts = []
-                    for sc in ix.signal_checks:
-                        if sc.signal_names:
-                            sids = " + ".join(_signal_id(n) for n in sc.signal_names)
-                            parts.append(f"{sids} → also read {entry_prefix}-{sc.entry_number}")
-                        else:
-                            parts.append(f"Otherwise → also read {entry_prefix}-{sc.entry_number}")
-                    entry_signal_refs[ri.entry_number] = "Check your signals: " + ". ".join(parts) + "."
+                    # Strip markdown bold markers for plain-text PDF instructions
+                    ref = _format_signal_check_instruction(
+                        ix.signal_checks, entry_prefix, _signal_id, also=True
+                    )
+                    entry_signal_refs[ri.entry_number] = ref.replace("**", "")
 
     ledger.sort(key=lambda e: e["entry"])
 
@@ -184,7 +182,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
     index_signal_checks = []
     for sc in game.signal_checks:
         if sc.signal_names:
-            sid = " + ".join(_signal_id(n) for n in sc.signal_names)
+            sid = " and ".join(_signal_id(n) for n in sc.signal_names)
         else:
             sid = None
         index_signal_checks.append({

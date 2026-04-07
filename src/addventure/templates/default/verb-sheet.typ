@@ -56,9 +56,14 @@
   if signal-checks.len() > 0 {
     block(below: 1.2em)[
       #text(size: 9pt, style: "italic")[
-        Check your signals: #for sc in signal-checks {
-          if sc.is_otherwise [Otherwise] else [#str(sc.signal_id)]
-          [ → read #prefix\-#str(sc.entry). ]
+        Check your signals: #for (i, sc) in signal-checks.enumerate() {
+          if sc.is_otherwise {
+            [Otherwise, read #prefix\-#str(sc.entry).]
+          } else if i == 0 {
+            [if you have *#str(sc.signal_id)*, read #prefix\-#str(sc.entry).]
+          } else {
+            [ Otherwise, if you have *#str(sc.signal_id)*, read #prefix\-#str(sc.entry).]
+          }
         }
       ]
     ]

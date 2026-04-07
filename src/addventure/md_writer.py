@@ -6,6 +6,26 @@ from .models import GameData, ResolvedInteraction
 from .writer import GameWriter
 
 
+def _format_signal_check_instruction(checks, entry_prefix, _signal_id, also=False):
+    """Format signal checks as an if/otherwise instruction string.
+
+    Returns e.g.: "Check your signals: if you have LLLT and HWZT, read A-2.
+    Otherwise, if you have LLLT, read A-5. Otherwise, read A-3."
+    """
+    read_word = "also read" if also else "read"
+    parts = []
+    for i, sc in enumerate(checks):
+        if sc.signal_names:
+            sids = " and ".join(f"**{_signal_id(n)}**" for n in sc.signal_names)
+            if i == 0:
+                parts.append(f"if you have {sids}, {read_word} {entry_prefix}-{sc.entry_number}")
+            else:
+                parts.append(f"Otherwise, if you have {sids}, {read_word} {entry_prefix}-{sc.entry_number}")
+        else:
+            parts.append(f"Otherwise, {read_word} {entry_prefix}-{sc.entry_number}")
+    return f"Check your signals: {'. '.join(parts)}."
+
+
 def _render_placeholder_rows(count: int, width: int = 6) -> list[str]:
     """Render placeholder table rows padded to a fixed column width."""
     total = max(count, width)
@@ -59,14 +79,7 @@ def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
 
     if game.signal_checks:
         from .compiler import signal_id as _signal_id
-        parts = []
-        for sc in game.signal_checks:
-            if sc.signal_names:
-                sids = " + ".join(_signal_id(n) for n in sc.signal_names)
-                parts.append(f"**{sids}** → read {entry_prefix}-{sc.entry_number}")
-            else:
-                parts.append(f"Otherwise → read {entry_prefix}-{sc.entry_number}")
-        lines.append(f"\n*Check your signals: {'. '.join(parts)}.*")
+        lines.append(f"\n*{_format_signal_check_instruction(game.signal_checks, entry_prefix, _signal_id)}*")
 
     lines.append(
         "\n*To take an action, calculate verb number + object number(s)."
@@ -301,14 +314,9 @@ def _ledger_section(
             # Find the entry numbers for resolved interactions from this interaction
             for ri in game.resolved:
                 if ri.source_line == ix.source_line and ri.room == ix.room:
-                    parts = []
-                    for sc in ix.signal_checks:
-                        if sc.signal_names:
-                            sids = " + ".join(_signal_id(n) for n in sc.signal_names)
-                            parts.append(f"**{sids}** → also read {entry_prefix}-{sc.entry_number}")
-                        else:
-                            parts.append(f"Otherwise → also read {entry_prefix}-{sc.entry_number}")
-                    entry_signal_refs[ri.entry_number] = f"Check your signals: {'. '.join(parts)}."
+                    entry_signal_refs[ri.entry_number] = _format_signal_check_instruction(
+                        ix.signal_checks, entry_prefix, _signal_id, also=True
+                    )
 
     for entry_num, narrative, instructions in all_entries:
         lines.append(f"\n{entry_prefix}-{entry_num}")
