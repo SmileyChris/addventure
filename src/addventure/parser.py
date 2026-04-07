@@ -668,6 +668,10 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
 def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propagated_arrows=None):
     dest = arrow.destination
 
+    # NAME -> signal is a signal emission, no children
+    if dest == "signal":
+        return i
+
     # ? -> "Room" is a cue (cross-room deferred effect)
     if arrow.subject == "?":
         if not (dest.startswith('"') and dest.endswith('"')):
