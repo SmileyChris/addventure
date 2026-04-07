@@ -168,14 +168,19 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         room["discovery_slots"] = max_disc
         room["is_start"] = room["name"] == start_room
 
-    sealed_texts = [
-        {
+    sealed_texts = []
+    for st in sorted(game.sealed_texts, key=lambda s: s.ref):
+        instructions = ""
+        if st.arrows:
+            insts = writer._signal_check_instructions(st.arrows, room=st.room)
+            if insts:
+                instructions = "\n".join(insts)
+        sealed_texts.append({
             "ref": st.ref,
             "content": st.content,
             "entry_number": st.entry_number,
-        }
-        for st in sorted(game.sealed_texts, key=lambda s: s.ref)
-    ]
+            "instructions": instructions,
+        })
 
     # Signal checks (index-level) for verb sheet
     index_signal_checks = []

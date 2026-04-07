@@ -68,11 +68,7 @@ AIR_DUCT
 
   "Yeah."
 
-  You take one more look. You want to remember it exactly like this.
-
-  Then you follow them down.
-
-  *Ending: Everyone Out*
+  You take one more look. You want to remember it exactly like this. Then you follow them down — off the roof, across the gravel, and out through a gap in the perimeter fence. The service road stretches north into the pines. Half a kilometre up, a concrete building with an antenna on its roof. If anything out here still works, that's your best chance of calling for help.
   - EVERYONE_OUT_ESCAPE -> signal
   - player -> "Epilogue"
   :::

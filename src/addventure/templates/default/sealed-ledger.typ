@@ -22,6 +22,14 @@
       ]
       #v(0.3em)
       #text(size: 9pt)[#eval(st.content, mode: "markup")]
+      #if st.at("instructions", default: "") != "" {
+        v(0.5em)
+        for inst in st.instructions.split("\n") {
+          block(below: 0.2em)[
+            #text(size: 9pt, style: "italic")[— #inst]
+          ]
+        }
+      }
     ]
   }
 }

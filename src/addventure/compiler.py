@@ -580,6 +580,10 @@ def compile_game(global_source: str, room_sources: list[str],
         for arrow in action.arrows:
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
+    for ix in game.interactions:
+        for arrow in ix.sealed_arrows:
+            if arrow.signal_name:
+                game.signal_emissions.add(arrow.signal_name)
 
     # Mark objects discovered via signal check arrows (-> room)
     start_room = game.metadata.get("start", "")
