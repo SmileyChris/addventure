@@ -581,35 +581,39 @@ def compile_game(global_source: str, room_sources: list[str],
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
 
-    # Mark objects discovered via signal check arrows (-> room)
+    # Mark objects discovered via signal check arrows (-> room or -> "RoomName")
     start_room = game.metadata.get("start", "")
     if not start_room:
-        # Fall back to first room
         for rm in game.rooms.values():
             if rm.state is None:
                 start_room = rm.name
                 break
+
+    def _mark_discovered(arrow, default_room):
+        dest = arrow.destination
+        subj = arrow.subject
+        if not subj or subj == "player":
+            return
+        if dest == "room":
+            target = default_room
+        elif dest.startswith('"') and dest.endswith('"'):
+            target = dest[1:-1]
+        else:
+            return
+        base, state = _split_name(subj)
+        key = f"{target}::{subj}"
+        if key in game.objects:
+            game.objects[key].discovered = True
+        else:
+            game.objects[key] = RoomObject(subj, base, state, target, discovered=True)
+
     for sc in game.signal_checks:
         for arrow in sc.arrows:
-            if arrow.destination == "room" and arrow.subject:
-                subj = arrow.subject
-                base, state = _split_name(subj)
-                key = f"{start_room}::{subj}"
-                if key in game.objects:
-                    game.objects[key].discovered = True
-                else:
-                    game.objects[key] = RoomObject(subj, base, state, start_room, discovered=True)
+            _mark_discovered(arrow, start_room)
     for ix in game.interactions:
         for sc in ix.signal_checks:
             for arrow in sc.arrows:
-                if arrow.destination == "room" and arrow.subject:
-                    subj = arrow.subject
-                    base, state = _split_name(subj)
-                    key = f"{ix.room}::{subj}"
-                    if key in game.objects:
-                        game.objects[key].discovered = True
-                    else:
-                        game.objects[key] = RoomObject(subj, base, state, ix.room, discovered=True)
+                _mark_discovered(arrow, ix.room)
 
     # Validate signal names don't collide with game entities
     all_signal_names = set(game.signal_emissions)

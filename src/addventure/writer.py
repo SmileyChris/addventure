@@ -206,9 +206,21 @@ class GameWriter:
                         f"for arrow: {subj} -> {dest}"
                     )
 
+            # ENTITY -> "Room" (cross-room object placement)
+            elif dest.startswith('"') and dest.endswith('"') and subj:
+                target_room = dest[1:-1]
+                entity_id = self._get_id(subj, current_room)
+                rm = self.game.rooms.get(target_room)
+                if rm:
+                    if self.blind:
+                        room_ref = f"room sheet {rm.id}"
+                    else:
+                        room_ref = f"the {target_room} room sheet"
+                    instructions.append(
+                        f"Write {dn(subj)} ({entity_id}) in a discovery slot on {room_ref}."
+                    )
+
             else:
-                # Unhandled arrow type — e.g. cross-room placement (NOUN -> "Room")
-                # is a potential future feature
                 self.warnings.append(
                     f"Line {arrow.source_line}: No instruction generated "
                     f"for arrow: {subj} -> {dest}"
