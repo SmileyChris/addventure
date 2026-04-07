@@ -370,6 +370,54 @@ When building with `--all`, the compiler validates signal usage across chapters 
 
 See the [Signals reference](reference.md#signals) for the full syntax summary.
 
+## Chapters
+
+Chapters let you split a game across multiple booklets — sequels, side quests, epilogues. Each chapter is a subdirectory within your game directory, with its own `index.md` and room files. Chapters are independently compiled with their own ID space.
+
+### Creating chapters
+
+Run `addventure new` from inside your game directory:
+
+```bash
+cd my-game
+addventure new "The Escape"     # creates the-escape/index.md with prefix B
+addventure new "The Surface"    # creates the-surface/index.md with prefix C
+```
+
+Each chapter is automatically assigned a unique ledger prefix (B, C, D...) so its ledger entries don't clash with other chapters. The parent game is always prefix A.
+
+### Building
+
+```bash
+addventure build my-game --all          # all chapters in one PDF
+addventure build my-game                # just the parent (chapter A)
+addventure build my-game/the-escape     # just one chapter
+```
+
+When built standalone, a chapter's title nests under the parent: "The Facility — The Escape", and the PDF filename reflects this (`the-facility_the-escape.pdf`).
+
+When built with `--all`, the output shares one Actions & Inventory page across all chapters. Each chapter gets its own title page (with potentials list and cue checks), rooms, and ledger.
+
+### Transitioning between chapters
+
+Use `player -> "ChapterName"` to direct the player to the next chapter:
+
+```markdown
++ USE + AIR_DUCT:
+  You escape through the vent.
+  - player -> "Epilogue"
+```
+
+In a standalone build, this renders as: "Continue with the addventure booklet: The Facility — Epilogue." In a combined build: "Turn to the next chapter: Epilogue."
+
+This works well inside [fragments](#fragments) — the player finishes reading the ending prose, then sees the transition instruction.
+
+### Carrying state between chapters
+
+Chapters can carry narrative consequences using [signals](#signals). The sending chapter emits a signal, and the receiving chapter branches the story based on which signals the player has.
+
+See [Signals across chapters](#signals-across-chapters) for details.
+
 ## Compiler
 
 ### Game sizing and ID allocation
@@ -395,29 +443,7 @@ The compiler randomly assigns IDs to verbs and entities, then checks that no two
 
 The compiler tries 3-digit IDs first (200 attempts). If no collision-free allocation is found, it automatically retries with 4-digit entity IDs (1000–9999, 7200 possible values) and 3-digit verb IDs (101–999). The wider verb range spreads sums out more, making it harder for players to reverse-engineer which verb was used. This is seamless — larger games just get slightly bigger numbers on the sheets.
 
-**For very large games**, split into chapters. Each chapter is a subdirectory within your game directory, with its own `index.md` and room files. Chapters are independently compiled with their own ID space.
-
-To create a chapter, run `addventure new` from inside your game directory:
-
-```bash
-cd my-game
-addventure new "The Escape"     # creates the-escape/index.md with prefix B
-addventure new "The Surface"    # creates the-surface/index.md with prefix C
-```
-
-Each chapter is automatically assigned a unique ledger prefix (B, C, D...) so entries don't clash when printed together. The parent game is always prefix A.
-
-To build all chapters into a single PDF:
-
-```bash
-addventure build my-game --all     # combines parent + all chapters
-addventure build my-game           # builds just the parent (chapter A)
-addventure build my-game/the-escape  # builds just one chapter
-```
-
-Use narrative handoffs at chapter boundaries: the ending ledger entry tells the player what they're carrying, and the next chapter's first entry sets up the new inventory with fresh IDs.
-
-Chapters can also carry narrative state between them using [signals](#signals).
+**For very large games**, consider splitting into chapters (see [Chapters](#chapters) below).
 
 **The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ room objects per room stays well under 80 total.
 
