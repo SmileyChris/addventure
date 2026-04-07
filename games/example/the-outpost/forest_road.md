@@ -23,7 +23,7 @@ PICKUP_TRUCK
     + LOOK: Half a crowbar. The break is clean — metal fatigue. No use to anyone.
 
 COMPANION
-+ LOOK: One of the freed prisoners. Wiry, watchful, sticking close. They haven't said much since catching up to you on the road.
++ LOOK: One of the freed prisoners. Wiry, watchful, sticking close. They haven't said much since catching up with you on the road.
 
 GATE
 + LOOK: Chain-link, six feet high. A padlock holds the gate shut, the chain brown with rust. Through the mesh you can make out two buildings: one with the antenna mast, one a squat concrete shed. Gravel between them.
