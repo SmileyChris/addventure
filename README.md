@@ -29,8 +29,6 @@ uv run addventure build -o output.pdf       # custom output path
 uv run addventure new my-game               # scaffold a new game directory
 ```
 
-If `typst` is not on your PATH, the compiler falls back to plain text output automatically.
-
 ## Writing Games
 
 A game is a directory of `.md` files. You need one `index.md` for metadata, verbs, and items; all other `.md` files define rooms and are loaded alphabetically.
@@ -91,40 +89,6 @@ CRATE
   - CROWBAR -> trash
 ```
 
-### Script syntax reference
-
-| Syntax | Meaning |
-|---|---|
-| `+ VERB: text` | Interaction on an entity |
-| `+ VERB + TARGET:` | Multi-entity interaction (verb + two things) |
-| `ENTITY__STATE` | Double-underscore separates entity from state |
-| `- ENTITY -> destination` | Arrow — moves/transforms an entity |
-| `-> player` | Move to inventory |
-| `-> trash` | Remove from game |
-| `-> "RoomName"` | Move player to another room |
-| `-> room` | Place in current room |
-| `-> ENTITY__STATE` | Transform entity to a new state |
-| `@room` | Reference to the current room entity |
-| `*` wildcard | Matches all entities in room |
-
-Room-level interactions use `VERB: text` without the `+` prefix. Entity interactions and arrows use `+` and `-` prefixes respectively. Indentation defines the hierarchy: arrows nested under an interaction fire when that interaction triggers, and child interactions on a state-changed entity only apply in that state.
-
-### Interactions section
-
-Room files can have a `# Interactions` section for interactions that don't belong to a specific room object:
-
-```markdown
-# Interactions
-
-USE + KNIFE + BINDINGS:
-  You saw through the rope. Your hands are free.
-  - BINDINGS -> trash
-  - USE__RESTRAINED -> USE
-
-USE__RESTRAINED + *:
-  You strain against the bindings. No use.
-```
-
 ## Example Output
 
 Running `uv run addventure build` generates a PDF with sheets like:
@@ -150,5 +114,3 @@ Objects in this room:
 ```
 
 The potentials list maps sums to ledger entries (e.g., `LOOK + TERMINAL = 51 + 951 = 1002 → Entry #5`), and the story ledger contains the narrative with physical instructions for updating your sheets.
-
-IDs are randomly assigned each compilation, so every printout is a unique puzzle.
