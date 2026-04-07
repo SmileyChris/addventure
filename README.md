@@ -6,14 +6,15 @@ Players solve games by looking up a Verb ID and an Object ID, adding them togeth
 
 ## How It Works
 
-A game compiles down to a printable PDF with four sheet types:
+A game compiles down to a printable PDF with these pages:
 
-- **Verb Sheet** — lists each action (LOOK, USE, TAKE...) with its numeric ID
+- **Title Page** — intro text, cue checks, and the master potentials list (maps every valid sum to a ledger entry)
+- **Actions & Inventory** — verb IDs, inventory tracking slots, and signal codes
 - **Room Sheets** — one per location, listing objects and their IDs
-- **Inventory & Potentials List** — tracks carried items; maps every valid sum to a ledger entry
 - **Story Ledger** — numbered narrative entries with instructions ("cross out X, write Y")
+- **Fragments** — sealed text passages, revealed during play (if the game uses them)
 
-The player's loop: pick a verb, pick a target, add the IDs, look up the sum. If it's in the potentials list, read the ledger entry and follow the instructions (state changes, item transfers, room transitions).
+The player's loop: pick a verb, pick a target, add the IDs, look up the sum in the potentials list. If it's there, read the ledger entry and follow the instructions (state changes, item transfers, room transitions).
 
 ## Quick Start
 

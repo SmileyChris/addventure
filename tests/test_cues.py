@@ -851,7 +851,7 @@ KEY
     instructions = writer._generate_instructions(take_ri[0])
 
     # Direct TAKE pickup should not restate the already-computed room object ID
-    assert any("Cross out KEY on this room sheet." in inst for inst in instructions)
+    assert any("Cross out *KEY* on this room sheet." in inst for inst in instructions)
     assert not any(str(key_noun.id) in inst for inst in instructions)
     # Should mention writing to Inventory
     assert any("Inventory" in inst for inst in instructions)

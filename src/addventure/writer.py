@@ -56,7 +56,7 @@ class GameWriter:
             if subj == "" and dest in self.game.verbs:
                 verb = self.game.verbs[dest]
                 instructions.append(
-                    f"Record {dn(dest)} ({verb.id}) on your Verb Sheet."
+                    f"Record *{dn(dest)}* (*{verb.id}*) on your Verb Sheet."
                 )
                 continue
 
@@ -66,15 +66,15 @@ class GameWriter:
                 rm = self.game.rooms.get(room_name)
                 if rm:
                     if self.blind:
-                        room_ref = f"room sheet {rm.id}"
+                        room_ref = f"room sheet *{rm.id}*"
                     else:
-                        room_ref = f"the {room_name} room sheet"
+                        room_ref = f"the *{room_name}* room sheet"
                     instructions.append(f"Switch to {room_ref}.")
                     current_room = room_name
                 else:
                     # Not a room in this game — chapter transition
                     if self.game.metadata.get("combined_build"):
-                        instructions.append(f"Turn to the next chapter: {room_name}.")
+                        instructions.append(f"Turn to the next chapter: *{room_name}*.")
                     else:
                         title = self.game.metadata.get("title", "")
                         parent = self.game.metadata.get("parent_title")
@@ -84,14 +84,14 @@ class GameWriter:
                             full_name = f"{title} — {room_name}"
                         else:
                             full_name = room_name
-                        instructions.append(f"Continue with the addventure booklet: {full_name}.")
+                        instructions.append(f"Continue with the addventure booklet: *{full_name}*.")
 
             # THING -> trash
             elif dest == "trash":
                 if subj in self.game.verbs:
                     verb = self.game.verbs[subj]
                     instructions.append(
-                        f"Cross out {dn(subj)} ({verb.id}) on your Verb Sheet."
+                        f"Cross out *{dn(subj)}* (*{verb.id}*) on your Verb Sheet."
                     )
                 else:
                     # Check if subject is an action in this room
@@ -100,13 +100,13 @@ class GameWriter:
                     if action:
                         prefix = self.entry_prefix
                         instructions.append(
-                            f"Cross out {dn(subj)} ({prefix}-{action.ledger_id}) on this room sheet."
+                            f"Cross out *{dn(subj)}* (*{prefix}-{action.ledger_id}*) on this room sheet."
                         )
                     else:
                         sheet, entity_id = self._locate_entity(
                             subj, current_room, ri.from_inventory)
                         instructions.append(
-                            f"Cross out {dn(subj)} ({entity_id}) on your {sheet}."
+                            f"Cross out *{dn(subj)}* (*{entity_id}*) on your {sheet}."
                         )
 
             # THING -> player
@@ -120,18 +120,18 @@ class GameWriter:
                     # Auto-inventory object picked up via TAKE: player already computed the sum
                     if ri.verb == "TAKE" and subj in self.game.auto_inventory:
                         instructions.append(
-                            f"Cross out {dn(subj)} on this room sheet. "
-                            f"Write {dn(subj)} and your sum ({inv_obj.id}) on your Inventory."
+                            f"Cross out *{dn(subj)}* on this room sheet. "
+                            f"Write *{dn(subj)}* and your sum (*{inv_obj.id}*) on your Inventory."
                         )
                     else:
                         instructions.append(
-                            f"Cross out {dn(subj)} on this room sheet. "
-                            f"Write {dn(subj)} and {inv_obj.id} on your Inventory."
+                            f"Cross out *{dn(subj)}* on this room sheet. "
+                            f"Write *{dn(subj)}* and *{inv_obj.id}* on your Inventory."
                         )
                 else:
                     instructions.append(
-                        f"Cross out {dn(subj)} on this room sheet. "
-                        f"Write {dn(subj)} ({entity_id}) on your Inventory."
+                        f"Cross out *{dn(subj)}* on this room sheet. "
+                        f"Write *{dn(subj)}* (*{entity_id}*) on your Inventory."
                     )
 
             # Action discovery: >ACTION_NAME -> room
@@ -142,7 +142,7 @@ class GameWriter:
                 if action:
                     prefix = self.entry_prefix
                     instructions.append(
-                        f"Write {dn(action_name)} ({prefix}-{action.ledger_id}) "
+                        f"Write *{dn(action_name)}* (*{prefix}-{action.ledger_id}*) "
                         f"in a discovery slot on this room sheet."
                     )
 
@@ -151,7 +151,7 @@ class GameWriter:
             elif dest == "room" and not subj.startswith("room__"):
                 entity_id = self._get_id(subj, current_room)
                 instructions.append(
-                    f"Write {dn(subj)} ({entity_id}) in a discovery slot "
+                    f"Write *{dn(subj)}* (*{entity_id}*) in a discovery slot "
                     f"on this room sheet."
                 )
 
@@ -166,7 +166,7 @@ class GameWriter:
                 )
                 if cue:
                     instructions.append(
-                        f"Write {cue.id} in your Cue Checks."
+                        f"Write *{cue.id}* in your Cue Checks."
                     )
 
             # THING -> THING__STATE or THING__STATE -> THING (transform)
@@ -184,11 +184,11 @@ class GameWriter:
                 dest_display = dn(resolved_dest.lstrip("@"))
                 if clean_subj in self.game.verbs or subj in self.game.verbs:
                     instructions.append(
-                        f"Change {subj_display} to {new_id} on your Verb Sheet."
+                        f"Change *{subj_display}* to *{new_id}* on your Verb Sheet."
                     )
                 else:
                     instructions.append(
-                        f"Change {subj_display} to {new_id} on this room sheet."
+                        f"Change *{subj_display}* to *{new_id}* on this room sheet."
                     )
 
             # Verb state restore: USE__RESTRAINED -> USE
@@ -198,7 +198,7 @@ class GameWriter:
                     new_id = self.game.verbs[dest].id
                     dest_display = dn(dest)
                     instructions.append(
-                        f"Change {dest_display} to {new_id} on your Verb Sheet."
+                        f"Change *{dest_display}* to *{new_id}* on your Verb Sheet."
                     )
                 else:
                     self.warnings.append(
@@ -220,7 +220,7 @@ class GameWriter:
             )
             if cue:
                 instructions.append(
-                    f"Cross out {cue.id} from your Cue Checks."
+                    f"Cross out *{cue.id}* from your Cue Checks."
                 )
 
         # Sealed text: append instruction to open/assemble sealed content
@@ -230,9 +230,9 @@ class GameWriter:
         )
         if sealed:
             if self.jigsaw:
-                instructions.append(f"Assemble Fragment {sealed.ref}.")
+                instructions.append(f"Assemble Fragment *{sealed.ref}*.")
             else:
-                instructions.append(f"Turn to Fragment {sealed.ref}.")
+                instructions.append(f"Turn to Fragment *{sealed.ref}*.")
 
         # Blind mode: append room reveal instructions for LOOK + @room
         if self.blind:
@@ -259,21 +259,21 @@ class GameWriter:
             if objects:
                 for obj in objects:
                     instructions.append(
-                        f"Write {obj.id} next to {dn(obj.name)} on this room sheet."
+                        f"Write *{obj.id}* next to *{dn(obj.name)}* on this room sheet."
                     )
         else:
             # Non-start: reveal room name and all objects
-            instructions.append(f'Write "{room_name}" as the room title.')
+            instructions.append(f'Write *"{room_name}"* as the room title.')
             for obj in objects:
                 instructions.append(
-                    f"Write {dn(obj.name)} ({obj.id}) in an object slot."
+                    f"Write *{dn(obj.name)}* (*{obj.id}*) in an object slot."
                 )
 
         # Reveal pre-printed actions
         prefix = self.entry_prefix
         for action in self._preprinted_actions(room_name):
             instructions.append(
-                f"Write {dn(action.name)} ({prefix}-{action.ledger_id}) in an object slot."
+                f"Write *{dn(action.name)}* (*{prefix}-{action.ledger_id}*) in an object slot."
             )
 
         return instructions

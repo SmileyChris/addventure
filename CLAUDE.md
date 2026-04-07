@@ -64,11 +64,12 @@ Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 
 ### Writer (`writer.py`)
 
-`GameWriter` transforms `GameData` into four printable components:
-- **Verb Sheet** — verb reference with IDs
+`GameWriter` transforms `GameData` into printable pages:
+- **Title Page** — intro, cue checks (cross-room triggers), master potentials list (sum lookups)
+- **Actions & Inventory** — verb IDs, inventory tracking slots, signal codes
 - **Room Sheets** — per-location state and discovery slots
-- **Inventory Sheet** — inventory object tracking + Cue Checks (cross-room triggers) + Master Potentials List (sum lookups)
 - **Story Ledger** — narratives + human-readable instructions from arrows
+- **Fragments** — sealed text passages revealed during play (optional)
 
 ### Script Syntax (`.md` files)
 

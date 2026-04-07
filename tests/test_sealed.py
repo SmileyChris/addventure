@@ -176,7 +176,7 @@ KEY
     ri = next(r for r in game.resolved if r.verb == "USE" and "KEY" in r.targets)
     instructions = writer._generate_instructions(ri)
     st = game.sealed_texts[0]
-    assert any(f"Turn to Fragment {st.ref}" in inst for inst in instructions)
+    assert any(f"Turn to Fragment *{st.ref}*" in inst for inst in instructions)
 
 def test_sealed_instruction_jigsaw():
     global_src = "# Verbs\nUSE\n\n# Inventory\n"
@@ -194,7 +194,7 @@ KEY
     ri = next(r for r in game.resolved if r.verb == "USE")
     instructions = writer._generate_instructions(ri)
     st = game.sealed_texts[0]
-    assert any(f"Assemble Fragment {st.ref}" in inst for inst in instructions)
+    assert any(f"Assemble Fragment *{st.ref}*" in inst for inst in instructions)
 
 def test_markdown_sealed_section():
     global_src = "# Verbs\nUSE\n\n# Inventory\n"

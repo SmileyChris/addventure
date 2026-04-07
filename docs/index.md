@@ -18,19 +18,22 @@ That entry contains narrative text and physical instructions — cross out this 
 
 ## What players get
 
-A compiled game produces four types of sheet:
+A compiled game produces these pages:
 
-**Verb Sheet**
-:   Lists every action (LOOK, USE, TAKE...) with its numeric ID. When the game changes a verb, players cross out the old ID and write in the new one.
+**Title Page**
+:   Intro text, cue checks, and the master potentials list — the lookup table that maps every valid sum to a story entry number. This is what players consult after adding.
+
+**Actions & Inventory**
+:   Lists every verb (LOOK, USE, TAKE...) with its numeric ID, plus inventory tracking slots and signal codes. When the game changes a verb, players cross out the old ID and write in the new one.
 
 **Room Sheets**
 :   One per location. Lists actions (direct ledger references like "GO NORTH → A-12") and objects with their IDs. Actions are authored as identifiers such as `GO_NORTH` and displayed with spaces. Players flip between room sheets as they move through the game.
 
-**Inventory & Potentials List**
-:   Tracks carried inventory objects and their IDs. The potentials list maps every valid sum to a story entry number — this is the lookup table players use after adding.
-
 **Story Ledger**
 :   Numbered narrative entries. Each contains a passage of story text and instructions: cross out an object, write a new ID, move an object to your inventory, go to a different room.
+
+**Fragments**
+:   Sealed text passages that are only revealed when directed by a ledger entry. Not all games use fragments.
 
 ## A player's turn
 
