@@ -5,3 +5,4 @@ __pycache__/
 *.pdf
 site/build/
 .worktrees/
+repository-open-graph.jpg
