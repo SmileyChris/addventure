@@ -38,7 +38,6 @@ EXIT_DOOR
   You punch in the code. The lock clicks green. The door swings open. Cold air hits your face. You're out.
 
   You don't look back.
-  - WITNESS_ESCAPE -> signal
 
   ::: fragment
   The light is wrong — too bright, too open after all that concrete.
@@ -54,5 +53,7 @@ EXIT_DOOR
   You pick up the receiver. You dial.
 
   *Ending: The Witness*
+  - WITNESS_ESCAPE -> signal
+  - player -> "Epilogue"
   :::
 

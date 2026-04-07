@@ -200,6 +200,65 @@ def _unexpected_child_line(lines, i, child_indent):
     return None
 
 
+# ── Content Block Parser ───────────────────────────────────────────────────
+
+def _parse_content_block(lines, i, game, room_name, fence_close=None):
+    """Parse a block of narrative + arrows + signal checks.
+
+    Used by fragment blocks (fence_close=":::") and could be used by other
+    content blocks. Returns (next_i, narrative, arrows, signal_checks).
+    """
+    narrative_lines = []
+    block_arrows = []
+    block_signal_checks = []
+
+    while i < len(lines):
+        sline = lines[i]
+        sstripped = sline.strip()
+
+        # Fence termination
+        if fence_close and sstripped == fence_close:
+            i += 1
+            break
+        if _is_header(sline):
+            if fence_close:
+                raise ParseError(i + 1, f"Unclosed block (hit header)")
+            break
+
+        if not sstripped or _is_comment(sstripped):
+            i += 1
+            continue
+
+        # Signal checks
+        if (sstripped == "otherwise?" or
+              (sstripped.endswith("?") and len(sstripped) > 1 and
+               all(_is_name(n.strip()) for n in sstripped[:-1].split("+")))):
+            i, block_signal_checks = _parse_signal_check_group(lines, i, game=game, room_name=room_name)
+            continue
+
+        # Arrows
+        if sstripped.startswith("- ") and _is_arrow(sstripped[2:]):
+            arrow = _parse_arrow(_strip_trailing_comment(sstripped[2:]), i + 1)
+            if arrow.subject == "room":
+                arrow.subject = f"@{room_name}"
+            block_arrows.append(arrow)
+            arr_indent = _indent(sline, i + 1)
+            i += 1
+            i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=block_arrows)
+            continue
+
+        # Narrative
+        narrative_lines.append(sstripped)
+        i += 1
+    else:
+        if fence_close:
+            raise ParseError(i, f"Unclosed block (hit end of file)")
+
+    paragraphs = [sl for sl in narrative_lines if sl]
+    narrative = "\n\n".join(paragraphs)
+    return i, narrative, block_arrows, block_signal_checks
+
+
 # ── Signal Check Parser ─────────────────────────────────────────────────────
 
 def _parse_signal_check_group(lines, i, game=None, room_name=""):
@@ -527,6 +586,8 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
 
     arrows = []
     sealed_content = None
+    sealed_arrows = []
+    sealed_signal_checks_content = []
     blank_line_seen = False
     signal_checks = []
 
@@ -562,22 +623,9 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             if bstripped != "::: fragment":
                 raise ParseError(i + 1, "Expected '::: fragment' to open a fragment block")
             i += 1
-            sealed_lines = []
-            while i < len(lines):
-                sline = lines[i]
-                sstripped = sline.strip()
-                if sstripped == ":::":
-                    i += 1
-                    break
-                if _is_header(sline):
-                    raise ParseError(i + 1, "Unclosed fragment block (hit header)")
-                sealed_lines.append(sstripped)
-                i += 1
-            else:
-                raise ParseError(i, "Unclosed fragment block (hit end of file)")
-            # Each non-empty line is its own paragraph; blank lines are separators
-            paragraphs = [sl for sl in sealed_lines if sl]
-            sealed_content = "\n\n".join(paragraphs)
+            i, sealed_content, sealed_arrows, sealed_signal_checks_content = _parse_content_block(
+                lines, i, game, room_name, fence_close=":::",
+            )
         elif _is_action(bstripped):
             action_name = bstripped[2:].strip()
             action_line = i + 1
@@ -610,6 +658,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
         narrative=narrative, arrows=arrows,
         source_line=source_line, room=room_name,
         sealed_content=sealed_content,
+        sealed_arrows=sealed_arrows,
         signal_checks=signal_checks,
     )
     _register_interaction(game, ix)

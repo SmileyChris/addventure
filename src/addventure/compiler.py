@@ -728,6 +728,7 @@ def compile_game(global_source: str, room_sources: list[str],
                 source_line=ix.source_line,
                 room=ix.room,
                 entry_number=ri.entry_number,
+                arrows=ix.sealed_arrows,
             ))
 
     return game

@@ -262,7 +262,7 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
 
             sections.append(_ledger_section(game, writer, entry_prefix))
 
-            fragments = _sealed_section(game)
+            fragments = _sealed_section(game, writer)
             if fragments:
                 sections.append(fragments)
 

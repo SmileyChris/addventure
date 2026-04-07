@@ -68,7 +68,7 @@ def generate_markdown(game: GameData, blind: bool = False, fragment: str = "incl
     sections.append(_ledger_section(game, writer, entry_prefix))
 
     # 5. Fragments
-    fragments = _sealed_section(game)
+    fragments = _sealed_section(game, writer)
     if fragments:
         sections.append(fragments)
 
@@ -328,7 +328,7 @@ def _potentials_table(game: GameData, entry_prefix: str) -> list[str]:
     return lines
 
 
-def _sealed_section(game: GameData) -> str:
+def _sealed_section(game: GameData, writer: GameWriter = None) -> str:
     """Render sealed texts as a section at the end."""
     if not game.sealed_texts:
         return ""
@@ -340,6 +340,11 @@ def _sealed_section(game: GameData) -> str:
         lines.append(f"\n### Fragment {st.ref}")
         lines.append(f"> ⚠ Do not read until directed.\n")
         lines.append(st.content)
+        if st.arrows and writer:
+            instructions = writer._signal_check_instructions(st.arrows, room=st.room)
+            if instructions:
+                lines.append("")
+                lines.extend(f"- *{inst}*" for inst in instructions)
     return "\n".join(lines)
 
 

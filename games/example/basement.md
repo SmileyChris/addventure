@@ -54,7 +54,6 @@ AIR_DUCT
   Cool air rushes past. Then daylight. The duct opens onto the roof. Below, others are streaming out through every exit they can find.
 
   You made the right call.
-  - EVERYONE_OUT_ESCAPE -> signal
 
   ::: fragment
   From the roof you can see all of it — the perimeter fence, the service road, the treeline beyond. People spilling out across the gravel in every direction.
@@ -74,6 +73,8 @@ AIR_DUCT
   Then you follow them down.
 
   *Ending: Everyone Out*
+  - EVERYONE_OUT_ESCAPE -> signal
+  - player -> "Epilogue"
   :::
 
 
