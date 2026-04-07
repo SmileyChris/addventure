@@ -164,3 +164,58 @@ def test_parse_otherwise_before_signal_check_errors():
     )
     with pytest.raises(ParseError, match="otherwise\\? must be the last branch"):
         compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+
+
+def test_parse_interaction_signal_checks():
+    global_src = (
+        "# Verbs\nLOOK\nUSE\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\n"
+    )
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Common narrative.\n"
+        "  SIGNAL_A?\n"
+        "    Branch A narrative.\n"
+        "  otherwise?\n"
+        "    Default narrative.\n"
+    )
+    game = compile_game(global_src, [room_src])
+    # Find the USE interaction
+    use_interactions = [ix for ix in game.interactions if ix.verb == "USE"]
+    assert len(use_interactions) == 1
+    ix = use_interactions[0]
+    assert "Common narrative" in ix.narrative
+    assert len(ix.signal_checks) == 2
+    assert ix.signal_checks[0].signal_name == "SIGNAL_A"
+    assert "Branch A" in ix.signal_checks[0].narrative
+    assert ix.signal_checks[1].signal_name is None  # otherwise
+
+
+def test_interaction_signal_checks_with_unconditional_arrows():
+    global_src = (
+        "# Verbs\nUSE\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\n"
+    )
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Common text.\n"
+        "  - THING -> trash\n"
+        "  SIGNAL_A?\n"
+        "    Signal text.\n"
+        "    - BONUS -> room\n"
+        "  otherwise?\n"
+        "    Other text.\n"
+    )
+    game = compile_game(global_src, [room_src])
+    ix = [i for i in game.interactions if i.verb == "USE"][0]
+    assert len(ix.arrows) == 1  # Unconditional arrow
+    assert ix.arrows[0].destination == "trash"
+    assert len(ix.signal_checks) == 2
+    assert len(ix.signal_checks[0].arrows) == 1  # Conditional arrow
+    assert ix.signal_checks[0].arrows[0].subject == "BONUS"

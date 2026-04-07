@@ -524,6 +524,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     arrows = []
     sealed_content = None
     blank_line_seen = False
+    signal_checks = []
 
     while i < len(lines):
         bline = lines[i]
@@ -579,6 +580,11 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             blank_line_seen = False
             i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=current_indent)
             arrows.append(Arrow(f">{action_name}", "room", action_line))
+        elif (bstripped == "otherwise?" or
+              (bstripped.endswith("?") and len(bstripped) > 1 and _is_name(bstripped[:-1]))):
+            # Signal check block — parse it and break out of body loop
+            i, signal_checks = _parse_signal_check_group(lines, i)
+            break
         elif _is_narrative(bstripped) and not narrative:
             narrative = bstripped
             blank_line_seen = False
@@ -599,6 +605,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
         narrative=narrative, arrows=arrows,
         source_line=source_line, room=room_name,
         sealed_content=sealed_content,
+        signal_checks=signal_checks,
     )
     _register_interaction(game, ix)
     return i
