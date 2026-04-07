@@ -60,7 +60,7 @@ class GameWriter:
                 )
                 continue
 
-            # player -> "Room"
+            # player -> "Room" or player -> "Chapter"
             if subj == "player" and dest.startswith('"'):
                 room_name = dest[1:-1]
                 rm = self.game.rooms.get(room_name)
@@ -71,6 +71,9 @@ class GameWriter:
                         room_ref = f"the {room_name} room sheet"
                     instructions.append(f"Switch to {room_ref}.")
                     current_room = room_name
+                else:
+                    # Not a room in this game — chapter transition
+                    instructions.append(f"Continue to {room_name}.")
 
             # THING -> trash
             elif dest == "trash":
