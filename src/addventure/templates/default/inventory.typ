@@ -66,7 +66,7 @@
       column-gutter: 0.8em,
       row-gutter: 0.6em,
       ..for i in range(slot-count) {
-        (id-box(hide[000], crossable: true),)
+        (id-box(hide[0000]),)
       }
     )
   }
