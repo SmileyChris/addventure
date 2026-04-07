@@ -300,3 +300,99 @@ def test_signal_emit_and_receive_same_chapter_warns():
     )
     game = compile_game(global_src, [room_src])
     assert any("both emits and receives" in w.lower() for w in game.warnings)
+
+
+from addventure.writer import GameWriter
+from addventure.md_writer import generate_markdown
+
+
+def test_writer_signal_emission_instruction():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  You do it.\n"
+        "  - -> signal EVERYONE_OUT_ESCAPE\n"
+    )
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    ri = [r for r in game.resolved if r.verb == "USE"][0]
+    instructions = writer._generate_instructions(ri)
+    sig_id_val = signal_id("EVERYONE_OUT_ESCAPE")
+    assert any(str(sig_id_val) in inst for inst in instructions)
+    assert any("signal" in inst.lower() for inst in instructions)
+
+
+def test_md_index_signal_checks_rendered():
+    global_src = (
+        "---\ntitle: Test\n---\n\n"
+        "Intro text.\n\n"
+        "SIGNAL_A?\n"
+        "  Branch A.\n"
+        "otherwise?\n"
+        "  Default.\n\n"
+        "# Verbs\nLOOK\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    sig_id_val = signal_id("SIGNAL_A")
+    assert str(sig_id_val) in md
+    assert "Check your signals" in md
+
+
+def test_md_signals_section_on_inventory_sheet():
+    global_src = (
+        "# Verbs\nLOOK\n\n# Inventory\n\n"
+        "# Signals\nSIGNAL_A\nSIGNAL_B\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    assert "Signals" in md
+
+
+def test_md_no_signals_section_when_none():
+    global_src = "# Verbs\nLOOK\n\n# Inventory\n"
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    # "Signals" should not appear anywhere
+    assert "Signals" not in md
+
+
+def test_md_signal_emission_in_ledger():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  You do it.\n"
+        "  - -> signal MY_SIGNAL\n"
+    )
+    game = compile_game(global_src, [room_src])
+    md, _ = generate_markdown(game)
+    sig_id_val = signal_id("MY_SIGNAL")
+    assert str(sig_id_val) in md
+    assert "signal" in md.lower()
+
+
+def test_md_interaction_signal_checks_in_ledger():
+    global_src = (
+        "# Verbs\nUSE\n\n# Inventory\n\n# Signals\nSIGNAL_A\n"
+    )
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Common text.\n"
+        "  SIGNAL_A?\n"
+        "    Branch A.\n"
+        "  otherwise?\n"
+        "    Default.\n"
+    )
+    game = compile_game(global_src, [room_src])
+    md, _ = generate_markdown(game)
+    assert "Check your signals" in md
+    assert "Branch A" in md
+    assert "Default" in md

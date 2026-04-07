@@ -45,6 +45,13 @@ class GameWriter:
             subj = arrow.subject
             dest = arrow.destination
 
+            # -> signal NAME (signal emission)
+            if arrow.signal_name:
+                from .compiler import signal_id as _signal_id
+                sid = _signal_id(arrow.signal_name)
+                instructions.append(f"Write {sid} in your signals.")
+                continue
+
             # -> VERB (verb reveal)
             if subj == "" and dest in self.game.verbs:
                 verb = self.game.verbs[dest]
@@ -341,6 +348,17 @@ class GameWriter:
             verb="ACTION", targets=[], sum_id=0,
             narrative=action.narrative, arrows=action.arrows,
             source_line=0, room=action.room, parent_label=action.name,
+        )
+        return self._generate_instructions(ri)
+
+    def _signal_check_instructions(self, arrows: list, room: str = "") -> list[str]:
+        """Generate instructions for signal check arrows."""
+        if not arrows:
+            return []
+        # Create a minimal ResolvedInteraction to reuse _generate_instructions
+        ri = ResolvedInteraction(
+            verb="", targets=[], sum_id=0, narrative="", arrows=arrows,
+            source_line=0, room=room, parent_label="",
         )
         return self._generate_instructions(ri)
 
