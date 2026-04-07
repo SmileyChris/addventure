@@ -23,9 +23,12 @@ addventure build [dir] --paper SIZE  # Paper size: a4 (default), letter, legal
 addventure build [dir] --blind       # Blind mode: room names/IDs hidden until discovered
 addventure build [dir] --no-cover    # Omit the How to Play cover page
 addventure build [dir] --fragment MODE  # Fragment output mode (see below)
+addventure build [dir] --all           # Build all chapters into one output
 ```
 
 If no directory is given, looks for `index.md` in the current directory.
+
+`--all` discovers chapter subdirectories (those containing `index.md` with a `# Verbs` header), builds each independently, and combines them into a single PDF or markdown output. Warns if any chapters share the same `entry_prefix`.
 
 #### Fragment modes
 
@@ -48,7 +51,7 @@ addventure new [name]   # Scaffold with defaults (oneshot)
 addventure new          # Interactive setup (choose verbs, set author name)
 ```
 
-Run from inside an existing game directory to scaffold a new chapter subdirectory instead.
+Run from inside an existing game directory to scaffold a new chapter subdirectory instead. The chapter is automatically assigned the next available ledger prefix (B, C, D...).
 
 ## Index files
 
@@ -69,7 +72,7 @@ start: Entrance Hall
 | `title` | Game title, shown on printed sheets |
 | `author` | Author name, shown in footers |
 | `start` | Starting room name (must match a `#` header) |
-| `entry_prefix` | Prefix for ledger entry labels (default: none) |
+| `entry_prefix` | Prefix for ledger entry labels (default: `A`). Auto-assigned by `addventure new` for chapters |
 | `image` | Path to cover/watermark image |
 | `image_height` | Height of the cover image |
 | `name_style` | Identifier rendering style: `upper_words` (default) or `title` — see [Name rendering](#name-rendering) |

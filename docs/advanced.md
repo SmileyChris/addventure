@@ -336,7 +336,27 @@ The compiler randomly assigns IDs to verbs and entities, then checks that no two
 
 The compiler tries 3-digit IDs first (200 attempts). If no collision-free allocation is found, it automatically retries with 4-digit entity IDs (1000–9999, 7200 possible values) and 3-digit verb IDs (101–999). The wider verb range spreads sums out more, making it harder for players to reverse-engineer which verb was used. This is seamless — larger games just get slightly bigger numbers on the sheets.
 
-**For very large games**, split into chapters. Each chapter is an independent game with its own ID space. Use narrative handoffs at chapter boundaries: the ending ledger entry tells the player what they're carrying, and the next chapter's first entry sets up the new inventory with fresh IDs.
+**For very large games**, split into chapters. Each chapter is a subdirectory within your game directory, with its own `index.md` and room files. Chapters are independently compiled with their own ID space.
+
+To create a chapter, run `addventure new` from inside your game directory:
+
+```bash
+cd my-game
+addventure new "The Escape"     # creates the-escape/index.md with prefix B
+addventure new "The Surface"    # creates the-surface/index.md with prefix C
+```
+
+Each chapter is automatically assigned a unique ledger prefix (B, C, D...) so entries don't clash when printed together. The parent game is always prefix A.
+
+To build all chapters into a single PDF:
+
+```bash
+addventure build my-game --all     # combines parent + all chapters
+addventure build my-game           # builds just the parent (chapter A)
+addventure build my-game/the-escape  # builds just one chapter
+```
+
+Use narrative handoffs at chapter boundaries: the ending ledger entry tells the player what they're carrying, and the next chapter's first entry sets up the new inventory with fresh IDs.
 
 **The player math tradeoff:** 3-digit addition is easy in your head. 4-digit works on paper but is slower. Design your game to stay in 3-digit territory if possible — most games will, since even a 6-room game with 10+ room objects per room stays well under 80 total.
 

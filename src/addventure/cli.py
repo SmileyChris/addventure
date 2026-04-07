@@ -46,6 +46,8 @@ def cmd_build(args: list[str]):
     parser.add_argument("--fragment", choices=["included", "separate", "jigsaw"],
                         default="included",
                         help="Fragment output mode: included (default), separate PDF, or jigsaw cut pages")
+    parser.add_argument("--all", action="store_true",
+                        help="Build all chapters into a single combined output")
     parsed = parser.parse_args(args)
 
     if parsed.game_dir:
@@ -58,6 +60,15 @@ def cmd_build(args: list[str]):
         print("ERROR: No game directory specified and not in a game directory")
         print("Usage: addventure build [dir]")
         sys.exit(1)
+
+    if parsed.all:
+        _cmd_build_all(game_dir, parsed)
+    else:
+        _build_single(game_dir, parsed)
+
+
+def _build_single(game_dir: Path, parsed) -> None:
+    """Build a single game directory."""
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
 
@@ -114,6 +125,110 @@ def cmd_build(args: list[str]):
         print(f"⚠ {warning}", file=sys.stderr)
 
     print_build_summary(game)
+
+
+def _cmd_build_all(game_dir: Path, parsed) -> None:
+    """Build the parent game and all chapter subdirectories into one output."""
+    import tempfile
+
+    chapters = _find_chapters(game_dir)
+    all_dirs = [game_dir] + chapters
+
+    # Check for prefix conflicts
+    prefix_map: dict[str, list[str]] = {}
+    for d in all_dirs:
+        prefix = _read_entry_prefix(d / "index.md") or "A"
+        label = d.name if d != game_dir else str(game_dir)
+        prefix_map.setdefault(prefix, []).append(label)
+    for prefix, dirs in prefix_map.items():
+        if len(dirs) > 1:
+            names = ", ".join(dirs)
+            print(f"⚠ Prefix conflict: {names} share entry_prefix \"{prefix}\"",
+                  file=sys.stderr)
+
+    if not chapters:
+        print("No chapter subdirectories found, building single game",
+              file=sys.stderr)
+        _build_single(game_dir, parsed)
+        return
+
+    if parsed.markdown:
+        # Concatenate markdown outputs
+        all_md = []
+        for d in all_dirs:
+            global_source, room_sources = load_game(d)
+            game = compile_game(global_source, room_sources)
+            for warning in game.warnings:
+                print(f"⚠ {warning}", file=sys.stderr)
+            md, writer_warnings = generate_markdown(game, blind=parsed.blind, fragment=parsed.fragment)
+            for warning in writer_warnings:
+                print(f"⚠ {warning}", file=sys.stderr)
+            all_md.append(md)
+            label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
+            print(f"Built chapter: {label}", file=sys.stderr)
+        combined = "\n\n---\n\n".join(all_md)
+        if parsed.output:
+            Path(parsed.output).write_text(combined)
+            print(f"Markdown written to {parsed.output}", file=sys.stderr)
+        else:
+            print(combined, end="")
+    else:
+        if find_typst() is None:
+            print("ERROR: typst not found on PATH (needed for PDF output)",
+                  file=sys.stderr)
+            print("  Install typst: https://github.com/typst/typst",
+                  file=sys.stderr)
+            print("  Or use: addventure build --all --md", file=sys.stderr)
+            sys.exit(1)
+
+        # Build each chapter as a separate PDF, then merge
+        chapter_pdfs = []
+        try:
+            for i, d in enumerate(all_dirs):
+                global_source, room_sources = load_game(d)
+                game = compile_game(global_source, room_sources)
+                for warning in game.warnings:
+                    print(f"⚠ {warning}", file=sys.stderr)
+
+                tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+                tmp.close()
+                tmp_path = Path(tmp.name)
+
+                # Only show cover on first chapter
+                cover = (not parsed.no_cover) and (i == 0)
+                success, writer_warnings = generate_pdf(
+                    game, tmp_path, theme=parsed.theme,
+                    game_dir=d.resolve(), paper=parsed.paper,
+                    blind=parsed.blind, cover=cover,
+                    fragment=parsed.fragment,
+                )
+                for warning in writer_warnings:
+                    print(f"⚠ {warning}", file=sys.stderr)
+                if success:
+                    chapter_pdfs.append(tmp_path)
+                label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
+                print(f"Built chapter: {label}", file=sys.stderr)
+
+            if not chapter_pdfs:
+                print("ERROR: No chapters built successfully", file=sys.stderr)
+                sys.exit(1)
+
+            # Determine output path
+            if parsed.output:
+                output_path = Path(parsed.output)
+            else:
+                # Use parent game title
+                global_source, _ = load_game(game_dir)
+                from .parser import parse_global
+                parent_game = parse_global(global_source)
+                name = parent_game.metadata.get("title") or game_dir.resolve().name
+                output_path = Path(f"{_slugify(name)}.pdf")
+
+            _merge_pdfs(chapter_pdfs, output_path)
+            print(f"Combined PDF written to {output_path}", file=sys.stderr)
+        finally:
+            for p in chapter_pdfs:
+                p.unlink(missing_ok=True)
 
 
 def _slugify(name: str) -> str:
@@ -201,6 +316,50 @@ def _cmd_new_game(name: str | None):
     print(f"\nCreated game: {game_dir / 'index.md'}")
 
 
+def _read_entry_prefix(index_path: Path) -> str | None:
+    """Read entry_prefix from a chapter's index.md frontmatter."""
+    try:
+        content = index_path.read_text()
+    except OSError:
+        return None
+    if not content.startswith("---"):
+        return None
+    end = content.find("---", 3)
+    if end == -1:
+        return None
+    for line in content[3:end].splitlines():
+        if line.strip().startswith("entry_prefix:"):
+            return line.split(":", 1)[1].strip()
+    return None
+
+
+def _find_chapters(game_dir: Path) -> list[Path]:
+    """Find chapter subdirectories (those with index.md containing # Verbs)."""
+    chapters = []
+    for child in sorted(game_dir.iterdir()):
+        if child.is_dir() and (child / "index.md").is_file():
+            try:
+                content = (child / "index.md").read_text()
+                if "# Verbs" in content or "# verbs" in content:
+                    chapters.append(child)
+            except OSError:
+                pass
+    return chapters
+
+
+def _next_chapter_prefix(game_dir: Path) -> str:
+    """Determine the next available chapter prefix letter."""
+    used = {"A"}  # Parent game is always A
+    for chapter_dir in _find_chapters(game_dir):
+        prefix = _read_entry_prefix(chapter_dir / "index.md")
+        if prefix:
+            used.add(prefix.upper())
+    for letter in "BCDEFGHIJKLMNOPQRSTUVWXYZ":
+        if letter not in used:
+            return letter
+    raise RuntimeError("No available chapter prefix letters (A-Z exhausted)")
+
+
 def _cmd_new_chapter(name: str | None):
     """Scaffold a new chapter subdirectory within an existing game."""
     if not name:
@@ -215,17 +374,33 @@ def _cmd_new_chapter(name: str | None):
         print(f"ERROR: {chapter_dir / 'index.md'} already exists")
         sys.exit(1)
 
+    prefix = _next_chapter_prefix(Path("."))
+
     chapter_dir.mkdir(parents=True, exist_ok=True)
 
     lines = [
-        f"# Verbs",
+        "---",
+        f"entry_prefix: {prefix}",
+        "---",
         "",
-        f"# Inventory",
+        "# Verbs",
+        "",
+        "# Inventory",
         "",
     ]
 
     (chapter_dir / "index.md").write_text("\n".join(lines) + "\n")
-    print(f"\nCreated chapter \"{name}\": {chapter_dir / 'index.md'}")
+    print(f"\nCreated chapter \"{name}\" (prefix {prefix}): {chapter_dir / 'index.md'}")
+
+
+def _merge_pdfs(pdf_paths: list[Path], output_path: Path) -> None:
+    """Merge multiple PDFs into one using pypdf."""
+    from pypdf import PdfWriter
+    writer = PdfWriter()
+    for p in pdf_paths:
+        writer.append(str(p))
+    writer.write(str(output_path))
+    writer.close()
 
 
 COMMANDS = {
@@ -237,7 +412,7 @@ USAGE = """\
 Usage: addventure <command> [args]
 
 Commands:
-  build [dir] [--md] [-o FILE] [--theme NAME] [--paper SIZE] [--blind] [--no-cover] [--fragment MODE]
+  build [dir] [--md] [-o FILE] [--all] [--theme NAME] [--paper SIZE] [--blind] [--no-cover] [--fragment MODE]
                      Compile game to PDF (default) or markdown
   new [name]         Scaffold a new game or chapter (interactive if no name given)\
 """
