@@ -572,6 +572,24 @@ def compile_game(global_source: str, room_sources: list[str],
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
 
+    # Validate signal names don't collide with game entities
+    all_signal_names = set(game.signal_emissions)
+    for sc in game.signal_checks:
+        if sc.signal_name:
+            all_signal_names.add(sc.signal_name)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            if sc.signal_name:
+                all_signal_names.add(sc.signal_name)
+    entity_names = (
+        set(game.verbs.keys())
+        | {obj.name for obj in game.objects.values()}
+        | {rm.name for rm in game.rooms.values()}
+        | set(game.inventory.keys())
+    )
+    for name in all_signal_names & entity_names:
+        game.warnings.append(f"Signal name collides with game entity: {name}")
+
     # Renumber entries. Deduplicate entries with identical content:
     # - Cue aliases (same cue, different room state) share entry numbers
     # - Interactions with same narrative + arrows (e.g. wildcard expansions)

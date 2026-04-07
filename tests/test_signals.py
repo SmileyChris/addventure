@@ -400,3 +400,18 @@ def test_signals_section_is_now_rejected():
     global_src = "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\nFOO\n"
     with pytest.raises(ParseError, match="Unknown global section"):
         compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+
+
+def test_signal_name_collision_with_entity_warns():
+    """Signal names that match entity names should produce a warning."""
+    global_src = "# Verbs\nLOOK\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ LOOK: A thing.\n"
+        "+ USE:\n"
+        "  You do it.\n"
+        "  - THING -> signal\n"  # THING is both an object and a signal name
+    )
+    game = compile_game(global_src, [room_src])
+    assert any("collides with game entity" in w.lower() for w in game.warnings)
