@@ -8,13 +8,22 @@ from .models import (
 from .parser import parse_global, parse_room_file, _split_name, ParseError
 
 
-def signal_id(name: str) -> int:
-    """Derive a deterministic numeric ID from a signal name.
+_SIGNAL_CHARS = "BCDFGHJKLMNPQRSTVWXZ"  # consonants minus Y — can't form words
 
-    Range: 10010–99999 (avoids entity/verb ID ranges).
+
+def signal_id(name: str) -> str:
+    """Derive a deterministic 4-character code from a signal name.
+
+    Uses 20 consonants (no vowels, no Y), giving 160,000 possible codes.
+    Codes are visually distinct from numeric entity IDs.
     """
     h = hashlib.sha256(name.encode()).hexdigest()
-    return int(h[:8], 16) % 89990 + 10010
+    n = int(h[:8], 16)
+    chars = []
+    for _ in range(4):
+        chars.append(_SIGNAL_CHARS[n % 20])
+        n //= 20
+    return "".join(chars)
 
 
 # ── ID Allocation ───────────────────────────────────────────────────────────

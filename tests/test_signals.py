@@ -35,10 +35,11 @@ def test_signal_id_deterministic():
     assert a == b
 
 
-def test_signal_id_in_range():
+def test_signal_id_format():
     for name in ["FOO", "EVERYONE_OUT_ESCAPE", "WITNESS_ESCAPE", "A_VERY_LONG_SIGNAL_NAME"]:
         sid = signal_id(name)
-        assert 10010 <= sid <= 99999, f"{name} -> {sid} out of range"
+        assert len(sid) == 4, f"{name} -> {sid} not 4 chars"
+        assert all(c in "BCDFGHJKLMNPQRSTVWXZ" for c in sid), f"{name} -> {sid} has invalid chars"
 
 
 def test_signal_id_different_names_differ():
@@ -257,7 +258,7 @@ def test_writer_signal_emission_instruction():
     ri = [r for r in game.resolved if r.verb == "USE"][0]
     instructions = writer._generate_instructions(ri)
     sig_id_val = signal_id("EVERYONE_OUT_ESCAPE")
-    assert any(str(sig_id_val) in inst for inst in instructions)
+    assert any(sig_id_val in inst for inst in instructions)
     assert any("signal" in inst.lower() for inst in instructions)
 
 
@@ -275,7 +276,7 @@ def test_md_index_signal_checks_rendered():
     game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
     md, _ = generate_markdown(game)
     sig_id_val = signal_id("SIGNAL_A")
-    assert str(sig_id_val) in md
+    assert sig_id_val in md
     assert "Check your signals" in md
 
 
@@ -328,7 +329,7 @@ def test_md_signal_emission_in_ledger():
     game = compile_game(global_src, [room_src])
     md, _ = generate_markdown(game)
     sig_id_val = signal_id("MY_SIGNAL")
-    assert str(sig_id_val) in md
+    assert sig_id_val in md
     assert "signal" in md.lower()
 
 
