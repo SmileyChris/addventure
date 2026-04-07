@@ -64,17 +64,11 @@ def validate_reachability(game: GameData) -> list[str]:
         for arrow in sc.arrows:
             if arrow.destination == "room" and arrow.subject and arrow.subject != "player":
                 signal_objects.add((start_room, arrow.subject))
-            elif arrow.destination.startswith('"') and arrow.destination.endswith('"') and arrow.subject and arrow.subject != "player":
-                target = arrow.destination[1:-1]
-                signal_objects.add((target, arrow.subject))
     for ix in game.interactions:
         for sc in ix.signal_checks:
             for arrow in sc.arrows:
                 if arrow.destination == "room" and arrow.subject and arrow.subject != "player":
                     signal_objects.add((ix.room, arrow.subject))
-                elif arrow.destination.startswith('"') and arrow.destination.endswith('"') and arrow.subject and arrow.subject != "player":
-                    target = arrow.destination[1:-1]
-                    signal_objects.add((target, arrow.subject))
 
     start = GameState(
         room=start_room,

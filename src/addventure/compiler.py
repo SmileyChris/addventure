@@ -581,7 +581,7 @@ def compile_game(global_source: str, room_sources: list[str],
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
 
-    # Mark objects discovered via signal check arrows (-> room or -> "RoomName")
+    # Mark objects discovered via signal check arrows (-> room)
     start_room = game.metadata.get("start", "")
     if not start_room:
         for rm in game.rooms.values():
@@ -589,31 +589,24 @@ def compile_game(global_source: str, room_sources: list[str],
                 start_room = rm.name
                 break
 
-    def _mark_discovered(arrow, default_room):
-        dest = arrow.destination
+    def _mark_signal_discovered(arrow, default_room):
+        if arrow.destination != "room" or not arrow.subject or arrow.subject == "player":
+            return
         subj = arrow.subject
-        if not subj or subj == "player":
-            return
-        if dest == "room":
-            target = default_room
-        elif dest.startswith('"') and dest.endswith('"'):
-            target = dest[1:-1]
-        else:
-            return
         base, state = _split_name(subj)
-        key = f"{target}::{subj}"
+        key = f"{default_room}::{subj}"
         if key in game.objects:
             game.objects[key].discovered = True
         else:
-            game.objects[key] = RoomObject(subj, base, state, target, discovered=True)
+            game.objects[key] = RoomObject(subj, base, state, default_room, discovered=True)
 
     for sc in game.signal_checks:
         for arrow in sc.arrows:
-            _mark_discovered(arrow, start_room)
+            _mark_signal_discovered(arrow, start_room)
     for ix in game.interactions:
         for sc in ix.signal_checks:
             for arrow in sc.arrows:
-                _mark_discovered(arrow, ix.room)
+                _mark_signal_discovered(arrow, ix.room)
 
     # Validate signal names don't collide with game entities
     all_signal_names = set(game.signal_emissions)

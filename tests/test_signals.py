@@ -609,34 +609,6 @@ def test_signal_check_object_not_unreachable():
     assert not any("COMPANION" in w for w in warnings)
 
 
-def test_signal_check_cross_room_object_not_unreachable():
-    """Objects placed in a named room via signal check should not be unreachable."""
-    from addventure.validator import validate_reachability
-    global_src = (
-        "---\nstart: Room\n---\n\n"
-        "SIGNAL_A?\n"
-        "  A key appears in the other room.\n"
-        '  - KEY -> "Other"\n'
-        "otherwise?\n"
-        "  Nothing.\n\n"
-        "# Verbs\nLOOK\nUSE\n\n# Inventory\n"
-    )
-    room_src = (
-        "# Room\n\n"
-        "DOOR\n"
-        "+ LOOK: A door.\n"
-        "+ USE:\n"
-        "  You go through.\n"
-        '  - player -> "Other"\n'
-    )
-    other_src = (
-        "# Other\n\n"
-        "KEY\n+ LOOK: A key.\n"
-    )
-    game = compile_game(global_src, [room_src, other_src])
-    warnings = validate_reachability(game)
-    assert not any("KEY" in w for w in warnings)
-
 
 def test_signal_check_arrows_generate_instructions():
     """Signal check branches with arrows should produce ledger entries with instructions."""
