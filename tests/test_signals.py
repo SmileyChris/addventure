@@ -464,3 +464,140 @@ def test_interaction_and_signal_check():
     game = compile_game(global_src, [room_src])
     ix = [i for i in game.interactions if i.verb == "USE"][0]
     assert ix.signal_checks[0].signal_names == ["SIGNAL_A", "SIGNAL_B"]
+
+
+def test_duplicate_otherwise_errors():
+    import pytest
+    from addventure.parser import ParseError
+    global_src = (
+        "SIGNAL_A?\n"
+        "  Branch A.\n"
+        "otherwise?\n"
+        "  Default.\n"
+        "otherwise?\n"
+        "  Another default.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    with pytest.raises(ParseError, match="Duplicate otherwise"):
+        compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+
+
+def test_md_incoming_signals_hint():
+    """Chapters that check signals they don't emit should show the copy hint."""
+    global_src = (
+        "SIGNAL_A?\n"
+        "  Branch A.\n"
+        "otherwise?\n"
+        "  Default.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    assert "Copy any signals from the previous chapter" in md
+
+
+def test_md_emitting_signals_hint():
+    """Chapters that only emit signals should NOT show the copy hint."""
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Text.\n"
+        "  - MY_SIGNAL -> signal\n"
+    )
+    game = compile_game(global_src, [room_src])
+    md, _ = generate_markdown(game)
+    assert "Copy any signals" not in md
+    assert "Write signal codes here when instructed" in md
+
+
+def test_md_first_match_wins_phrasing():
+    """Signal check instructions should use if/otherwise phrasing."""
+    global_src = (
+        "SIGNAL_A?\n"
+        "  Branch A.\n"
+        "SIGNAL_B?\n"
+        "  Branch B.\n"
+        "otherwise?\n"
+        "  Default.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    assert "if you have" in md
+    assert "Otherwise, if you have" in md
+    assert "Otherwise, read" in md
+
+
+def test_cross_chapter_orphaned_check_warns(tmp_path):
+    """Building --all should warn about signals checked but never emitted."""
+    import sys
+    import io
+
+    parent = tmp_path
+    (parent / "index.md").write_text("# Verbs\nLOOK\n\n# Inventory\n")
+    (parent / "room.md").write_text("# Room\n\nTHING\n+ LOOK: A thing.\n")
+
+    ch = parent / "chapter-b"
+    ch.mkdir()
+    (ch / "index.md").write_text(
+        "---\nentry_prefix: B\n---\n\n"
+        "NEVER_EMITTED?\n"
+        "  Ghost branch.\n"
+        "otherwise?\n"
+        "  Default.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    (ch / "room.md").write_text("# Room\n\nTHING\n+ LOOK: A thing.\n")
+
+    from addventure.cli import _cmd_build_all
+    import argparse
+    parsed = argparse.Namespace(
+        markdown=True, output=None, theme="default", paper=None,
+        blind=False, no_cover=True, fragment="included",
+    )
+    old_stderr = sys.stderr
+    sys.stderr = io.StringIO()
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        _cmd_build_all(parent, parsed)
+        warnings = sys.stderr.getvalue()
+    finally:
+        sys.stderr = old_stderr
+        sys.stdout = old_stdout
+    assert "NEVER_EMITTED" in warnings
+
+
+def test_pdf_serialization_includes_signal_data():
+    from addventure.pdf_writer import serialize_game_data
+    global_src = (
+        "SIGNAL_A?\n"
+        "  Branch A.\n"
+        "otherwise?\n"
+        "  Default.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert data["signal_slots"] > 0
+    assert data["signal_has_incoming"] is True
+    assert len(data["signal_checks"]) == 2
+
+
+def test_signal_check_arrows_generate_instructions():
+    """Signal check branches with arrows should produce ledger entries with instructions."""
+    global_src = (
+        "SIGNAL_A?\n"
+        "  A companion appears.\n"
+        "  - COMPANION -> room\n"
+        "otherwise?\n"
+        "  You are alone.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    md, _ = generate_markdown(game)
+    # The signal check entry should mention writing COMPANION
+    assert "COMPANION" in md
