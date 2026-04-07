@@ -111,3 +111,56 @@ def test_signal_emission_rejects_invalid_name():
     )
     with pytest.raises(ParseError, match="Invalid signal name"):
         compile_game(global_src, [room_src])
+
+
+def test_parse_index_signal_checks():
+    global_src = (
+        "---\ntitle: Test\n---\n\n"
+        "Common intro text.\n\n"
+        "SIGNAL_A?\n"
+        "  Branch A text.\n"
+        "  - COMPANION -> \"Room\"\n"
+        "SIGNAL_B?\n"
+        "  Branch B text.\n"
+        "otherwise?\n"
+        "  Default text.\n\n"
+        "# Verbs\nLOOK\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\nSIGNAL_B\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    assert "Common intro text." in game.metadata.get("description", "")
+    assert len(game.signal_checks) == 3
+    assert game.signal_checks[0].signal_name == "SIGNAL_A"
+    assert "Branch A" in game.signal_checks[0].narrative
+    assert len(game.signal_checks[0].arrows) == 1
+    assert game.signal_checks[1].signal_name == "SIGNAL_B"
+    assert game.signal_checks[2].signal_name is None  # otherwise
+
+
+def test_parse_index_signal_checks_no_otherwise():
+    global_src = (
+        "Common intro.\n\n"
+        "SIGNAL_A?\n"
+        "  Branch A.\n\n"
+        "# Verbs\nLOOK\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    assert len(game.signal_checks) == 1
+    assert game.signal_checks[0].signal_name == "SIGNAL_A"
+
+
+def test_parse_otherwise_before_signal_check_errors():
+    import pytest
+    from addventure.parser import ParseError
+    global_src = (
+        "otherwise?\n"
+        "  Default first.\n"
+        "SIGNAL_A?\n"
+        "  Branch A.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\nSIGNAL_A\n"
+    )
+    with pytest.raises(ParseError, match="otherwise\\? must be the last branch"):
+        compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])

@@ -1,6 +1,6 @@
 import re
 from .models import (
-    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action, Signal,
+    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action, Signal, SignalCheck,
 )
 
 
@@ -199,6 +199,65 @@ def _unexpected_child_line(lines, i, child_indent):
     return None
 
 
+# ── Signal Check Parser ─────────────────────────────────────────────────────
+
+def _parse_signal_check_group(lines, i):
+    """Parse a group of NAME? / otherwise? blocks. Returns (next_i, list[SignalCheck])."""
+    checks = []
+    saw_otherwise = False
+
+    while i < len(lines):
+        stripped = _strip_trailing_comment(lines[i]).strip()
+        if not stripped or _is_comment(stripped):
+            i += 1
+            continue
+        if _is_header(lines[i]):
+            break
+
+        if stripped == "otherwise?":
+            if saw_otherwise:
+                raise ParseError(i + 1, "Duplicate otherwise? in signal check")
+            saw_otherwise = True
+            signal_name = None
+            i += 1
+        elif stripped.endswith("?") and len(stripped) > 1 and _is_name(stripped[:-1]):
+            if saw_otherwise:
+                raise ParseError(i + 1, "otherwise? must be the last branch in a signal check")
+            signal_name = stripped[:-1]
+            i += 1
+        else:
+            break
+
+        # Parse indented body: narrative lines and arrows
+        narrative_lines = []
+        arrows = []
+        block_indent = None
+        while i < len(lines):
+            line = lines[i]
+            line_stripped = _strip_trailing_comment(line).strip()
+            if not line_stripped or _is_comment(line_stripped):
+                i += 1
+                continue
+            ind = _indent(line, i + 1)
+            if block_indent is None:
+                if ind == 0:
+                    break  # No indented body
+                block_indent = ind
+            if ind < block_indent:
+                break
+            if line_stripped.startswith("- ") and _is_arrow(line_stripped[2:]):
+                arrow = _parse_arrow(_strip_trailing_comment(line_stripped[2:]), i + 1)
+                arrows.append(arrow)
+            else:
+                narrative_lines.append(line_stripped)
+            i += 1
+
+        narrative = "\n".join(narrative_lines)
+        checks.append(SignalCheck(signal_name=signal_name, narrative=narrative, arrows=arrows))
+
+    return i, checks
+
+
 # ── Global Parser ───────────────────────────────────────────────────────────
 
 def parse_global(source: str) -> GameData:
@@ -211,14 +270,25 @@ def parse_global(source: str) -> GameData:
         if key not in _KNOWN_FRONTMATTER_KEYS:
             game.warnings.append(f"Unknown frontmatter key: {key}")
 
-    # Collect description: text between frontmatter and first # header
+    # Collect description and signal checks: text between frontmatter and first # header
     desc_lines = []
     while i < len(lines):
-        line = _strip_trailing_comment(lines[i]).strip()
-        if _is_header(lines[i]):
+        line = lines[i]
+        stripped = _strip_trailing_comment(line).strip()
+        if _is_header(line):
             break
-        if line and not _is_comment(line):
-            desc_lines.append(line)
+        if not stripped or _is_comment(stripped):
+            i += 1
+            continue
+        # Check for signal check block: NAME? or otherwise?
+        if stripped == "otherwise?" or (stripped.endswith("?") and len(stripped) > 1 and _is_name(stripped[:-1])):
+            i, checks = _parse_signal_check_group(lines, i)
+            game.signal_checks = checks
+            # Consume remaining blank/comment lines before header
+            while i < len(lines) and not _is_header(lines[i]) and not _strip_trailing_comment(lines[i]).strip():
+                i += 1
+            break
+        desc_lines.append(stripped)
         i += 1
     if desc_lines:
         game.metadata["description"] = "\n\n".join(desc_lines)
