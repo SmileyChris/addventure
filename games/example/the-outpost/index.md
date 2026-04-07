@@ -1,6 +1,6 @@
 ---
-title: The Outpost
-author: Example
+title: Epilogue
+author: Addventure Example
 ledger_prefix: B
 start: Forest Road
 image: outpost.jpg

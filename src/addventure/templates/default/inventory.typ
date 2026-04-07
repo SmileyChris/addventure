@@ -116,36 +116,45 @@
     ]
 
     // Data rows — left to right, top to bottom
-    for row-idx in range(rows) {
-      block(
-        width: 100%,
-        inset: (x: 8pt, y: 0pt),
-      )[
-        #grid(
-          columns: (1fr,) * pot-cols,
-          gutter: 1.5em,
-          ..for col-idx in range(pot-cols) {
-            let idx = row-idx * pot-cols + col-idx
-            if idx < pots.len() {
-              (
-                grid(
-                  columns: (auto, auto),
-                  column-gutter: 1em,
-                  align(left + horizon)[
-                    #text(font: "Liberation Mono", size: 9pt, weight: "bold")[#str(pots.at(idx).sum)]
-                  ],
-                  align(left + horizon)[
-                    #text(font: "Liberation Mono", size: 9pt)[#prefix\-#str(pots.at(idx).entry)]
-                  ],
-                ),
-              )
-            } else {
-              ([], )
-            }
-          }
-        )
+    // Group rows into non-breakable chunks to prevent orphan rows across pages
+    let chunk-size = 3
+    let chunks = calc.ceil(rows / chunk-size)
+    for chunk-idx in range(chunks) {
+      let start-row = chunk-idx * chunk-size
+      let end-row = calc.min(start-row + chunk-size, rows)
+      block(breakable: false, width: 100%)[
+        #for row-idx in range(start-row, end-row) {
+          block(
+            width: 100%,
+            inset: (x: 8pt, y: 0pt),
+          )[
+            #grid(
+              columns: (1fr,) * pot-cols,
+              gutter: 1.5em,
+              ..for col-idx in range(pot-cols) {
+                let idx = row-idx * pot-cols + col-idx
+                if idx < pots.len() {
+                  (
+                    grid(
+                      columns: (auto, auto),
+                      column-gutter: 1em,
+                      align(left + horizon)[
+                        #text(font: "Liberation Mono", size: 9pt, weight: "bold")[#str(pots.at(idx).sum)]
+                      ],
+                      align(left + horizon)[
+                        #text(font: "Liberation Mono", size: 9pt)[#prefix\-#str(pots.at(idx).entry)]
+                      ],
+                    ),
+                  )
+                } else {
+                  ([], )
+                }
+              }
+            )
+          ]
+          line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
+        }
       ]
-      line(length: 100%, stroke: (paint: luma(220), thickness: 0.3pt))
     }
   }
 }

@@ -71,7 +71,11 @@ def generate_markdown(game: GameData, blind: bool = False, fragment: str = "incl
 
 def _verb_section(game: GameData, writer: GameWriter, entry_prefix: str) -> str:
     title = game.metadata.get("title", "Addventure")
-    lines = [f"# {title}"]
+    parent_title = game.metadata.get("parent_title")
+    if parent_title:
+        lines = [f"# {parent_title} — {title}"]
+    else:
+        lines = [f"# {title}"]
 
     description = game.metadata.get("description")
     if description:

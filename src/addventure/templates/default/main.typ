@@ -13,7 +13,9 @@
 #let data = json(data-path)
 
 // Game title from metadata (falls back to "ADDVENTURE")
-#let game-title = upper(data.metadata.at("title", default: "Addventure"))
+#let chapter-title = upper(data.metadata.at("title", default: "Addventure"))
+#let parent-title = data.metadata.at("parent_title", default: none)
+#let game-title = if parent-title != none { upper(parent-title) + " — " + chapter-title } else { chapter-title }
 #let start-room = data.at("start_room", default: none)
 #let blind = data.at("blind", default: false)
 

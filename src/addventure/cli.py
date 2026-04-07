@@ -67,10 +67,37 @@ def cmd_build(args: list[str]):
         _build_single(game_dir, parsed)
 
 
+def _detect_parent_title(game_dir: Path) -> str | None:
+    """If game_dir is a chapter subdirectory, return the parent game's title."""
+    parent = game_dir.resolve().parent
+    parent_index = parent / "index.md"
+    if not parent_index.is_file():
+        return None
+    try:
+        content = parent_index.read_text()
+        if "# Verbs" not in content and "# verbs" not in content:
+            return None
+        # Parse frontmatter for title
+        if content.startswith("---"):
+            end = content.find("---", 3)
+            if end != -1:
+                for line in content[3:end].splitlines():
+                    if line.strip().startswith("title:"):
+                        return line.split(":", 1)[1].strip()
+        return parent.name
+    except OSError:
+        return None
+
+
 def _build_single(game_dir: Path, parsed) -> None:
     """Build a single game directory."""
     global_source, room_sources = load_game(game_dir)
     game = compile_game(global_source, room_sources)
+
+    # Detect parent game for chapter nesting
+    parent_title = _detect_parent_title(game_dir)
+    if parent_title:
+        game.metadata["parent_title"] = parent_title
 
     for warning in game.warnings:
         print(f"⚠ {warning}", file=sys.stderr)
@@ -116,7 +143,11 @@ def _build_single(game_dir: Path, parsed) -> None:
             output_path = Path(parsed.output)
         else:
             name = game.metadata.get("title") or game_dir.resolve().name
-            output_path = Path(f"{_slugify(name)}.pdf")
+            parent = game.metadata.get("parent_title")
+            if parent:
+                output_path = Path(f"{_slugify(parent)}_{_slugify(name)}.pdf")
+            else:
+                output_path = Path(f"{_slugify(name)}.pdf")
         success, writer_warnings = generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=not parsed.no_cover, fragment=parsed.fragment)
         if success:
             print(f"PDF written to {output_path}", file=sys.stderr)
@@ -154,12 +185,17 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
 
     # Compile all chapters first so we can do cross-chapter validation
     compiled_chapters: list[tuple[str, object]] = []
+    parent_title = None
     for d in all_dirs:
         global_source, room_sources = load_game(d)
         game = compile_game(global_source, room_sources)
         for warning in game.warnings:
             print(f"⚠ {warning}", file=sys.stderr)
-        label = d.name if d != game_dir else game.metadata.get("title", str(game_dir))
+        if d == game_dir:
+            parent_title = game.metadata.get("title", str(game_dir))
+        elif parent_title:
+            game.metadata["parent_title"] = parent_title
+        label = game.metadata.get("title", d.name)
         compiled_chapters.append((label, game))
 
     # Cross-chapter signal validation

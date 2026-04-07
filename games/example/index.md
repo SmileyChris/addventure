@@ -1,6 +1,6 @@
 ---
 title: The Facility
-author: Example
+author: Addventure Example
 start: Control Room
 image: the-facility.jpg
 ---
