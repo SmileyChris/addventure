@@ -201,11 +201,11 @@ subject          = object-ref
 destination      = "trash"
                  | "player"
                  | "room"
+                 | "signal"
                  | quoted-room
                  | object-state-ref
                  | NAME
-                 | room-state-ref
-                 | signal-arrow ;
+                 | room-state-ref ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -304,15 +304,16 @@ freeform-body-line(m) = narrative-line(m)
 (* Signals are derived from emission arrows and signal check blocks.
    No declaration section is needed. *)
 
-signal_arrow        = NAME "->" "signal" ;
-
-signal_check        = IDENTIFIER "?" newline indented_block ;
+signal_names        = NAME { " + " NAME } ;
+signal_check        = signal_names "?" newline indented_block ;
 otherwise_check     = "otherwise?" newline indented_block ;
 signal_check_group  = { signal_check } [ otherwise_check ] ;
 
-(* Signal check groups can appear in:
+(* Signal emission: NAME -> signal (subject is the signal name, destination is `signal`)
+   Signal check groups can appear in:
    - The description block (between frontmatter and `# Verbs`) — fires at chapter start
-   - Interaction bodies (after narrative and arrows) — fires during play *)
+   - Interaction bodies (after narrative and arrows) — fires during play
+   First matching branch wins — the player reads the first check that matches. *)
 
 
 (* ══════════════════════════════════════════════════════════ *)
