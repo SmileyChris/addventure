@@ -52,7 +52,7 @@
 
   // Signal check instructions (only if game has index-level signal checks)
   let signal-checks = data.at("signal_checks", default: ())
-  let prefix = data.at("entry_prefix", default: "A")
+  let prefix = data.at("ledger_prefix", default: "A")
   if signal-checks.len() > 0 {
     block(below: 1.2em)[
       #text(size: 9pt, style: "italic")[

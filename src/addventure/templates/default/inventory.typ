@@ -83,7 +83,7 @@
 
   // Potentials grid — columns adapt to page width
   let pots = data.potentials
-  let prefix = data.at("entry_prefix", default: "A")
+  let prefix = data.at("ledger_prefix", default: "A")
 
   context {
     let pot-cols = calc.max(3, calc.min(6, int(page.width / 1.4in)))

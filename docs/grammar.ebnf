@@ -356,5 +356,5 @@ signal_check_group  = { signal_check } [ otherwise_check ] ;
    18. The global file is strict outside sections: only section headers, blank
        lines, and comments are allowed between (and after) global sections.
    19. Unknown frontmatter keys are syntactically valid but produce build
-       warnings. Known keys: title, author, start, entry_prefix, image,
+       warnings. Known keys: title, author, start, ledger_prefix, image,
        image_height, name_style. *)

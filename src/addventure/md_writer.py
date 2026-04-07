@@ -44,7 +44,7 @@ def generate_markdown(game: GameData, blind: bool = False, fragment: str = "incl
     fragment: "included" (default), "separate", or "jigsaw"
     """
     writer = GameWriter(game, blind=blind, jigsaw=(fragment == "jigsaw"))
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
     sections = []
 
     sections.append(_verb_section(game, writer, entry_prefix))
@@ -147,7 +147,7 @@ def _room_section(
             lines.append("\n### Actions\n")
             lines.append("| Action | Entry |")
             lines.append("|--------|------:|")
-            entry_prefix_local = game.metadata.get("entry_prefix", "A")
+            entry_prefix_local = game.metadata.get("ledger_prefix", "A")
             for a in preprinted_actions:
                 lines.append(f"| {writer.display_name(a.name)} | {entry_prefix_local}-{a.ledger_id} |")
 

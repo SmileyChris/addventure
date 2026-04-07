@@ -371,7 +371,7 @@ def test_cross_chapter_orphaned_emission_warns(tmp_path):
     ch = parent / "chapter-b"
     ch.mkdir()
     (ch / "index.md").write_text(
-        "---\nentry_prefix: B\n---\n\n# Verbs\nLOOK\n\n# Inventory\n"
+        "---\nledger_prefix: B\n---\n\n# Verbs\nLOOK\n\n# Inventory\n"
     )
     (ch / "room.md").write_text("# Room\n\nTHING\n+ LOOK: A thing.\n")
 
@@ -542,7 +542,7 @@ def test_cross_chapter_orphaned_check_warns(tmp_path):
     ch = parent / "chapter-b"
     ch.mkdir()
     (ch / "index.md").write_text(
-        "---\nentry_prefix: B\n---\n\n"
+        "---\nledger_prefix: B\n---\n\n"
         "NEVER_EMITTED?\n"
         "  Ghost branch.\n"
         "otherwise?\n"

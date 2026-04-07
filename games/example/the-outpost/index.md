@@ -1,7 +1,7 @@
 ---
 title: The Outpost
 author: Example
-entry_prefix: B
+ledger_prefix: B
 start: Forest Road
 image: outpost.jpg
 ---

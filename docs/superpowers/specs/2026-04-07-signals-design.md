@@ -33,7 +33,7 @@ Signal checks can appear in the `index.md` description (the prose between frontm
 ```
 ---
 title: The Outpost
-entry_prefix: B
+ledger_prefix: B
 start: Forest Road
 ---
 

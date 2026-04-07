@@ -28,7 +28,7 @@ class GameWriter:
         self.game = game
         self.blind = blind
         self.jigsaw = jigsaw
-        self.entry_prefix = game.metadata.get("entry_prefix", "A")
+        self.entry_prefix = game.metadata.get("ledger_prefix", "A")
         self.name_style = game.metadata.get("name_style", "upper_words")
         self.warnings: list[str] = []
 

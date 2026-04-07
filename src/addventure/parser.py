@@ -161,7 +161,7 @@ def _validate_target_groups(target_groups: list[list[str]], ln: int) -> None:
 
 
 _KNOWN_FRONTMATTER_KEYS = {
-    "title", "author", "start", "entry_prefix",
+    "title", "author", "start", "ledger_prefix",
     "image", "image_height", "name_style",
 }
 

@@ -64,7 +64,7 @@
   ]
 
   // Actions and objects
-  let prefix = if "entry_prefix" in room { room.entry_prefix } else { "A" }
+  let prefix = if "ledger_prefix" in room { room.ledger_prefix } else { "A" }
   let room-actions = if "actions" in room { room.actions } else { () }
   let obj-count = room.objects.len()
   let act-count = room-actions.len()

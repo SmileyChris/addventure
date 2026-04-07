@@ -10,26 +10,26 @@ from addventure.md_writer import generate_markdown
 from addventure.cli import (
     _find_chapters,
     _next_chapter_prefix,
-    _read_entry_prefix,
+    _read_ledger_prefix,
 )
 
 
 # ── Prefix reading ────────────────────────────────────────────────────────────
 
-def test_read_entry_prefix(tmp_path):
+def test_read_ledger_prefix(tmp_path):
     index = tmp_path / "index.md"
-    index.write_text("---\nentry_prefix: B\n---\n\n# Verbs\nLOOK\n")
-    assert _read_entry_prefix(index) == "B"
+    index.write_text("---\nledger_prefix: B\n---\n\n# Verbs\nLOOK\n")
+    assert _read_ledger_prefix(index) == "B"
 
 
-def test_read_entry_prefix_missing(tmp_path):
+def test_read_ledger_prefix_missing(tmp_path):
     index = tmp_path / "index.md"
     index.write_text("# Verbs\nLOOK\n")
-    assert _read_entry_prefix(index) is None
+    assert _read_ledger_prefix(index) is None
 
 
-def test_read_entry_prefix_no_file(tmp_path):
-    assert _read_entry_prefix(tmp_path / "nope.md") is None
+def test_read_ledger_prefix_no_file(tmp_path):
+    assert _read_ledger_prefix(tmp_path / "nope.md") is None
 
 
 # ── Chapter discovery ─────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ def test_find_chapters(tmp_path):
     # Valid chapter
     ch = tmp_path / "chapter-b"
     ch.mkdir()
-    (ch / "index.md").write_text("---\nentry_prefix: B\n---\n\n# Verbs\nLOOK\n\n# Inventory\n")
+    (ch / "index.md").write_text("---\nledger_prefix: B\n---\n\n# Verbs\nLOOK\n\n# Inventory\n")
 
     # Not a chapter (no # Verbs)
     notch = tmp_path / "notes"
@@ -80,7 +80,7 @@ def test_next_prefix_skips_used(tmp_path):
     for name, prefix in [("ch-b", "B"), ("ch-c", "C")]:
         d = tmp_path / name
         d.mkdir()
-        (d / "index.md").write_text(f"---\nentry_prefix: {prefix}\n---\n\n# Verbs\nLOOK\n\n# Inventory\n")
+        (d / "index.md").write_text(f"---\nledger_prefix: {prefix}\n---\n\n# Verbs\nLOOK\n\n# Inventory\n")
 
     assert _next_chapter_prefix(tmp_path) == "D"
 
@@ -91,7 +91,7 @@ def _make_chapter(prefix):
     global_src = textwrap.dedent(f"""\
         ---
         title: Chapter {prefix}
-        entry_prefix: {prefix}
+        ledger_prefix: {prefix}
         ---
 
         # Verbs
@@ -108,7 +108,7 @@ def _make_chapter(prefix):
     return global_src, [room_src]
 
 
-def test_entry_prefix_in_markdown():
+def test_ledger_prefix_in_markdown():
     global_src, room_sources = _make_chapter("B")
     game = compile_game(global_src, room_sources)
     md, _ = generate_markdown(game)

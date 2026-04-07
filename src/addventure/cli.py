@@ -137,13 +137,13 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
     # Check for prefix conflicts
     prefix_map: dict[str, list[str]] = {}
     for d in all_dirs:
-        prefix = _read_entry_prefix(d / "index.md") or "A"
+        prefix = _read_ledger_prefix(d / "index.md") or "A"
         label = d.name if d != game_dir else str(game_dir)
         prefix_map.setdefault(prefix, []).append(label)
     for prefix, dirs in prefix_map.items():
         if len(dirs) > 1:
             names = ", ".join(dirs)
-            print(f"⚠ Prefix conflict: {names} share entry_prefix \"{prefix}\"",
+            print(f"⚠ Prefix conflict: {names} share ledger_prefix \"{prefix}\"",
                   file=sys.stderr)
 
     if not chapters:
@@ -343,8 +343,8 @@ def _cmd_new_game(name: str | None):
     print(f"\nCreated game: {game_dir / 'index.md'}")
 
 
-def _read_entry_prefix(index_path: Path) -> str | None:
-    """Read entry_prefix from a chapter's index.md frontmatter."""
+def _read_ledger_prefix(index_path: Path) -> str | None:
+    """Read ledger_prefix from a chapter's index.md frontmatter."""
     try:
         content = index_path.read_text()
     except OSError:
@@ -355,7 +355,7 @@ def _read_entry_prefix(index_path: Path) -> str | None:
     if end == -1:
         return None
     for line in content[3:end].splitlines():
-        if line.strip().startswith("entry_prefix:"):
+        if line.strip().startswith("ledger_prefix:"):
             return line.split(":", 1)[1].strip()
     return None
 
@@ -378,7 +378,7 @@ def _next_chapter_prefix(game_dir: Path) -> str:
     """Determine the next available chapter prefix letter."""
     used = {"A"}  # Parent game is always A
     for chapter_dir in _find_chapters(game_dir):
-        prefix = _read_entry_prefix(chapter_dir / "index.md")
+        prefix = _read_ledger_prefix(chapter_dir / "index.md")
         if prefix:
             used.add(prefix.upper())
     for letter in "BCDEFGHIJKLMNOPQRSTUVWXYZ":
@@ -407,7 +407,7 @@ def _cmd_new_chapter(name: str | None):
 
     lines = [
         "---",
-        f"entry_prefix: {prefix}",
+        f"ledger_prefix: {prefix}",
         "---",
         "",
         "# Verbs",

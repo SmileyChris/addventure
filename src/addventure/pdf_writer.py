@@ -37,7 +37,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
                 break
         verbs.append({"name": writer.display_name(v.name), "id": start_id})
 
-    entry_prefix = game.metadata.get("entry_prefix", "A")
+    entry_prefix = game.metadata.get("ledger_prefix", "A")
 
     rooms = []
     for room_name, rm in game.rooms.items():
@@ -78,7 +78,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
             "discovery_slots": disc_count,
             "description": first_line,
             "actions": room_actions,
-            "entry_prefix": entry_prefix,
+            "ledger_prefix": entry_prefix,
         })
 
     potentials = sorted(
@@ -205,7 +205,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
     return {
         "metadata": dict(game.metadata),
         "start_room": start_room,
-        "entry_prefix": entry_prefix,
+        "ledger_prefix": entry_prefix,
         "blind": blind,
         "jigsaw": False,
         "verbs": verbs,
