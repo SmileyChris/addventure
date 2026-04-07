@@ -219,3 +219,84 @@ def test_interaction_signal_checks_with_unconditional_arrows():
     assert len(ix.signal_checks) == 2
     assert len(ix.signal_checks[0].arrows) == 1  # Conditional arrow
     assert ix.signal_checks[0].arrows[0].subject == "BONUS"
+
+
+def test_signal_ids_reserved_no_collision():
+    """Signal IDs should not be assigned to any entity or verb."""
+    global_src = (
+        "# Verbs\nLOOK\nUSE\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\nSIGNAL_B\n"
+    )
+    room_src = "# Room\n\nTHING\n+ LOOK: A thing.\n"
+    game = compile_game(global_src, [room_src])
+    sig_ids = {s.id for s in game.signals.values()}
+    entity_ids = {o.id for o in game.objects.values()} | {v.id for v in game.verbs.values()} | {r.id for r in game.rooms.values()}
+    assert sig_ids.isdisjoint(entity_ids)
+
+
+def test_signal_checks_get_entry_numbers():
+    global_src = (
+        "---\ntitle: Test\n---\n\n"
+        "Intro.\n\n"
+        "SIGNAL_A?\n"
+        "  Branch A text.\n"
+        "otherwise?\n"
+        "  Default text.\n\n"
+        "# Verbs\nLOOK\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    assert len(game.signal_checks) == 2
+    assert game.signal_checks[0].entry_number > 0
+    assert game.signal_checks[1].entry_number > 0
+    assert game.signal_checks[0].entry_number != game.signal_checks[1].entry_number
+
+
+def test_interaction_signal_checks_get_entry_numbers():
+    global_src = (
+        "# Verbs\nUSE\n\n"
+        "# Inventory\n\n"
+        "# Signals\nSIGNAL_A\n"
+    )
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Common text.\n"
+        "  SIGNAL_A?\n"
+        "    Branch A.\n"
+        "  otherwise?\n"
+        "    Default.\n"
+    )
+    game = compile_game(global_src, [room_src])
+    ix = [i for i in game.interactions if i.verb == "USE"][0]
+    assert len(ix.signal_checks) == 2
+    assert ix.signal_checks[0].entry_number > 0
+    assert ix.signal_checks[1].entry_number > 0
+
+
+def test_signal_check_unknown_signal_warns():
+    global_src = (
+        "UNKNOWN_SIGNAL?\n"
+        "  Branch text.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n\n# Signals\n"
+    )
+    game = compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+    assert any("unknown signal" in w.lower() for w in game.warnings)
+
+
+def test_signal_emit_and_receive_same_chapter_warns():
+    global_src = (
+        "# Verbs\nUSE\n\n# Inventory\n\n# Signals\nSIGNAL_A\n"
+    )
+    room_src = (
+        "# Room\n\n"
+        "THING\n"
+        "+ USE:\n"
+        "  Text.\n"
+        "  - -> signal SIGNAL_A\n"
+    )
+    game = compile_game(global_src, [room_src])
+    assert any("both emits and receives" in w.lower() for w in game.warnings)

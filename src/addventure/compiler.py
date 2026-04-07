@@ -572,6 +572,33 @@ def compile_game(global_source: str, room_sources: list[str],
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
 
+    # Signal validation
+    declared_signals = set(game.signals.keys())
+
+    # Warn about unknown signal checks (index-level)
+    for sc in game.signal_checks:
+        if sc.signal_name and sc.signal_name not in declared_signals:
+            game.warnings.append(f"Signal check references unknown signal: {sc.signal_name}")
+
+    # Warn about unknown signal checks (interaction-level)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            if sc.signal_name and sc.signal_name not in declared_signals:
+                game.warnings.append(f"Signal check references unknown signal: {sc.signal_name}")
+
+    # Warn if chapter both emits and receives same signal
+    for name in game.signal_emissions & declared_signals:
+        game.warnings.append(f"Chapter both emits and receives signal: {name}")
+
+    # Check for hash collisions within chapter
+    seen_ids = {}
+    for name, sig in game.signals.items():
+        if sig.id in seen_ids:
+            raise RuntimeError(
+                f"Signal hash collision: {name} and {seen_ids[sig.id]} both resolve to ID {sig.id}"
+            )
+        seen_ids[sig.id] = name
+
     # Renumber entries. Deduplicate entries with identical content:
     # - Cue aliases (same cue, different room state) share entry numbers
     # - Interactions with same narrative + arrows (e.g. wildcard expansions)
@@ -628,6 +655,17 @@ def compile_game(global_source: str, room_sources: list[str],
             action.ledger_id = entry_num
             action_content[arrows_key] = (entry_num, action)
 
+    # Assign entry numbers to signal checks (index-level)
+    for sc in game.signal_checks:
+        entry_num += 1
+        sc.entry_number = entry_num
+
+    # Assign entry numbers to signal checks (interaction-level)
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            entry_num += 1
+            sc.entry_number = entry_num
+
     # Shuffle entry numbers so ledger order doesn't reveal game structure.
     # Deterministic: seeded by random.seed(attempt) in the allocation loop.
     unique_entries = list(range(1, entry_num + 1))
@@ -638,6 +676,11 @@ def compile_game(global_source: str, room_sources: list[str],
     for action in game.actions.values():
         action.ledger_id = remap[action.ledger_id]
     cue_primary_entry = {k: remap[v] for k, v in cue_primary_entry.items()}
+    for sc in game.signal_checks:
+        sc.entry_number = remap[sc.entry_number]
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            sc.entry_number = remap[sc.entry_number]
 
     # Copy entry numbers back to cue objects
     for cue in game.cues:
