@@ -57,11 +57,30 @@ def validate_reachability(game: GameData) -> list[str]:
         if rm.state is None:
             initial_room_states.add((name, name))
 
+    # Apply signal check arrows to initial state (assume all signals present)
+    # This prevents false "unreachable" warnings for signal-conditional objects
+    signal_objects = set()
+    for sc in game.signal_checks:
+        for arrow in sc.arrows:
+            if arrow.destination == "room" and arrow.subject and arrow.subject != "player":
+                signal_objects.add((start_room, arrow.subject))
+            elif arrow.destination.startswith('"') and arrow.destination.endswith('"') and arrow.subject and arrow.subject != "player":
+                target = arrow.destination[1:-1]
+                signal_objects.add((target, arrow.subject))
+    for ix in game.interactions:
+        for sc in ix.signal_checks:
+            for arrow in sc.arrows:
+                if arrow.destination == "room" and arrow.subject and arrow.subject != "player":
+                    signal_objects.add((ix.room, arrow.subject))
+                elif arrow.destination.startswith('"') and arrow.destination.endswith('"') and arrow.subject and arrow.subject != "player":
+                    target = arrow.destination[1:-1]
+                    signal_objects.add((target, arrow.subject))
+
     start = GameState(
         room=start_room,
         inventory=frozenset(),
         verbs=frozenset(initial_verbs),
-        room_objects=frozenset(initial_objects),
+        room_objects=frozenset(initial_objects | signal_objects),
         room_states=frozenset(initial_room_states),
         cues=frozenset(),
     )
