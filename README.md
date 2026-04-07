@@ -94,7 +94,7 @@ CRATE
 Running `uv run addventure build` generates a PDF with sheets like:
 
 ```
-THE FACILITY — VERB SHEET
+THE FACILITY — ACTIONS & INVENTORY
 ========================================
 
   USE                  [ 32 ]

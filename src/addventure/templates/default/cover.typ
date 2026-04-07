@@ -33,10 +33,9 @@
     *The core mechanic* is addition. Pick a verb and add its number to an object's number. Look up the resulting sum in the Master Potentials List. If it's listed, read the matching Story Ledger entry aloud. If it's not listed, nothing happens --- try something else!
 
     *Your sheets:*
-    - *Verb Sheet* --- your available actions, each with a number
+    - *Title Page* --- game intro and the Potentials List (the lookup table: find your sum here to know which Ledger entry to read)
+    - *Actions & Inventory* --- your available verbs (each with a number), inventory tracking slots, and signal codes
     - *Room Sheets* --- one per location, listing the objects you can see and interact with
-    - *Inventory* --- tracks items you're carrying and their numbers
-    - *Master Potentials List* --- the lookup table: find your sum here to know which Ledger entry to read
     - *Story Ledger* --- the narrative entries that drive the story forward, with instructions to follow
 
     *Discoveries:* Some actions reveal new objects in a room. When a Ledger entry tells you to add something to a room, write it in that room's Discoveries section.
