@@ -971,6 +971,24 @@
       opacity: 0.4;
     }
 
+    .install-cmd-reload {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--gold);
+      opacity: 0.5;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      transition: opacity 0.2s ease, transform 0.3s ease;
+    }
+
+    .install-cmd-reload:hover {
+      opacity: 0.8;
+      transform: rotate(180deg);
+    }
+
     .install-cmd .prompt {
       color: var(--text-dim);
       user-select: none;
@@ -979,6 +997,10 @@
     .cursor {
       animation: blink 1s step-end infinite;
       user-select: none;
+    }
+
+    .game-title-rotate {
+      transition: opacity 0.4s ease;
     }
 
     @keyframes blink {
@@ -1113,21 +1135,169 @@
     }
 
     .act-divider-icon {
-      display: block;
+      display: flex;
       margin: 0 auto 1.5rem;
       width: 48px;
       height: 48px;
       border: 1px solid var(--gold-dim);
-      display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.2rem;
       color: var(--gold);
       transform: rotate(45deg);
+      position: relative;
+      overflow: hidden;
+      pointer-events: none;
+      user-select: none;
     }
 
     .act-divider-icon span {
       transform: rotate(-45deg);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Act I starfield — streaks fly past the triangle */
+    .act-divider-icon .starfield {
+      position: absolute;
+      inset: -4px;
+      transform: rotate(-45deg);
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .act-divider-group:hover .starfield {
+      opacity: 1;
+    }
+
+    .act-divider-icon .starfield::before,
+    .act-divider-icon .starfield::after {
+      content: '';
+      position: absolute;
+      border-radius: 1px;
+    }
+
+    .act-divider-icon .starfield::before {
+      width: 12px;
+      height: 1.5px;
+      top: 10px;
+      left: 0;
+      background: var(--gold);
+      box-shadow:
+        8px 16px 0 0 var(--gold-bright),
+        -6px 30px 0 0 var(--gold),
+        15px -4px 0 0 var(--gold-dim),
+        -10px 42px 0 0 var(--gold-bright);
+      animation: starstreak-fast 1.2s linear infinite;
+    }
+
+    .act-divider-icon .starfield::after {
+      width: 6px;
+      height: 1px;
+      top: 20px;
+      left: 0;
+      background: var(--gold-dim);
+      box-shadow:
+        -5px 14px 0 0 var(--gold-dim),
+        12px 28px 0 0 var(--gold-dim);
+      animation: starstreak-slow 2s linear infinite;
+    }
+
+    /* Act II gearbox — meshing cogs on hover */
+    .act-divider-icon .gearbox {
+      position: absolute;
+      inset: -4px;
+      transform: rotate(-45deg);
+      pointer-events: none;
+    }
+
+    .act-divider-icon .gearbox span {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--gold);
+      z-index: 1;
+      animation: gear-cw 4s linear infinite paused;
+      translate: 0 0;
+      transition: translate 0.5s ease;
+    }
+
+    .act-divider-group:hover .gearbox span {
+      animation-play-state: running;
+      translate: 3px -3px;
+    }
+
+    .act-divider-icon .gearbox::before,
+    .act-divider-icon .gearbox::after {
+      content: '\2699';
+      position: absolute;
+      opacity: 0;
+      transition: opacity 0.5s ease, translate 0.5s ease;
+    }
+
+    /* Medium gear — top-right in screen space (local -Y) */
+    .act-divider-icon .gearbox::before {
+      top: -10px;
+      right: -10px;
+      font-size: 2rem;
+      color: var(--gold-dim);
+      translate: 14px 0;
+      animation: gear-ccw 6.7s linear infinite;
+    }
+
+    /* Large gear — bottom-left in screen space */
+    .act-divider-icon .gearbox::after {
+      bottom: -16px;
+      left: -16px;
+      font-size: 2.8rem;
+      color: var(--gold-dim);
+      translate: -16px 0;
+      animation: gear-ccw 9.3s linear infinite;
+    }
+
+    .act-divider-group:hover .gearbox::before,
+    .act-divider-group:hover .gearbox::after {
+      opacity: 0.6;
+      translate: 0 0;
+    }
+
+    @keyframes gear-cw {
+      to { rotate: 360deg; }
+    }
+
+    @keyframes gear-ccw {
+      to { rotate: -360deg; }
+    }
+
+    @keyframes starstreak-fast {
+      from { transform: translateX(70px); }
+      to { transform: translateX(-30px); }
+    }
+
+    @keyframes starstreak-slow {
+      from { transform: translateX(60px); }
+      to { transform: translateX(-20px); }
+    }
+
+    /* Touch devices — always show animations (no hover available) */
+    @media (hover: none) {
+      .act-divider-icon .starfield {
+        opacity: 1;
+      }
+      .act-divider-icon .gearbox span {
+        animation: gear-cw 4s linear infinite;
+        translate: 3px -3px;
+      }
+      .act-divider-icon .gearbox::before,
+      .act-divider-icon .gearbox::after {
+        opacity: 0.6;
+        translate: 0 0;
+      }
     }
 
     .act-divider-label {
@@ -1166,7 +1336,8 @@
       display: none;
     }
 
-    .act-divider:has(+ .act-divider-title-wrap)::after {
+    .act-divider:has(+ .act-divider-title-wrap)::after,
+    .act-divider-group:has(+ .act-divider-title-wrap) .act-divider::after {
       display: none;
     }
 
@@ -1448,9 +1619,11 @@
        ACT I: THE GAME
        ═══════════════════════════════════════════ -->
   <div class="act-content">
+  <div class="act-divider-group">
   <div class="act-divider">
-    <div class="act-divider-icon reveal"><span>&#9654;</span></div>
+    <div class="act-divider-icon reveal"><div class="starfield"></div><span>&#9654;</span></div>
     <div class="act-divider-label reveal">Act I</div>
+  </div>
   </div>
   <div class="act-divider-title-wrap"><a href="#"><img src="assets/images/logo.png" alt="" class="act-divider-logo reveal"></a><h2 class="act-divider-title reveal">The Game</h2></div>
   <div class="act-divider act-divider-bottom">
@@ -1672,9 +1845,11 @@
        ACT II: THE ENGINE
        ═══════════════════════════════════════════ -->
   <div class="act-content">
+  <div class="act-divider-group">
   <div class="act-divider" id="the-engine">
-    <div class="act-divider-icon reveal"><span>&#9881;</span></div>
+    <div class="act-divider-icon reveal"><div class="gearbox"><span>&#9881;</span></div></div>
     <div class="act-divider-label reveal">Act II</div>
+  </div>
   </div>
   <div class="act-divider-title-wrap"><a href="#"><img src="assets/images/logo.png" alt="" class="act-divider-logo reveal"></a><h2 class="act-divider-title reveal">The Engine</h2></div>
   <div class="act-divider act-divider-bottom">
@@ -1687,7 +1862,7 @@
   <section class="section author">
     <div class="section-inner">
       <span class="section-label reveal">Authoring</span>
-      <h2 class="section-title reveal">Write Games in Markdown</h2>
+      <h2 class="section-title reveal">Write Games in Plain Text</h2>
       <div class="author-grid">
         <div class="code-block reveal">
           <div class="code-block-header"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">editing control-room.md</span></div>
@@ -1719,7 +1894,7 @@
   <section class="section pipeline">
     <div class="section-inner">
       <span class="section-label reveal">The Compiler</span>
-      <h2 class="section-title reveal">Markdown In, Printable Game Out</h2>
+      <h2 class="section-title reveal">Build, Print, and Play</h2>
       <p class="section-subtitle reveal">One command transforms your scripts into a complete, playable game package.</p>
       <div class="pipeline-flow reveal">
         <div class="pipeline-row pipeline-row-1">
@@ -1781,15 +1956,15 @@
        CTA FOOTER
        ═══════════════════════════════════════════ -->
   <section class="cta-footer">
-    <h2 class="reveal">Build Your First Game</h2>
+    <h2 class="reveal">Create Your First Game</h2>
     <p class="reveal">Scaffold a game, write some rooms, compile, print, play.</p>
     <div class="hero-cta reveal">
       <a href="getting-started/" class="btn btn-primary">Read the Docs</a>
       <a href="https://github.com/SmileyChris/addventure" class="btn btn-ghost">View on GitHub</a>
     </div>
     <div class="install-cmd reveal">
-      <div class="install-cmd-bar"><span></span><span></span><span></span></div>
-      <span class="prompt">$ </span>uvx addventure new "My Game"<span class="cursor">│</span>
+      <div class="install-cmd-bar"><span></span><span></span><span></span><button class="install-cmd-reload" title="New game idea" aria-label="Randomize game title">&#8635;</button></div>
+      <span class="prompt">$ </span>uvx addventure new "<span class="game-title-rotate"></span>"<span class="cursor">│</span>
     </div>
   </section>
 
@@ -1813,6 +1988,39 @@
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Random game title in CTA command
+    (() => {
+      const titles = [
+        'The Sunken Library',
+        'Curse of the Iron Gate',
+        'Echoes in the Static',
+        'The Last Lighthouse',
+        'Beneath the Floorboards',
+        'The Clockwork Garden',
+        'Ashes of the Signal Tower',
+        'The Paper Labyrinth',
+        'Whispers at Midnight',
+        'The Forgotten Elevator',
+        'Vault of the Tidekeeper',
+        'The Bone Market',
+      ];
+      const el = document.querySelector('.game-title-rotate');
+      const btn = document.querySelector('.install-cmd-reload');
+      if (!el) return;
+      let last = -1;
+      function pick() {
+        let i;
+        do { i = Math.floor(Math.random() * titles.length); } while (i === last);
+        last = i;
+        el.style.opacity = '0';
+        setTimeout(() => { el.textContent = titles[i]; el.style.opacity = '1'; }, 300);
+      }
+      // Instant on first load (no fade)
+      last = Math.floor(Math.random() * titles.length);
+      el.textContent = titles[last];
+      if (btn) btn.addEventListener('click', pick);
+    })();
 
     // Show gold line on sticky title when bottom divider scrolls past
     document.querySelectorAll('.act-divider-bottom').forEach(bottom => {
