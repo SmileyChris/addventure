@@ -2004,22 +2004,39 @@
         'The Forgotten Elevator',
         'Vault of the Tidekeeper',
         'The Bone Market',
+        'Dead Frequency',
+        'The Amber Cartographer',
+        'Station Nine',
+        'A Thread of Smoke',
+        'The Moth Collector',
+        'Rust and Reverie',
+        'The Wax Museum Incident',
+        'Tides of the Iron Coast',
+        'What the Walls Remember',
+        'The Silence Engine',
+        'Lanterns Below',
+        'The Gilt Affair',
+        'Compass of the Drowned',
+        'An Ordinary Thursday',
+        'The Vermillion Door',
+        'Ghosts of the Dry Season',
       ];
+      // Fisher-Yates shuffle
+      for (let i = titles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [titles[i], titles[j]] = [titles[j], titles[i]];
+      }
       const el = document.querySelector('.game-title-rotate');
       const btn = document.querySelector('.install-cmd-reload');
       if (!el) return;
-      let last = -1;
-      function pick() {
-        let i;
-        do { i = Math.floor(Math.random() * titles.length); } while (i === last);
-        last = i;
+      let idx = 0;
+      function next() {
+        idx = (idx + 1) % titles.length;
         el.style.opacity = '0';
-        setTimeout(() => { el.textContent = titles[i]; el.style.opacity = '1'; }, 300);
+        setTimeout(() => { el.textContent = titles[idx]; el.style.opacity = '1'; }, 300);
       }
-      // Instant on first load (no fade)
-      last = Math.floor(Math.random() * titles.length);
-      el.textContent = titles[last];
-      if (btn) btn.addEventListener('click', pick);
+      el.textContent = titles[0];
+      if (btn) btn.addEventListener('click', next);
     })();
 
     // Show gold line on sticky title when bottom divider scrolls past
