@@ -1,10 +1,11 @@
 <script lang="ts">
-  import type { Interaction, Arrow } from '../lib/types';
+  import type { Interaction, Arrow, SignalCheck } from '../lib/types';
   import { store } from '../lib/store.svelte';
   import { createArrow } from '../lib/factory';
   import VerbPicker from './VerbPicker.svelte';
   import TargetBuilder from './TargetBuilder.svelte';
   import ArrowEditor from './ArrowEditor.svelte';
+  import SignalCheckEditor from './SignalCheckEditor.svelte';
 
   interface Props {
     interaction: Interaction;
@@ -63,6 +64,14 @@
       game.interactions.splice(interactionIndex, 1);
     });
     onclose();
+  }
+
+  function addSignalChecks() {
+    update((i) => { i.signalChecks = [{ signalNames: [], narrative: '', arrows: [] }]; });
+  }
+
+  function handleSignalChecksChange(checks: SignalCheck[]) {
+    update((i) => { i.signalChecks = checks; });
   }
 </script>
 
@@ -139,6 +148,20 @@
         ></textarea>
         <button class="remove-sealed-btn" onclick={removeSealedContent}>Remove sealed content</button>
       </div>
+    {/if}
+  </div>
+
+  <!-- Signal checks -->
+  <div class="field-section">
+    <div class="section-label">Signal Checks</div>
+    {#if interaction.signalChecks.length > 0}
+      <SignalCheckEditor
+        checks={interaction.signalChecks}
+        onchange={handleSignalChecksChange}
+        roomName={interaction.room}
+      />
+    {:else}
+      <button class="add-sealed-btn" onclick={addSignalChecks}>+ Add signal checks</button>
     {/if}
   </div>
 </div>
