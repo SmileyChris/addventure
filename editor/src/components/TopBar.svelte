@@ -1,5 +1,6 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
+  import { exportZip, downloadBlob } from '../lib/export';
 
   let editingName = $state(false);
   let nameInput = $state('');
@@ -25,6 +26,13 @@
   function handleNameKey(e: KeyboardEvent) {
     if (e.key === 'Enter') commitNameEdit();
     else if (e.key === 'Escape') editingName = false;
+  }
+
+  async function handleExport() {
+    if (!store.project || !store.game) return;
+    const blob = await exportZip(store.game, store.project.name);
+    const filename = store.project.name.toLowerCase().replace(/\s+/g, '-') + '.zip';
+    downloadBlob(blob, filename);
   }
 </script>
 
@@ -74,7 +82,7 @@
       >
         ↪ Redo
       </button>
-      <button class="btn-export" title="Export as .zip">
+      <button class="btn-export" onclick={handleExport} title="Export as .zip">
         ↓ Export .zip
       </button>
       <button class="btn-action" title="Import .zip">
