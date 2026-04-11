@@ -1,7 +1,9 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
   import { getObjectInteractions } from '../lib/helpers';
+  import { createInteraction } from '../lib/factory';
   import InteractionCard from './InteractionCard.svelte';
+  import InteractionEditor from './InteractionEditor.svelte';
 
   interface Props {
     objectName: string;
@@ -12,6 +14,7 @@
 
   let expanded = $state(false);
   let activeState = $state<string | null>(null);
+  let editingIdx = $state<number | null>(null);
 
   const effectiveActiveState = $derived(activeState ?? objectName);
 
@@ -70,6 +73,28 @@
       activeState = null; // reset to base (via effectiveActiveState) when expanding
     }
   }
+
+  function getInteractionIndex(interaction: (typeof interactions)[number]): number {
+    if (!store.game) return -1;
+    return store.game.interactions.indexOf(interaction);
+  }
+
+  function openEditor(interaction: (typeof interactions)[number]) {
+    const idx = getInteractionIndex(interaction);
+    if (idx >= 0) editingIdx = idx;
+  }
+
+  function addInteraction() {
+    if (!store.game) return;
+    const targetName = effectiveActiveState;
+    const newInteraction = createInteraction('', roomName);
+    newInteraction.targetGroups = [[targetName]];
+    store.mutate((game) => {
+      game.interactions.push(newInteraction);
+    });
+    // The new interaction is now the last one
+    editingIdx = store.game.interactions.length - 1;
+  }
 </script>
 
 <div class="object-card" class:expanded>
@@ -114,14 +139,22 @@
 
       <!-- Interactions for active state -->
       <div class="interactions-list">
-        {#if interactions.length === 0}
+        {#if interactions.length === 0 && editingIdx === null}
           <p class="no-interactions">No interactions for this state.</p>
-        {:else}
-          {#each interactions as interaction (interaction.verb + JSON.stringify(interaction.targetGroups))}
-            <InteractionCard {interaction} />
-          {/each}
         {/if}
-        <button class="add-btn">+ Add interaction</button>
+        {#each interactions as interaction (interaction.verb + JSON.stringify(interaction.targetGroups))}
+          {@const idx = getInteractionIndex(interaction)}
+          {#if editingIdx === idx}
+            <InteractionEditor
+              {interaction}
+              interactionIndex={idx}
+              onclose={() => (editingIdx = null)}
+            />
+          {:else}
+            <InteractionCard {interaction} onclick={() => openEditor(interaction)} />
+          {/if}
+        {/each}
+        <button class="add-btn" onclick={addInteraction}>+ Add interaction</button>
       </div>
     </div>
   {/if}
