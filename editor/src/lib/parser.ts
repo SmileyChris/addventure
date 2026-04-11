@@ -296,16 +296,8 @@ function collectInteractionBody(
       blankLineSeen = false;
       const arrowIndent = getIndent(line);
       i++;
-      // Handle cue arrow children
-      if (arrow.subject === '?') {
-        const dest = arrow.destination;
-        if (dest.startsWith('"') && dest.endsWith('"')) {
-          const targetRoom = dest.slice(1, -1);
-          const cueResult = parseCueChildrenFull(lines, i, arrowIndent + 1, roomName, targetRoom, game);
-          game.cues.push(cueResult.cue);
-          i = cueResult.nextLine;
-        }
-      }
+      // Parse arrow children (state transitions, cues, -> room, etc.)
+      i = parseArrowChildren(lines, i, arrowIndent + 1, roomName, arrow, game);
     } else if (isSealedFence(lineStripped)) {
       if (lineStripped === '::: fragment') {
         i++;
@@ -668,31 +660,9 @@ function parseEntityBlock(
     } else if (marker === '-') {
       if (isArrow(content)) {
         const arrow = parseArrow(stripTrailingComment(content));
-        // Register room objects from arrows
-        if (arrow.destination === 'room' && arrow.subject) {
-          const key = objectKey(roomName, arrow.subject);
-          if (!game.objects[key]) {
-            game.objects[key] = createRoomObject(arrow.subject, roomName, true);
-          }
-        }
         i++;
-        // If cue arrow, parse cue children (narrative/arrows at next indent)
-        if (arrow.subject === '?') {
-          const dest = arrow.destination;
-          if (dest.startsWith('"') && dest.endsWith('"')) {
-            const targetRoom = dest.slice(1, -1);
-            const cueChildResult = parseCueChildrenFull(
-              lines,
-              i,
-              ind + 1,
-              roomName,
-              targetRoom,
-              game,
-            );
-            game.cues.push(cueChildResult.cue);
-            i = cueChildResult.nextLine;
-          }
-        }
+        // Parse arrow children (state transitions, cues, -> room, etc.)
+        i = parseArrowChildren(lines, i, ind + 1, roomName, arrow, game);
       } else {
         i++;
       }
@@ -713,6 +683,96 @@ function parseEntityBlock(
   }
 
   return i;
+}
+
+/**
+ * Parse children of an arrow line. Mirrors Python's _parse_arrow_children.
+ *
+ * After parsing an arrow, if the arrow has a state-destination or a
+ * `-> room` / `-> "Room"` destination, we parse the nested + blocks
+ * (interactions / entity properties) that follow at `childIndent`.
+ *
+ * Returns the updated line index after consuming all children.
+ */
+function parseArrowChildren(
+  lines: string[],
+  startI: number,
+  childIndent: number,
+  roomName: string,
+  arrow: Arrow,
+  game: GameData,
+): number {
+  const dest = arrow.destination;
+  const subj = arrow.subject;
+
+  // -> signal: no children
+  if (dest === 'signal') return startI;
+
+  // ? -> "Room": cue (handled by caller — but also handle here for completeness)
+  if (subj === '?') {
+    if (dest.startsWith('"') && dest.endsWith('"')) {
+      const targetRoom = dest.slice(1, -1);
+      const cueResult = parseCueChildrenFull(lines, startI, childIndent, roomName, targetRoom, game);
+      game.cues.push(cueResult.cue);
+      return cueResult.nextLine;
+    }
+    return startI;
+  }
+
+  // -> trash: no children
+  if (dest === 'trash') return startI;
+
+  // player -> "Room": movement, no children
+  if (subj === 'player' && dest.startsWith('"') && dest.endsWith('"')) return startI;
+
+  // -> "Room" (non-player subject): object teleports to another room, parse entity block there
+  if (dest.startsWith('"') && dest.endsWith('"')) {
+    const targetRoom = dest.slice(1, -1);
+    if (subj) {
+      const key = objectKey(targetRoom, subj);
+      if (!game.objects[key]) {
+        game.objects[key] = createRoomObject(subj, targetRoom);
+      }
+      return parseEntityBlock(lines, startI, targetRoom, subj, childIndent - 1, game);
+    }
+    return startI;
+  }
+
+  // -> room: subject appears in current room, parse entity block
+  if (dest === 'room') {
+    if (subj) {
+      const key = objectKey(roomName, subj);
+      if (!game.objects[key]) {
+        game.objects[key] = createRoomObject(subj, roomName, true);
+      } else {
+        game.objects[key].discovered = true;
+      }
+      return parseEntityBlock(lines, startI, roomName, subj, childIndent - 1, game);
+    }
+    return startI;
+  }
+
+  // -> VERBNAME (verb reveal, subject is empty string): no children
+  if (!subj) return startI;
+
+  // Verb state transform (e.g. USE__RESTRAINED -> USE): no children
+  // Detect by checking if destination looks like a verb name with no __
+  // (simple name, not a stated object). We treat it as verb-like if it matches NAME_RE.
+  // We can't check game.verbs here since they may not include the state forms,
+  // so we use a heuristic: if neither subject nor dest contain '__', treat as verb transform
+  // if they are simple uppercase names. Actually we just proceed to entity-state handling.
+
+  // Entity state transform: ENTITY -> ENTITY__STATE
+  // dest is a stated name like TERMINAL__UNLOCKED
+  if (isStatedName(dest) && dest !== 'room' && dest !== 'player' && dest !== 'trash') {
+    const key = objectKey(roomName, dest);
+    if (!game.objects[key]) {
+      game.objects[key] = createRoomObject(dest, roomName);
+    }
+    return parseEntityBlock(lines, startI, roomName, dest, childIndent - 1, game);
+  }
+
+  return startI;
 }
 
 function parseCueChildrenFull(
