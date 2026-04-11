@@ -1,5 +1,12 @@
 import type { GameProject, GameData } from './types';
-import { createGameProject } from './factory';
+import {
+  createGameProject,
+  createRoom,
+  createVerb,
+  createInventoryObject,
+  createRoomObject,
+  objectKey,
+} from './factory';
 import {
   saveProject,
   loadProject,
@@ -159,6 +166,33 @@ export const store = {
     if (_project) {
       saveProject(_project);
     }
+  },
+
+  // Add helpers
+
+  addRoom(name: string): void {
+    this.mutate((game) => {
+      game.rooms[name] = createRoom(name);
+    });
+  },
+
+  addVerb(name: string): void {
+    this.mutate((game) => {
+      game.verbs[name] = createVerb(name);
+    });
+  },
+
+  addInventoryItem(name: string): void {
+    this.mutate((game) => {
+      game.inventory[name] = createInventoryObject(name);
+    });
+  },
+
+  addObject(roomName: string, objectName: string, discovered = false): void {
+    this.mutate((game) => {
+      const key = objectKey(roomName, objectName);
+      game.objects[key] = createRoomObject(objectName, roomName, discovered);
+    });
   },
 
   _scheduleSave(): void {

@@ -3,6 +3,19 @@
   import { getSignalEmissions } from '../lib/helpers';
   import { displayName } from '../lib/helpers';
 
+  // Focus action (avoids a11y autofocus warning)
+  function focusEl(el: HTMLElement) {
+    el.focus();
+  }
+
+  // Inline-add state
+  let addingRoom = $state(false);
+  let newRoomName = $state('');
+  let addingVerb = $state(false);
+  let newVerbName = $state('');
+  let addingItem = $state(false);
+  let newItemName = $state('');
+
   function rooms() {
     if (!store.game) return [];
     return Object.values(store.game.rooms).filter((r) => r.state === null);
@@ -47,6 +60,83 @@
   function isActiveRoom(name: string) {
     return store.activeView === 'room' && store.activeRoom === name;
   }
+
+  // Room add
+  function startAddRoom() {
+    addingRoom = true;
+    newRoomName = '';
+  }
+
+  function commitRoom() {
+    const name = newRoomName.trim();
+    if (!name) { cancelRoom(); return; }
+    if (store.game?.rooms[name]) { cancelRoom(); return; }
+    store.addRoom(name);
+    store.showRoom(name);
+    cancelRoom();
+  }
+
+  function cancelRoom() {
+    addingRoom = false;
+    newRoomName = '';
+  }
+
+  // Verb add
+  function startAddVerb() {
+    addingVerb = true;
+    newVerbName = '';
+  }
+
+  function normalizeIdentifier(val: string) {
+    return val.toUpperCase().replace(/ /g, '_');
+  }
+
+  function commitVerb() {
+    const name = normalizeIdentifier(newVerbName.trim());
+    if (!name) { cancelVerb(); return; }
+    if (store.game?.verbs[name]) { cancelVerb(); return; }
+    store.addVerb(name);
+    cancelVerb();
+  }
+
+  function cancelVerb() {
+    addingVerb = false;
+    newVerbName = '';
+  }
+
+  // Inventory add
+  function startAddItem() {
+    addingItem = true;
+    newItemName = '';
+  }
+
+  function commitItem() {
+    const name = normalizeIdentifier(newItemName.trim());
+    if (!name) { cancelItem(); return; }
+    if (store.game?.inventory[name]) { cancelItem(); return; }
+    store.addInventoryItem(name);
+    cancelItem();
+  }
+
+  function cancelItem() {
+    addingItem = false;
+    newItemName = '';
+  }
+
+  function onRoomKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') { e.preventDefault(); commitRoom(); }
+    else if (e.key === 'Escape') cancelRoom();
+  }
+
+  function onVerbKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') { e.preventDefault(); commitVerb(); }
+    else if (e.key === 'Escape') cancelVerb();
+  }
+
+  function onItemKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') { e.preventDefault(); commitItem(); }
+    else if (e.key === 'Escape') cancelItem();
+  }
 </script>
 
 <nav class="sidebar">
@@ -63,7 +153,9 @@
   <div class="section">
     <div class="section-header rooms-header">
       <span>Rooms</span>
-      <button class="btn-add" title="Add room" onclick={() => {}}>+ Add</button>
+      {#if !addingRoom}
+        <button class="btn-add" title="Add room" onclick={startAddRoom}>+ Add</button>
+      {/if}
     </div>
     <ul class="section-list">
       {#each rooms() as room (room.name)}
@@ -81,13 +173,27 @@
         </li>
       {/each}
     </ul>
+    {#if addingRoom}
+      <div class="inline-add">
+        <input
+          type="text"
+          placeholder="Room name…"
+          bind:value={newRoomName}
+          onkeydown={onRoomKeydown}
+          onblur={cancelRoom}
+          use:focusEl
+        />
+      </div>
+    {/if}
   </div>
 
   <!-- Verbs -->
   <div class="section">
     <div class="section-header verbs-header">
       <span>Verbs</span>
-      <button class="btn-add" title="Add verb" onclick={() => {}}>+ Add</button>
+      {#if !addingVerb}
+        <button class="btn-add" title="Add verb" onclick={startAddVerb}>+ Add</button>
+      {/if}
     </div>
     <ul class="section-list">
       {#each verbs() as verb (verb.name)}
@@ -101,13 +207,28 @@
         </li>
       {/each}
     </ul>
+    {#if addingVerb}
+      <div class="inline-add">
+        <input
+          type="text"
+          placeholder="VERB_NAME…"
+          bind:value={newVerbName}
+          oninput={(e) => { newVerbName = normalizeIdentifier((e.target as HTMLInputElement).value); }}
+          onkeydown={onVerbKeydown}
+          onblur={cancelVerb}
+          use:focusEl
+        />
+      </div>
+    {/if}
   </div>
 
   <!-- Inventory -->
   <div class="section">
     <div class="section-header inventory-header">
       <span>Inventory</span>
-      <button class="btn-add" title="Add inventory item" onclick={() => {}}>+ Add</button>
+      {#if !addingItem}
+        <button class="btn-add" title="Add inventory item" onclick={startAddItem}>+ Add</button>
+      {/if}
     </div>
     <ul class="section-list">
       {#each inventory() as item (item.name)}
@@ -118,6 +239,19 @@
         </li>
       {/each}
     </ul>
+    {#if addingItem}
+      <div class="inline-add">
+        <input
+          type="text"
+          placeholder="ITEM_NAME…"
+          bind:value={newItemName}
+          oninput={(e) => { newItemName = normalizeIdentifier((e.target as HTMLInputElement).value); }}
+          onkeydown={onItemKeydown}
+          onblur={cancelItem}
+          use:focusEl
+        />
+      </div>
+    {/if}
   </div>
 
   <!-- Signals & Cues -->
@@ -247,6 +381,28 @@
   .section-list {
     list-style: none;
     padding: 0 0.3rem;
+  }
+
+  /* ── Inline add ────────────────────── */
+  .inline-add {
+    padding: 3px 12px;
+  }
+
+  .inline-add input {
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 3px 6px;
+    background-color: var(--mid-dark);
+    border: 1px solid var(--gold-dim);
+    border-radius: 2px;
+    color: var(--text-light);
+    font-family: var(--font-body);
+    box-sizing: border-box;
+  }
+
+  .inline-add input:focus {
+    outline: none;
+    border-color: var(--gold);
   }
 
   /* ── List items ────────────────────── */
