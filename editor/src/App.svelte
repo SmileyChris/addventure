@@ -1,25 +1,34 @@
 <script lang="ts">
   import './styles/theme.css';
+  import { store } from './lib/store.svelte';
+  import ProjectList from './components/ProjectList.svelte';
+  import TopBar from './components/TopBar.svelte';
+  import Sidebar from './components/Sidebar.svelte';
+  import MainPanel from './components/MainPanel.svelte';
 </script>
 
-<main>
-  <h1>Addventure Editor</h1>
-</main>
+{#if store.project}
+  <div class="editor">
+    <TopBar />
+    <div class="workspace">
+      <Sidebar />
+      <MainPanel />
+    </div>
+  </div>
+{:else}
+  <ProjectList />
+{/if}
 
 <style>
-  main {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .editor {
     height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
-  h1 {
-    font-family: var(--font-title);
-    font-weight: 900;
-    font-size: 2.5rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--gold);
+  .workspace {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
   }
 </style>
