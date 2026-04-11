@@ -1,9 +1,12 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
   import { exportZip, downloadBlob } from '../lib/export';
+  import { parseGameFiles } from '../lib/parser';
+  import JSZip from 'jszip';
 
   let editingName = $state(false);
   let nameInput = $state('');
+  let fileInput: HTMLInputElement = $state()!;
 
   function startEditName() {
     if (!store.project) return;
@@ -33,6 +36,55 @@
     const blob = await exportZip(store.game, store.project.name);
     const filename = store.project.name.toLowerCase().replace(/\s+/g, '-') + '.zip';
     downloadBlob(blob, filename);
+  }
+
+  function handleImport() {
+    fileInput.click();
+  }
+
+  async function onFileSelected(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // Reset so the same file can be re-imported
+    input.value = '';
+
+    const files: Record<string, string> = {};
+
+    if (file.name.endsWith('.zip')) {
+      const zip = await JSZip.loadAsync(file);
+      for (const [path, entry] of Object.entries(zip.files)) {
+        if (entry.dir) continue;
+        const filename = path.split('/').pop();
+        if (filename && filename.endsWith('.md')) {
+          files[filename] = await entry.async('string');
+        }
+      }
+    } else if (file.name.endsWith('.md')) {
+      const text = await file.text();
+      files[file.name] = text;
+    }
+
+    if (Object.keys(files).length === 0) return;
+
+    const gameData = parseGameFiles(files);
+    const projectName =
+      gameData.metadata['title'] ??
+      file.name.replace(/\.(zip|md)$/, '').replace(/[-_]/g, ' ');
+
+    store.create(projectName);
+    store.mutate((game) => {
+      game.metadata = gameData.metadata;
+      game.verbs = gameData.verbs;
+      game.objects = gameData.objects;
+      game.inventory = gameData.inventory;
+      game.rooms = gameData.rooms;
+      game.interactions = gameData.interactions;
+      game.cues = gameData.cues;
+      game.actions = gameData.actions;
+      game.signalChecks = gameData.signalChecks;
+    });
   }
 </script>
 
@@ -85,9 +137,16 @@
       <button class="btn-export" onclick={handleExport} title="Export as .zip">
         ↓ Export .zip
       </button>
-      <button class="btn-action" title="Import .zip">
+      <button class="btn-action" title="Import .zip or .md" onclick={handleImport}>
         Import
       </button>
+      <input
+        type="file"
+        accept=".zip,.md"
+        bind:this={fileInput}
+        onchange={onFileSelected}
+        style="display:none"
+      />
     </div>
   {/if}
 </header>
