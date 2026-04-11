@@ -2,6 +2,7 @@
   import { store } from '../lib/store.svelte';
   import GameSummary from './GameSummary.svelte';
   import RoomView from './RoomView.svelte';
+  import MapView from './MapView.svelte';
 </script>
 
 <div class="main-panel">
@@ -10,9 +11,7 @@
   {:else if store.activeView === 'room' && store.activeRoom}
     <RoomView roomName={store.activeRoom} />
   {:else if store.activeView === 'map'}
-    <div class="placeholder">
-      <p>Map view — coming soon</p>
-    </div>
+    <MapView />
   {/if}
 </div>
 
@@ -23,12 +22,4 @@
     overflow-y: auto;
   }
 
-  .placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--text-dim);
-    font-style: italic;
-  }
 </style>

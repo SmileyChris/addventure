@@ -1,14 +1,19 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
   import { getRoomObjects, getRoomInteractions, displayName } from '../lib/helpers';
+  import { serializeGame } from '../lib/serializer';
+  import { parseGameFiles } from '../lib/parser';
   import ObjectCard from './ObjectCard.svelte';
   import InteractionCard from './InteractionCard.svelte';
+  import SourceView from './SourceView.svelte';
 
   interface Props {
     roomName: string;
   }
 
   let { roomName }: Props = $props();
+
+  let sourceMode = $state(false);
 
   const game = $derived(store.game);
 
@@ -76,6 +81,59 @@
       return false;
     });
   });
+
+  /** Serialized content for this room's .md file */
+  const roomSource = $derived.by(() => {
+    if (!game) return '';
+    const files = serializeGame(game);
+    const filename = roomName.toLowerCase().replace(/ /g, '_') + '.md';
+    return files[filename] ?? '';
+  });
+
+  function handleSourceChange(newSource: string): void {
+    if (!game) return;
+    store.mutate((g) => {
+      // Remove old data for this room
+      g.interactions = g.interactions.filter((i) => i.room !== roomName);
+      for (const key of Object.keys(g.objects)) {
+        if (g.objects[key].room === roomName) {
+          delete g.objects[key];
+        }
+      }
+      for (const key of Object.keys(g.actions)) {
+        if (g.actions[key].room === roomName) {
+          delete g.actions[key];
+        }
+      }
+      // Remove room state variants (keep only the base room entry)
+      for (const key of Object.keys(g.rooms)) {
+        const r = g.rooms[key];
+        if (r.name !== roomName && r.base === roomName.split('__')[0]) {
+          delete g.rooms[key];
+        }
+      }
+      // Re-parse the updated room file and merge in
+      const parsed = parseGameFiles({ 'index.md': '', [roomName.toLowerCase().replace(/ /g, '_') + '.md']: newSource });
+      // Merge objects
+      for (const [key, obj] of Object.entries(parsed.objects)) {
+        g.objects[key] = obj;
+      }
+      // Merge interactions
+      g.interactions.push(...parsed.interactions);
+      // Merge cues
+      g.cues.push(...parsed.cues);
+      // Merge actions
+      for (const [key, action] of Object.entries(parsed.actions)) {
+        g.actions[key] = action;
+      }
+      // Merge any new rooms (state variants)
+      for (const [key, room] of Object.entries(parsed.rooms)) {
+        if (!g.rooms[key]) {
+          g.rooms[key] = room;
+        }
+      }
+    });
+  }
 </script>
 
 <div class="room-view">
@@ -89,57 +147,69 @@
     </div>
     <div class="header-right">
       <div class="view-toggle">
-        <button class="toggle-btn active" disabled>Visual</button>
-        <button class="toggle-btn" disabled>Source</button>
+        <button
+          class="toggle-btn"
+          class:active={!sourceMode}
+          onclick={() => (sourceMode = false)}
+        >Visual</button>
+        <button
+          class="toggle-btn"
+          class:active={sourceMode}
+          onclick={() => (sourceMode = true)}
+        >Source</button>
       </div>
     </div>
   </div>
 
-  <div class="room-content">
-    <!-- Room Description -->
-    <section class="section">
-      <label class="section-label" for="room-look">Room Description (LOOK)</label>
-      <textarea
-        id="room-look"
-        rows="3"
-        value={lookText}
-        oninput={(e) => updateLookText((e.target as HTMLTextAreaElement).value)}
-        placeholder="What does the player see when they look around?"
-      ></textarea>
-    </section>
+  {#if sourceMode}
+    <SourceView content={roomSource} onchange={handleSourceChange} />
+  {:else}
+    <div class="room-content">
+      <!-- Room Description -->
+      <section class="section">
+        <label class="section-label" for="room-look">Room Description (LOOK)</label>
+        <textarea
+          id="room-look"
+          rows="3"
+          value={lookText}
+          oninput={(e) => updateLookText((e.target as HTMLTextAreaElement).value)}
+          placeholder="What does the player see when they look around?"
+        ></textarea>
+      </section>
 
-    <!-- Objects -->
-    <section class="section">
-      <div class="section-header-row">
-        <span class="section-label">Objects in this Room</span>
-      </div>
-      {#if roomObjectBases.length === 0}
-        <p class="empty-hint">No objects in this room yet.</p>
-      {:else}
-        {#each roomObjectBases as baseName (baseName)}
-          <ObjectCard objectName={baseName} {roomName} />
-        {/each}
-      {/if}
-      <button class="add-btn">+ Add object</button>
-    </section>
-
-    <!-- Freeform interactions -->
-    {#if freeformInteractions.length > 0 || true}
+      <!-- Objects -->
       <section class="section">
         <div class="section-header-row">
-          <span class="section-label">Freeform Interactions</span>
+          <span class="section-label">Objects in this Room</span>
         </div>
-        {#if freeformInteractions.length === 0}
-          <p class="empty-hint">No wildcard or multi-target interactions.</p>
+        {#if roomObjectBases.length === 0}
+          <p class="empty-hint">No objects in this room yet.</p>
         {:else}
-          {#each freeformInteractions as interaction (interaction.verb + JSON.stringify(interaction.targetGroups))}
-            <InteractionCard {interaction} />
+          {#each roomObjectBases as baseName (baseName)}
+            <ObjectCard objectName={baseName} {roomName} />
           {/each}
         {/if}
-        <button class="add-btn">+ Add freeform interaction</button>
+        <button class="add-btn">+ Add object</button>
       </section>
-    {/if}
-  </div>
+
+      <!-- Freeform interactions -->
+      {#if freeformInteractions.length > 0 || true}
+        <section class="section">
+          <div class="section-header-row">
+            <span class="section-label">Freeform Interactions</span>
+          </div>
+          {#if freeformInteractions.length === 0}
+            <p class="empty-hint">No wildcard or multi-target interactions.</p>
+          {:else}
+            {#each freeformInteractions as interaction (interaction.verb + JSON.stringify(interaction.targetGroups))}
+              <InteractionCard {interaction} />
+            {/each}
+          {/if}
+          <button class="add-btn">+ Add freeform interaction</button>
+        </section>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -223,11 +293,6 @@
   .toggle-btn.active {
     background: var(--warm-gray);
     color: var(--parchment);
-  }
-
-  .toggle-btn:disabled {
-    cursor: default;
-    opacity: 0.7;
   }
 
   /* Content */
