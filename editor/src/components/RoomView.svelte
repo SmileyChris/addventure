@@ -1,35 +1,311 @@
 <script lang="ts">
+  import { store } from '../lib/store.svelte';
+  import { getRoomObjects, getRoomInteractions, displayName } from '../lib/helpers';
+  import ObjectCard from './ObjectCard.svelte';
+  import InteractionCard from './InteractionCard.svelte';
+
   interface Props {
     roomName: string;
   }
 
   let { roomName }: Props = $props();
+
+  const game = $derived(store.game);
+
+  const isStartRoom = $derived(game?.metadata.start === roomName);
+
+  /** LOOK interaction: verb === 'LOOK' and targetGroups is empty or contains @ROOM */
+  const lookInteraction = $derived.by(() => {
+    if (!game) return null;
+    return (
+      game.interactions.find(
+        (i) =>
+          i.room === roomName &&
+          i.verb === 'LOOK' &&
+          (i.targetGroups.length === 0 ||
+            i.targetGroups.some((g) => g.includes('@ROOM'))),
+      ) ?? null
+    );
+  });
+
+  const lookText = $derived(lookInteraction?.narrative ?? '');
+
+  function updateLookText(value: string) {
+    store.mutate((g) => {
+      const existing = g.interactions.find(
+        (i) =>
+          i.room === roomName &&
+          i.verb === 'LOOK' &&
+          (i.targetGroups.length === 0 ||
+            i.targetGroups.some((group) => group.includes('@ROOM'))),
+      );
+      if (existing) {
+        existing.narrative = value;
+      } else {
+        g.interactions.push({
+          verb: 'LOOK',
+          targetGroups: [],
+          narrative: value,
+          arrows: [],
+          room: roomName,
+          sealedContent: null,
+          sealedArrows: [],
+          signalChecks: [],
+        });
+      }
+    });
+  }
+
+  /** Unique base object names in room */
+  const roomObjectBases = $derived.by(() => {
+    if (!game) return [];
+    const grouped = getRoomObjects(game, roomName);
+    return Object.keys(grouped).sort();
+  });
+
+  /** Freeform interactions: wildcard (*) or multi-group targets */
+  const freeformInteractions = $derived.by(() => {
+    if (!game) return [];
+    return getRoomInteractions(game, roomName).filter((i) => {
+      if (i.verb === 'LOOK' && i.targetGroups.length === 0) return false;
+      if (i.targetGroups.length === 0) return true; // room-level, non-LOOK
+      // wildcard
+      if (i.targetGroups.some((g) => g.includes('*'))) return true;
+      // multi-group
+      if (i.targetGroups.length > 1) return true;
+      return false;
+    });
+  });
 </script>
 
 <div class="room-view">
-  <h2>{roomName}</h2>
-  <p class="hint">
-    Edit room objects, interactions, and exits here.
-  </p>
+  <!-- Room header -->
+  <div class="room-header">
+    <div class="header-left">
+      <h2>{roomName}</h2>
+      {#if isStartRoom}
+        <span class="badge badge-start">start room</span>
+      {/if}
+    </div>
+    <div class="header-right">
+      <div class="view-toggle">
+        <button class="toggle-btn active" disabled>Visual</button>
+        <button class="toggle-btn" disabled>Source</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="room-content">
+    <!-- Room Description -->
+    <section class="section">
+      <label class="section-label" for="room-look">Room Description (LOOK)</label>
+      <textarea
+        id="room-look"
+        rows="3"
+        value={lookText}
+        oninput={(e) => updateLookText((e.target as HTMLTextAreaElement).value)}
+        placeholder="What does the player see when they look around?"
+      ></textarea>
+    </section>
+
+    <!-- Objects -->
+    <section class="section">
+      <div class="section-header-row">
+        <span class="section-label">Objects in this Room</span>
+      </div>
+      {#if roomObjectBases.length === 0}
+        <p class="empty-hint">No objects in this room yet.</p>
+      {:else}
+        {#each roomObjectBases as baseName (baseName)}
+          <ObjectCard objectName={baseName} {roomName} />
+        {/each}
+      {/if}
+      <button class="add-btn">+ Add object</button>
+    </section>
+
+    <!-- Freeform interactions -->
+    {#if freeformInteractions.length > 0 || true}
+      <section class="section">
+        <div class="section-header-row">
+          <span class="section-label">Freeform Interactions</span>
+        </div>
+        {#if freeformInteractions.length === 0}
+          <p class="empty-hint">No wildcard or multi-target interactions.</p>
+        {:else}
+          {#each freeformInteractions as interaction (interaction.verb + JSON.stringify(interaction.targetGroups))}
+            <InteractionCard {interaction} />
+          {/each}
+        {/if}
+        <button class="add-btn">+ Add freeform interaction</button>
+      </section>
+    {/if}
+  </div>
 </div>
 
 <style>
   .room-view {
-    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .room-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--warm-gray);
+    flex-shrink: 0;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
   h2 {
     font-family: var(--font-title);
+    font-size: 1.2rem;
     font-weight: 900;
-    font-size: 1.5rem;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 1rem;
+    color: var(--parchment-light);
   }
 
-  .hint {
+  .badge {
+    font-family: var(--font-title);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+
+  .badge-start {
+    background: rgba(201, 168, 76, 0.2);
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+  }
+
+  .view-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--dark);
+    border: 1px solid var(--warm-gray);
+    border-radius: 4px;
+    padding: 2px;
+  }
+
+  .toggle-btn {
+    font-family: var(--font-title);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 3px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  .toggle-btn.active {
+    background: var(--warm-gray);
+    color: var(--parchment);
+  }
+
+  .toggle-btn:disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  /* Content */
+  .room-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .section-label {
+    font-family: var(--font-title);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: var(--text-mid);
-    font-size: 0.95rem;
+  }
+
+  .section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  textarea {
+    background: var(--mid-dark);
+    border: 1px solid var(--warm-gray);
+    border-radius: 3px;
+    color: var(--text-light);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    padding: 0.5em 0.7em;
+    resize: vertical;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--gold-dim);
+  }
+
+  .empty-hint {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .add-btn {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    background: transparent;
+    border: 1px dashed var(--warm-gray);
+    color: var(--text-dim);
+    padding: 5px 12px;
+    border-radius: 4px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .add-btn:hover {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+    background: transparent;
   }
 </style>
