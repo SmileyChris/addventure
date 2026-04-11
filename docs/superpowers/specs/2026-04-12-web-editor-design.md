@@ -38,8 +38,8 @@ interface GameData {
   cues: Cue[];
   actions: Record<string, Action>;    // Keyed by "room::name"
   signalChecks: SignalCheck[];        // Index-level signal checks
-  signalEmissions: string[];          // All signal names emitted (Set in Python, array here)
 }
+// signalEmissions is not stored — derived at runtime by scanning all arrows with destination "signal"
 
 interface Verb {
   name: string;
@@ -95,14 +95,9 @@ interface Action {
   discovered: boolean;
 }
 
-interface SealedText {
-  ref: string;
-  content: string;
-  images: string[];
-  room: string;
-  arrows: Arrow[];
-  signalChecks: SignalCheck[];
-}
+// SealedText is not stored in the editor — it's a writer artifact.
+// Sealed content is stored inline on Interaction via sealedContent/sealedArrows fields.
+// The ref codes (Alpha, Beta, etc.) are assigned during output generation.
 
 interface SignalCheck {
   signalNames: string[];  // Empty array = "otherwise?"
@@ -123,6 +118,8 @@ These fields from the Python models are not stored in the editor — they are co
 - `suppressed_interactions` (compiler artifact)
 - `warnings` (compiler output)
 - `from_inventory` on ResolvedInteraction
+- `SealedText` (entire type — writer artifact; sealed content is inline on Interaction)
+- `signal_emissions` on GameData (derived at runtime by scanning arrows)
 
 ## UI Layout
 
