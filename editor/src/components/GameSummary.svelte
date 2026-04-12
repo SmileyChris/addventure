@@ -25,10 +25,15 @@
             id="meta-title"
             type="text"
             value={store.game.metadata.title ?? ''}
-            oninput={(e) =>
+            oninput={(e) => {
+              const val = (e.target as HTMLInputElement).value;
               store.mutate((g) => {
-                g.metadata.title = (e.target as HTMLInputElement).value;
-              })}
+                g.metadata.title = val;
+              });
+              if (store.project && val.trim()) {
+                store.project.name = val.trim();
+              }
+            }}
           />
         </div>
 
