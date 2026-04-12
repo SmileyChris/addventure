@@ -108,14 +108,14 @@ describe('serializeInteraction', () => {
     interaction.targetGroups = [['LAMP']];
     interaction.narrative = 'A dusty lamp.';
     const lines = serializeInteraction(interaction, '');
-    expect(lines).toEqual(['+ LOOK + LAMP: A dusty lamp.']);
+    expect(lines).toEqual(['  + LOOK + LAMP: A dusty lamp.']);
   });
 
   it('serializes an interaction with empty narrative', () => {
     const interaction = createInteraction('USE', 'Basement');
     interaction.targetGroups = [['DOOR']];
     const lines = serializeInteraction(interaction, '');
-    expect(lines).toEqual(['+ USE + DOOR:']);
+    expect(lines).toEqual(['  + USE + DOOR:']);
   });
 
   it('serializes an interaction with multiline narrative', () => {
@@ -123,7 +123,7 @@ describe('serializeInteraction', () => {
     interaction.targetGroups = [['DOOR']];
     interaction.narrative = 'You push.\nIt moves.';
     const lines = serializeInteraction(interaction, '');
-    expect(lines).toEqual(['+ USE + DOOR:', '  You push.', '  It moves.']);
+    expect(lines).toEqual(['  + USE + DOOR:', '    You push.', '    It moves.']);
   });
 
   it('serializes an interaction with arrows', () => {
@@ -133,8 +133,8 @@ describe('serializeInteraction', () => {
     interaction.arrows.push(createArrow('KEY', 'player'));
     const lines = serializeInteraction(interaction, '');
     expect(lines).toEqual([
-      '+ TAKE + KEY: You grab the key.',
-      '  - KEY -> player',
+      '  + TAKE + KEY: You grab the key.',
+      '    - KEY -> player',
     ]);
   });
 
@@ -142,7 +142,7 @@ describe('serializeInteraction', () => {
     const interaction = createInteraction('LOOK', 'Hallway');
     interaction.narrative = 'A long corridor.';
     const lines = serializeInteraction(interaction, '');
-    expect(lines).toEqual(['+ LOOK: A long corridor.']);
+    expect(lines).toEqual(['  + LOOK: A long corridor.']);
   });
 
   it('serializes an interaction with multiple target groups', () => {
@@ -150,7 +150,7 @@ describe('serializeInteraction', () => {
     interaction.targetGroups = [['FUSE'], ['FUSE_BOX']];
     interaction.narrative = 'You slot it in.';
     const lines = serializeInteraction(interaction, '');
-    expect(lines).toEqual(['+ USE + FUSE + FUSE_BOX: You slot it in.']);
+    expect(lines).toEqual(['  + USE + FUSE + FUSE_BOX: You slot it in.']);
   });
 
   it('serializes an interaction with alternation in target group', () => {
@@ -158,7 +158,7 @@ describe('serializeInteraction', () => {
     interaction.targetGroups = [['KEYCARD', 'BADGE']];
     interaction.narrative = 'Access granted.';
     const lines = serializeInteraction(interaction, '');
-    expect(lines).toEqual(['+ USE + KEYCARD | BADGE: Access granted.']);
+    expect(lines).toEqual(['  + USE + KEYCARD | BADGE: Access granted.']);
   });
 
   it('serializes an interaction with sealed content', () => {
@@ -169,11 +169,11 @@ describe('serializeInteraction', () => {
     interaction.sealedArrows.push(createArrow('player', '"Epilogue"'));
     const lines = serializeInteraction(interaction, '');
     expect(lines).toEqual([
-      '+ USE + EXIT_DOOR: You step out.',
-      '  ::: fragment',
-      '  Cold air hits your face.',
-      '  - player -> "Epilogue"',
-      '  :::',
+      '  + USE + EXIT_DOOR: You step out.',
+      '    ::: fragment',
+      '    Cold air hits your face.',
+      '    - player -> "Epilogue"',
+      '    :::',
     ]);
   });
 
@@ -182,7 +182,7 @@ describe('serializeInteraction', () => {
     interaction.targetGroups = [['LAMP']];
     interaction.narrative = 'A dusty lamp.';
     const lines = serializeInteraction(interaction, '  ');
-    expect(lines).toEqual(['  + LOOK + LAMP: A dusty lamp.']);
+    expect(lines).toEqual(['    + LOOK + LAMP: A dusty lamp.']);
   });
 
   it('serializes an interaction with signal checks', () => {
@@ -195,9 +195,9 @@ describe('serializeInteraction', () => {
     interaction.signalChecks.push(check);
     const lines = serializeInteraction(interaction, '');
     expect(lines).toEqual([
-      '+ LOOK + TERMINAL: A terminal.',
-      '  UNLOCKED?',
-      '    It is unlocked.',
+      '  + LOOK + TERMINAL: A terminal.',
+      '    UNLOCKED?',
+      '      It is unlocked.',
     ]);
   });
 });
@@ -318,9 +318,9 @@ describe('serializeRoom', () => {
     const game = makeSimpleRoom();
     const output = serializeRoom(game, 'Basement');
     expect(output).toContain('LAMP');
-    expect(output).toContain('+ LOOK + LAMP: An old oil lamp.');
-    expect(output).toContain('+ TAKE + LAMP: You grab the lamp.');
-    expect(output).toContain('  - LAMP -> player');
+    expect(output).toContain('  + LOOK: An old oil lamp.');
+    expect(output).toContain('  + TAKE: You grab the lamp.');
+    expect(output).toContain('    - LAMP -> player');
   });
 
   it('produces correct output for a room with a move arrow', () => {
@@ -338,8 +338,8 @@ describe('serializeRoom', () => {
     game.interactions.push(useInteraction);
 
     const output = serializeRoom(game, 'Hallway');
-    expect(output).toContain('+ USE + DOOR: You walk through.');
-    expect(output).toContain('  - player -> "Basement"');
+    expect(output).toContain('  + USE: You walk through.');
+    expect(output).toContain('    - player -> "Basement"');
   });
 
   it('serializes freeform interactions in ## Interactions section', () => {
