@@ -94,7 +94,8 @@
 <header class="topbar">
   <div class="left">
     <button class="logo-btn" onclick={() => store.close()} title="Close project">
-      ▲ Addventure
+      <img src="/logo.png" alt="" class="topbar-logo" />
+      <span class="topbar-title"><span class="topbar-add">Add</span>venture</span>
     </button>
 
     {#if store.project}
@@ -185,6 +186,9 @@
   }
 
   .logo-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-family: var(--font-title);
     font-weight: 900;
     font-size: 0.9rem;
@@ -201,6 +205,31 @@
   .logo-btn:hover {
     color: var(--gold-bright);
     background: none;
+  }
+
+  .logo-btn:hover .topbar-logo {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+
+  .topbar-logo {
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .topbar-title {
+    color: var(--gold);
+  }
+
+  .topbar-add {
+    display: inline-block;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .logo-btn:hover .topbar-add {
+    transform: translateY(2px);
   }
 
   .sep {
