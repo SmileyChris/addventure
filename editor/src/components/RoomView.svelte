@@ -15,7 +15,61 @@
 
   let { roomName }: Props = $props();
 
+  import { objectKey } from '../lib/factory';
+
   let sourceMode = $state(false);
+
+  // Inline add state
+  let addingObject = $state(false);
+  let newObjectName = $state('');
+  let addingFreeform = $state(false);
+  let newFreeformVerb = $state('');
+
+  function focusEl(el: HTMLElement) {
+    el.focus();
+  }
+
+  function submitObject() {
+    const name = newObjectName.trim().toUpperCase().replace(/\s+/g, '_');
+    if (!name || !game) return;
+    const key = objectKey(roomName, name);
+    if (game.objects[key]) return; // already exists
+    store.addObject(roomName, name);
+    // Auto-create a LOOK interaction stub for the new object
+    store.mutate((g) => {
+      g.interactions.push({
+        verb: 'LOOK',
+        targetGroups: [[name]],
+        narrative: '',
+        arrows: [],
+        room: roomName,
+        sealedContent: null,
+        sealedArrows: [],
+        signalChecks: [],
+      });
+    });
+    newObjectName = '';
+    addingObject = false;
+  }
+
+  function submitFreeform() {
+    const verb = newFreeformVerb.trim().toUpperCase().replace(/\s+/g, '_');
+    if (!verb || !game) return;
+    store.mutate((g) => {
+      g.interactions.push({
+        verb,
+        targetGroups: [['*']],
+        narrative: '',
+        arrows: [],
+        room: roomName,
+        sealedContent: null,
+        sealedArrows: [],
+        signalChecks: [],
+      });
+    });
+    newFreeformVerb = '';
+    addingFreeform = false;
+  }
 
   const game = $derived(store.game);
 
@@ -200,7 +254,24 @@
             <ObjectCard objectName={baseName} {roomName} />
           {/each}
         {/if}
-        <button class="add-btn">+ Add object</button>
+        {#if addingObject}
+          <div class="inline-add">
+            <input
+              type="text"
+              class="mono"
+              bind:value={newObjectName}
+              placeholder="OBJECT_NAME"
+              use:focusEl
+              onkeydown={(e) => {
+                if (e.key === 'Enter') submitObject();
+                if (e.key === 'Escape') { addingObject = false; newObjectName = ''; }
+              }}
+              onblur={() => { addingObject = false; newObjectName = ''; }}
+            />
+          </div>
+        {:else}
+          <button class="add-btn" onclick={() => addingObject = true}>+ Add object</button>
+        {/if}
       </section>
 
       <!-- Freeform interactions -->
@@ -216,7 +287,24 @@
               <InteractionCard {interaction} />
             {/each}
           {/if}
-          <button class="add-btn">+ Add freeform interaction</button>
+          {#if addingFreeform}
+            <div class="inline-add">
+              <input
+                type="text"
+                class="mono"
+                bind:value={newFreeformVerb}
+                placeholder="VERB (e.g. USE)"
+                use:focusEl
+                onkeydown={(e) => {
+                  if (e.key === 'Enter') submitFreeform();
+                  if (e.key === 'Escape') { addingFreeform = false; newFreeformVerb = ''; }
+                }}
+                onblur={() => { addingFreeform = false; newFreeformVerb = ''; }}
+              />
+            </div>
+          {:else}
+            <button class="add-btn" onclick={() => addingFreeform = true}>+ Add freeform interaction</button>
+          {/if}
         </section>
       {/if}
     </div>
@@ -390,5 +478,14 @@
     border-color: var(--gold-dim);
     color: var(--gold);
     background: transparent;
+  }
+  .inline-add {
+    padding: 6px 0;
+  }
+
+  .inline-add input {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 6px 10px;
   }
 </style>
