@@ -7,6 +7,7 @@
   import InteractionCard from './InteractionCard.svelte';
   import SourceView from './SourceView.svelte';
   import GenerateButton from './GenerateButton.svelte';
+  import SuggestObjectsDialog from './SuggestObjectsDialog.svelte';
   import { roomDescriptionPrompt } from '../lib/ollama';
 
   interface Props {
@@ -18,6 +19,29 @@
   import { objectKey } from '../lib/factory';
 
   let sourceMode = $state(false);
+  let showSuggestObjects = $state(false);
+
+  function handleSuggestedObjects(names: string[]) {
+    for (const name of names) {
+      const key = objectKey(roomName, name);
+      if (!game?.objects[key]) {
+        store.addObject(roomName, name);
+        // Auto-create LOOK stub
+        store.mutate((g) => {
+          g.interactions.push({
+            verb: 'LOOK',
+            targetGroups: [[name]],
+            narrative: '',
+            arrows: [],
+            room: roomName,
+            sealedContent: null,
+            sealedArrows: [],
+            signalChecks: [],
+          });
+        });
+      }
+    }
+  }
 
   // Inline add state
   let addingObject = $state(false);
@@ -246,6 +270,9 @@
       <section class="section">
         <div class="section-header-row">
           <span class="section-label">Objects in this Room</span>
+          {#if store.settings.ollamaEnabled && store.settings.ollamaModel}
+            <button class="ai-btn" onclick={() => showSuggestObjects = true} title="Suggest objects with AI">✦ AI suggest</button>
+          {/if}
         </div>
         {#if roomObjectBases.length === 0}
           <p class="empty-hint">No objects in this room yet.</p>
@@ -310,6 +337,15 @@
     </div>
   {/if}
 </div>
+
+{#if showSuggestObjects}
+  <SuggestObjectsDialog
+    {roomName}
+    existingObjects={roomObjectBases}
+    onselected={handleSuggestedObjects}
+    onclose={() => showSuggestObjects = false}
+  />
+{/if}
 
 <style>
   .room-view {
@@ -479,6 +515,24 @@
     color: var(--gold);
     background: transparent;
   }
+  .ai-btn {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    background: none;
+    color: var(--gold-dim);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ai-btn:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(201, 168, 76, 0.1);
+  }
+
   .inline-add {
     padding: 6px 0;
   }

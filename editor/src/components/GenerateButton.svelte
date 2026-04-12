@@ -48,7 +48,7 @@
     {#if loading}
       <span class="spinner" aria-hidden="true"></span>
     {:else}
-      ✦
+      ✦ AI
     {/if}
   </button>
 {/if}
