@@ -84,7 +84,7 @@ export function serializeIndex(game: GameData): string {
         i.targetGroups.some((group) => group.includes(item.name)),
     );
     for (const interaction of itemInteractions) {
-      lines.push(...serializeInteraction(interaction, '  '));
+      lines.push(...serializeInteraction(interaction, '', item.name));
     }
   }
   lines.push('');
@@ -142,7 +142,7 @@ export function serializeRoom(game: GameData, roomName: string): string {
         i.targetGroups.some((group) => group.includes(baseVariant)),
     );
     for (const interaction of baseInteractions) {
-      lines.push(...serializeInteraction(interaction, ''));
+      lines.push(...serializeInteraction(interaction, '', baseVariant));
     }
 
     // State variants (sub-objects) with their interactions
@@ -154,7 +154,7 @@ export function serializeRoom(game: GameData, roomName: string): string {
           i.targetGroups.some((group) => group.includes(stateVariant)),
       );
       for (const interaction of stateInteractions) {
-        lines.push(...serializeInteraction(interaction, '  '));
+        lines.push(...serializeInteraction(interaction, '  ', stateVariant));
       }
     }
 
@@ -210,21 +210,40 @@ export function serializeRoom(game: GameData, roomName: string): string {
   return lines.join('\n');
 }
 
-/** Serialize an interaction (attached to an object, indented) */
+/**
+ * Serialize an interaction attached to an object.
+ * The first target group (the object itself) is implicit and stripped from the header.
+ * e.g. interaction {verb: "USE", targetGroups: [["DOOR"], ["KEY"]]} under DOOR
+ *   → "+ USE + KEY: ..."  (DOOR is implicit)
+ */
 export function serializeInteraction(
   interaction: Interaction,
   indent: string,
+  implicitTarget?: string,
 ): string[] {
   const lines: string[] = [];
 
+  // Strip the implicit target (the object this interaction is nested under)
+  let targetGroups = interaction.targetGroups;
+  if (implicitTarget && targetGroups.length > 0) {
+    const firstGroup = targetGroups[0];
+    if (firstGroup.length === 1 && firstGroup[0] === implicitTarget) {
+      targetGroups = targetGroups.slice(1);
+    }
+  }
+
+  // Indentation: interaction header is indent + 2, body content is indent + 4
+  const iIndent = indent + '  ';    // interaction line (+ VERB)
+  const bIndent = indent + '    ';  // body (narrative, arrows)
+
   // Build header: + VERB [+ TARGET1 | ALT + TARGET2]: narrative
   const verbPart = interaction.verb;
-  const targetPart = interaction.targetGroups
+  const targetPart = targetGroups
     .map((group) => group.join(' | '))
     .join(' + ');
 
   const headerBase =
-    `${indent}+ ${verbPart}` + (targetPart ? ` + ${targetPart}` : '');
+    `${iIndent}+ ${verbPart}` + (targetPart ? ` + ${targetPart}` : '');
 
   const narrative = interaction.narrative;
   const isMultilineNarrative = narrative.includes('\n');
@@ -234,7 +253,7 @@ export function serializeInteraction(
   } else if (isMultilineNarrative) {
     lines.push(`${headerBase}:`);
     for (const narrativeLine of narrative.split('\n')) {
-      lines.push(`${indent}  ${narrativeLine}`);
+      lines.push(`${bIndent}${narrativeLine}`);
     }
   } else {
     lines.push(`${headerBase}: ${narrative}`);
@@ -242,25 +261,24 @@ export function serializeInteraction(
 
   // Arrows
   for (const arrow of interaction.arrows) {
-    lines.push(`${indent}  - ${serializeArrow(arrow)}`);
-    // If this is a cue arrow (subject === '?'), it has no children in this model
+    lines.push(`${bIndent}- ${serializeArrow(arrow)}`);
   }
 
   // Signal checks
   for (const check of interaction.signalChecks) {
-    lines.push(...serializeSignalCheck(check, `${indent}  `));
+    lines.push(...serializeSignalCheck(check, bIndent));
   }
 
   // Sealed content
   if (interaction.sealedContent !== null) {
-    lines.push(`${indent}  ::: fragment`);
+    lines.push(`${bIndent}::: fragment`);
     for (const contentLine of interaction.sealedContent.split('\n')) {
-      lines.push(`${indent}  ${contentLine}`);
+      lines.push(`${bIndent}${contentLine}`);
     }
     for (const arrow of interaction.sealedArrows) {
-      lines.push(`${indent}  - ${serializeArrow(arrow)}`);
+      lines.push(`${bIndent}- ${serializeArrow(arrow)}`);
     }
-    lines.push(`${indent}  :::`);
+    lines.push(`${bIndent}:::`);
   }
 
   return lines;
