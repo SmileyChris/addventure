@@ -112,7 +112,7 @@
     <div class="label-row">
       <label class="field-label" for="narrative-{interactionIndex}">Narrative</label>
       <GenerateButton
-        prompt={interactionPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game!, interaction.narrative || undefined)}
+        prompt={interactionPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game!, interaction.narrative || undefined, store.settings.narratorVoice || undefined)}
         ongenerated={(text) => update((i) => { i.narrative = text; })}
       />
     </div>

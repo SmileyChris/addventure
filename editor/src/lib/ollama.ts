@@ -44,8 +44,13 @@ export async function generate(model: string, prompt: string, thinking = false, 
 }
 
 /** Build a rich context string from the game's existing narrative */
-export function buildGameContext(game: GameData): string {
+export function buildGameContext(game: GameData, narratorVoice?: string): string {
   const parts: string[] = [];
+
+  // Narrator voice direction (highest priority — shapes everything)
+  if (narratorVoice) {
+    parts.push(`Narrator voice and style direction: ${narratorVoice}`);
+  }
 
   // Game metadata
   if (game.metadata.title) parts.push(`Game: "${game.metadata.title}"`);
@@ -78,8 +83,8 @@ export function buildGameContext(game: GameData): string {
 }
 
 /** Build a prompt for generating a room description */
-export function roomDescriptionPrompt(roomName: string, objects: string[], game: GameData): string {
-  const context = buildGameContext(game);
+export function roomDescriptionPrompt(roomName: string, objects: string[], game: GameData, narratorVoice?: string): string {
+  const context = buildGameContext(game, narratorVoice);
   const objectList = objects.map(o => displayName(o)).join(', ');
 
   return `You are writing descriptions for a paper-based text adventure game. Match the tone and style of the existing writing.
@@ -96,8 +101,8 @@ Rules:
 }
 
 /** Build a prompt for generating an interaction narrative */
-export function interactionPrompt(verb: string, targets: string[], roomName: string, game: GameData, existingNarrative?: string): string {
-  const context = buildGameContext(game);
+export function interactionPrompt(verb: string, targets: string[], roomName: string, game: GameData, existingNarrative?: string, narratorVoice?: string): string {
+  const context = buildGameContext(game, narratorVoice);
   const targetStr = targets.map(t => displayName(t)).join(' and ');
 
   // Include nearby interactions for context
@@ -129,8 +134,8 @@ Rules:
 }
 
 /** Build a prompt for generating sealed/fragment content */
-export function sealedContentPrompt(verb: string, targets: string[], roomName: string, game: GameData): string {
-  const context = buildGameContext(game);
+export function sealedContentPrompt(verb: string, targets: string[], roomName: string, game: GameData, narratorVoice?: string): string {
+  const context = buildGameContext(game, narratorVoice);
   const targetStr = targets.map(t => displayName(t)).join(' and ');
 
   return `You are writing for a paper-based text adventure game. This is sealed content — a dramatic reveal or secret passage of text.

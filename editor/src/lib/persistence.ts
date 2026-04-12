@@ -7,12 +7,14 @@ export interface EditorSettings {
   ollamaEnabled: boolean;
   ollamaModel: string;
   ollamaThinking: boolean;
+  narratorVoice: string;
 }
 
 const DEFAULT_SETTINGS: EditorSettings = {
   ollamaEnabled: false,
   ollamaModel: '',
   ollamaThinking: false,
+  narratorVoice: '',
 };
 
 export function loadSettings(): EditorSettings {
