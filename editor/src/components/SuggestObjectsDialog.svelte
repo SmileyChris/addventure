@@ -6,7 +6,7 @@
   interface Props {
     roomName: string;
     existingObjects: string[];
-    onselected: (names: string[]) => void;
+    onselected: (items: { name: string; description: string }[]) => void;
     onclose: () => void;
   }
 
@@ -89,7 +89,7 @@ Rules:
   }
 
   function handleAdd() {
-    const selected = suggestions.filter(s => s.selected).map(s => s.name);
+    const selected = suggestions.filter(s => s.selected).map(s => ({ name: s.name, description: s.description }));
     if (selected.length > 0) {
       onselected(selected);
     }

@@ -21,26 +21,31 @@
   let sourceMode = $state(false);
   let showSuggestObjects = $state(false);
 
-  function handleSuggestedObjects(names: string[]) {
-    for (const name of names) {
-      const key = objectKey(roomName, name);
-      if (!game?.objects[key]) {
-        store.addObject(roomName, name);
-        // Auto-create LOOK stub
-        store.mutate((g) => {
+  function handleSuggestedObjects(items: { name: string; description: string }[]) {
+    store.mutate((g) => {
+      for (const item of items) {
+        const key = objectKey(roomName, item.name);
+        if (!g.objects[key]) {
+          g.objects[key] = {
+            name: item.name,
+            base: item.name.split('__')[0],
+            state: item.name.includes('__') ? item.name.split('__').slice(1).join('__') : null,
+            room: roomName,
+            discovered: false,
+          };
           g.interactions.push({
             verb: 'LOOK',
-            targetGroups: [[name]],
-            narrative: '',
+            targetGroups: [[item.name]],
+            narrative: item.description,
             arrows: [],
             room: roomName,
             sealedContent: null,
             sealedArrows: [],
             signalChecks: [],
           });
-        });
+        }
       }
-    }
+    });
   }
 
   // Inline add state

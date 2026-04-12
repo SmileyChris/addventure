@@ -1,7 +1,7 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
   import { getObjectInteractions } from '../lib/helpers';
-  import { createInteraction } from '../lib/factory';
+  import { createInteraction, objectKey } from '../lib/factory';
   import InteractionCard from './InteractionCard.svelte';
   import InteractionEditor from './InteractionEditor.svelte';
 
@@ -84,6 +84,34 @@
     if (idx >= 0) editingIdx = idx;
   }
 
+  function deleteObject() {
+    if (!store.game) return;
+    if (!confirm(`Delete ${objectName} and all its states and interactions?`)) return;
+    store.mutate((g) => {
+      // Remove all state variants of this object
+      for (const key of Object.keys(g.objects)) {
+        const obj = g.objects[key];
+        if (obj.room === roomName && obj.base === objectName) {
+          delete g.objects[key];
+        }
+      }
+      // Remove all interactions targeting this object or its states
+      g.interactions = g.interactions.filter((i) => {
+        if (i.room !== roomName) return true;
+        // Check if any target group references this object or its states
+        for (const group of i.targetGroups) {
+          for (const target of group) {
+            if (target === objectName || target.split('__')[0] === objectName) {
+              return false;
+            }
+          }
+        }
+        return true;
+      });
+    });
+    expanded = false;
+  }
+
   function addInteraction() {
     if (!store.game) return;
     const targetName = effectiveActiveState;
@@ -114,6 +142,9 @@
     <div class="header-right">
       {#if totalInteractions > 0}
         <span class="interaction-count">{totalInteractions} interaction{totalInteractions === 1 ? '' : 's'}</span>
+      {/if}
+      {#if expanded}
+        <button class="delete-obj-btn" onclick={(e) => { e.stopPropagation(); deleteObject(); }} title="Delete object">✕</button>
       {/if}
     </div>
   </div>
@@ -235,6 +266,27 @@
   .header-right {
     display: flex;
     align-items: center;
+    gap: 8px;
+  }
+
+  .delete-obj-btn {
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    padding: 2px 6px;
+    background: transparent;
+    border: 1px solid var(--warm-gray);
+    color: var(--text-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .delete-obj-btn:hover {
+    background: var(--red-ink);
+    border-color: var(--red-ink);
+    color: var(--parchment-light);
   }
 
   .interaction-count {
