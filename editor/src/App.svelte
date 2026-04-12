@@ -3,6 +3,7 @@
   import { store } from './lib/store.svelte';
   import ProjectList from './components/ProjectList.svelte';
   import TopBar from './components/TopBar.svelte';
+  import TabBar from './components/TabBar.svelte';
   import Sidebar from './components/Sidebar.svelte';
   import MainPanel from './components/MainPanel.svelte';
 </script>
@@ -10,8 +11,11 @@
 {#if store.project}
   <div class="editor">
     <TopBar />
+    <TabBar />
     <div class="workspace">
-      <Sidebar />
+      {#if store.activeView === 'editor'}
+        <Sidebar />
+      {/if}
       <MainPanel />
     </div>
   </div>

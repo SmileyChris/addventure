@@ -22,7 +22,7 @@ let _project = $state<GameProject | null>(null);
 let _undoStack = $state<string[]>([]);
 let _redoStack = $state<string[]>([]);
 let _saveTimer: ReturnType<typeof setTimeout> | null = null;
-let _activeView = $state<'summary' | 'room' | 'map'>('summary');
+let _activeView = $state<'summary' | 'editor' | 'map' | 'puzzleflow' | 'verbs' | 'inventory'>('summary');
 let _activeRoom = $state<string | null>(null);
 let _settings = $state<EditorSettings>(loadSettings());
 
@@ -102,12 +102,29 @@ export const store = {
   },
 
   showRoom(roomName: string): void {
-    _activeView = 'room';
+    _activeView = 'editor';
     _activeRoom = roomName;
+  },
+
+  showEditor(): void {
+    _activeView = 'editor';
+    // Keep _activeRoom as-is so last selected room stays active
   },
 
   showMap(): void {
     _activeView = 'map';
+  },
+
+  showPuzzleFlow(): void {
+    _activeView = 'puzzleflow';
+  },
+
+  showVerbs(): void {
+    _activeView = 'verbs';
+  },
+
+  showInventory(): void {
+    _activeView = 'inventory';
   },
 
   // Mutation

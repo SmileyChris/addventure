@@ -14,10 +14,6 @@
   // Inline-add state
   let addingRoom = $state(false);
   let newRoomName = $state('');
-  let addingVerb = $state(false);
-  let newVerbName = $state('');
-  let addingItem = $state(false);
-  let newItemName = $state('');
 
   function rooms() {
     if (!store.game) return [];
@@ -27,16 +23,6 @@
   function startRoom() {
     if (!store.game) return null;
     return store.game.metadata.start ?? null;
-  }
-
-  function verbs() {
-    if (!store.game) return [];
-    return Object.values(store.game.verbs);
-  }
-
-  function inventory() {
-    if (!store.game) return [];
-    return Object.values(store.game.inventory);
   }
 
   function signals() {
@@ -56,12 +42,8 @@
       });
   }
 
-  function isStateVerb(name: string) {
-    return name.includes('__');
-  }
-
   function isActiveRoom(name: string) {
-    return store.activeView === 'room' && store.activeRoom === name;
+    return store.activeView === 'editor' && store.activeRoom === name;
   }
 
   // Room add
@@ -84,74 +66,13 @@
     newRoomName = '';
   }
 
-  // Verb add
-  function startAddVerb() {
-    addingVerb = true;
-    newVerbName = '';
-  }
-
-  function normalizeIdentifier(val: string) {
-    return val.toUpperCase().replace(/ /g, '_');
-  }
-
-  function commitVerb() {
-    const name = normalizeIdentifier(newVerbName.trim());
-    if (!name) { cancelVerb(); return; }
-    if (store.game?.verbs[name]) { cancelVerb(); return; }
-    store.addVerb(name);
-    cancelVerb();
-  }
-
-  function cancelVerb() {
-    addingVerb = false;
-    newVerbName = '';
-  }
-
-  // Inventory add
-  function startAddItem() {
-    addingItem = true;
-    newItemName = '';
-  }
-
-  function commitItem() {
-    const name = normalizeIdentifier(newItemName.trim());
-    if (!name) { cancelItem(); return; }
-    if (store.game?.inventory[name]) { cancelItem(); return; }
-    store.addInventoryItem(name);
-    cancelItem();
-  }
-
-  function cancelItem() {
-    addingItem = false;
-    newItemName = '';
-  }
-
   function onRoomKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') { e.preventDefault(); commitRoom(); }
     else if (e.key === 'Escape') cancelRoom();
   }
-
-  function onVerbKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') { e.preventDefault(); commitVerb(); }
-    else if (e.key === 'Escape') cancelVerb();
-  }
-
-  function onItemKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') { e.preventDefault(); commitItem(); }
-    else if (e.key === 'Escape') cancelItem();
-  }
 </script>
 
 <nav class="sidebar">
-  <!-- Game Summary -->
-  <button
-    class="summary-item"
-    class:active={store.activeView === 'summary'}
-    onclick={() => store.showSummary()}
-  >
-    Game Summary
-  </button>
-
   <!-- Rooms -->
   <div class="section">
     <div class="section-header rooms-header">
@@ -190,78 +111,10 @@
     {/if}
   </div>
 
-  <!-- Verbs -->
-  <div class="section">
-    <div class="section-header verbs-header">
-      <span>Verbs</span>
-      {#if !addingVerb}
-        <button class="btn-add" title="Add verb" onclick={startAddVerb}>+ Add</button>
-      {/if}
-    </div>
-    <ul class="section-list">
-      {#each verbs() as verb (verb.name)}
-        <li>
-          <button class="list-item" onclick={() => {}}>
-            <span class="item-label">{displayName(verb.name, nameStyle())}</span>
-            {#if isStateVerb(verb.name)}
-              <span class="badge badge-state">state</span>
-            {/if}
-          </button>
-        </li>
-      {/each}
-    </ul>
-    {#if addingVerb}
-      <div class="inline-add">
-        <input
-          type="text"
-          placeholder="VERB_NAME…"
-          bind:value={newVerbName}
-          oninput={(e) => { newVerbName = normalizeIdentifier((e.target as HTMLInputElement).value); }}
-          onkeydown={onVerbKeydown}
-          onblur={cancelVerb}
-          use:focusEl
-        />
-      </div>
-    {/if}
-  </div>
-
-  <!-- Inventory -->
-  <div class="section">
-    <div class="section-header inventory-header">
-      <span>Inventory</span>
-      {#if !addingItem}
-        <button class="btn-add" title="Add inventory item" onclick={startAddItem}>+ Add</button>
-      {/if}
-    </div>
-    <ul class="section-list">
-      {#each inventory() as item (item.name)}
-        <li>
-          <button class="list-item" onclick={() => {}}>
-            <span class="item-label">{displayName(item.name, nameStyle())}</span>
-          </button>
-        </li>
-      {/each}
-    </ul>
-    {#if addingItem}
-      <div class="inline-add">
-        <input
-          type="text"
-          placeholder="ITEM_NAME…"
-          bind:value={newItemName}
-          oninput={(e) => { newItemName = normalizeIdentifier((e.target as HTMLInputElement).value); }}
-          onkeydown={onItemKeydown}
-          onblur={cancelItem}
-          use:focusEl
-        />
-      </div>
-    {/if}
-  </div>
-
   <!-- Signals & Cues -->
   <div class="section">
     <div class="section-header signals-header">
       <span>Signals &amp; Cues</span>
-      <button class="btn-add" title="Add signal" onclick={() => {}}>+ Add</button>
     </div>
     <ul class="section-list">
       {#each signals() as sig}
@@ -280,18 +133,12 @@
           </div>
         </li>
       {/each}
+      {#if signals().length === 0 && cueRooms().length === 0}
+        <li>
+          <p class="signals-hint">Add arrows to interactions to create signals and cues.</p>
+        </li>
+      {/if}
     </ul>
-  </div>
-
-  <!-- Footer -->
-  <div class="footer">
-    <button
-      class="map-btn"
-      class:active={store.activeView === 'map'}
-      onclick={() => store.showMap()}
-    >
-      🗺 Map View
-    </button>
   </div>
 </nav>
 
@@ -305,37 +152,6 @@
     flex-direction: column;
     overflow-y: auto;
     overflow-x: hidden;
-  }
-
-  /* ── Game Summary item ─────────────── */
-  .summary-item {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background-color: var(--mid-dark);
-    border: none;
-    border-bottom: 1px solid var(--warm-gray);
-    border-radius: 0;
-    padding: 0.85em 1em;
-    font-family: var(--font-title);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--parchment-light);
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-  }
-
-  .summary-item:hover {
-    background-color: rgba(201, 168, 76, 0.08);
-    color: var(--parchment-light);
-  }
-
-  .summary-item.active {
-    background-color: rgba(201, 168, 76, 0.1);
-    border-left: 3px solid var(--gold);
-    color: var(--gold);
   }
 
   /* ── Section ───────────────────────── */
@@ -357,8 +173,6 @@
   }
 
   .rooms-header { color: var(--gold); }
-  .verbs-header { color: var(--parchment); }
-  .inventory-header { color: var(--amber); }
   .signals-header { color: var(--parchment-dark); }
 
   .btn-add {
@@ -463,6 +277,14 @@
     opacity: 0.7;
   }
 
+  .signals-hint {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 0.3em 0.6em;
+    line-height: 1.4;
+  }
+
   /* ── Badges ────────────────────────── */
   .badge {
     font-family: var(--font-title);
@@ -478,37 +300,5 @@
   .badge-start {
     background-color: var(--gold-dim);
     color: var(--parchment-light);
-  }
-
-  .badge-state {
-    background-color: var(--amber);
-    color: var(--black);
-  }
-
-  /* ── Footer ────────────────────────── */
-  .footer {
-    margin-top: auto;
-    padding: 0.75rem;
-    border-top: 1px solid var(--warm-gray);
-  }
-
-  .map-btn {
-    width: 100%;
-    text-align: center;
-    background-color: var(--dark-warm);
-    border: 1px solid var(--warm-gray);
-    border-radius: 3px;
-    color: var(--text-mid);
-    font-size: 0.8rem;
-    padding: 0.45em 1em;
-    cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-  }
-
-  .map-btn:hover,
-  .map-btn.active {
-    background-color: rgba(201, 168, 76, 0.1);
-    border-color: var(--gold-dim);
-    color: var(--gold);
   }
 </style>

@@ -2,10 +2,6 @@
   import { store } from '../lib/store.svelte';
   import { getRoomExits, getRoomObjects } from '../lib/helpers';
   import { loadMapPositions, saveMapPositions } from '../lib/persistence';
-  import PuzzleFlow from './PuzzleFlow.svelte';
-
-  // Active sub-tab: 'map' or 'flow'
-  let activeTab = $state<'map' | 'flow'>('map');
 
   const NODE_W = 160;
   const NODE_H = 64; // taller to fit object count
@@ -270,34 +266,14 @@
 </script>
 
 <div class="mapview-wrapper">
-  <!-- Sub-tab bar -->
-  <div class="tab-bar">
-    <button
-      class="tab-btn"
-      class:active={activeTab === 'map'}
-      onclick={() => (activeTab = 'map')}
-    >
-      Room Map
-    </button>
-    <button
-      class="tab-btn"
-      class:active={activeTab === 'flow'}
-      onclick={() => (activeTab = 'flow')}
-    >
-      Puzzle Flow
-    </button>
-  </div>
-
-  <!-- Tab content -->
-  {#if activeTab === 'map'}
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-    <div
-      class="map-container"
-      role="application"
-      aria-label="Room map"
-      onmousemove={onMouseMove}
-      onmouseup={onMouseUp}
-    >
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div
+    class="map-container"
+    role="application"
+    aria-label="Room map"
+    onmousemove={onMouseMove}
+    onmouseup={onMouseUp}
+  >
       <!-- SVG layer for edges -->
       <svg
         class="map-svg"
@@ -419,9 +395,6 @@
         </div>
       {/if}
     </div>
-  {:else}
-    <PuzzleFlow />
-  {/if}
 </div>
 
 <style>
@@ -431,44 +404,6 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-  }
-
-  /* ── Sub-tab bar ───────────────────────────────────────── */
-  .tab-bar {
-    display: flex;
-    gap: 2px;
-    padding: 6px 8px 0;
-    background-color: var(--dark-warm);
-    border-bottom: 1px solid var(--warm-gray);
-    flex-shrink: 0;
-  }
-
-  .tab-btn {
-    font-family: var(--font-title);
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    background: none;
-    border: none;
-    border-radius: 3px 3px 0 0;
-    padding: 5px 14px;
-    cursor: pointer;
-    transition: color 0.15s, background-color 0.15s;
-  }
-
-  .tab-btn:hover {
-    color: var(--parchment-dark);
-    background-color: var(--mid-dark);
-  }
-
-  .tab-btn.active {
-    color: var(--gold);
-    background-color: var(--dark);
-    border: 1px solid var(--warm-gray);
-    border-bottom: 1px solid var(--dark);
-    margin-bottom: -1px;
   }
 
   /* ── Map container ─────────────────────────────────────── */
