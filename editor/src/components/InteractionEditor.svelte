@@ -87,18 +87,13 @@
     </div>
   </div>
 
-  <!-- Verb -->
-  <div class="field-row">
-    <span class="field-label" aria-hidden="true">Verb</span>
-    <div class="field-control">
+  <!-- Verb + Targets on one line -->
+  <div class="verb-targets-row">
+    <div class="verb-cell">
       <VerbPicker value={interaction.verb} onchange={handleVerbChange} />
     </div>
-  </div>
-
-  <!-- Targets -->
-  <div class="field-row">
-    <span class="field-label" aria-hidden="true">Targets</span>
-    <div class="field-control">
+    <span class="plus-sep">+</span>
+    <div class="targets-cell">
       <TargetBuilder
         targetGroups={interaction.targetGroups}
         onchange={handleTargetsChange}
@@ -228,6 +223,30 @@
   .done-btn {
     font-size: 0.72rem;
     padding: 3px 10px;
+  }
+
+  .verb-targets-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .verb-cell {
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  .plus-sep {
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .targets-cell {
+    flex: 1;
+    min-width: 0;
   }
 
   .field-row {
