@@ -15,7 +15,11 @@ import type {
 export function createGameData(): GameData {
   return {
     metadata: {},
-    verbs: {},
+    verbs: {
+      LOOK: { name: 'LOOK' },
+      USE: { name: 'USE' },
+      TAKE: { name: 'TAKE' },
+    },
     objects: {},
     inventory: {},
     rooms: {},

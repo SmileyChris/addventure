@@ -18,7 +18,7 @@ describe('createGameData', () => {
   it('returns empty structure with all required fields', () => {
     const data = createGameData();
     expect(data.metadata).toEqual({});
-    expect(data.verbs).toEqual({});
+    expect(Object.keys(data.verbs)).toEqual(['LOOK', 'USE', 'TAKE']);
     expect(data.objects).toEqual({});
     expect(data.inventory).toEqual({});
     expect(data.rooms).toEqual({});
