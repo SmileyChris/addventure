@@ -516,23 +516,7 @@
     color: var(--gold);
     background: transparent;
   }
-  .ai-btn {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    padding: 1px 6px;
-    background: none;
-    color: var(--gold-dim);
-    border: 1px solid var(--gold-dim);
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .ai-btn:hover {
-    color: var(--gold);
-    border-color: var(--gold);
-    background: rgba(201, 168, 76, 0.1);
-  }
+  /* .ai-btn defined globally in theme.css */
 
   .inline-add {
     padding: 6px 0;

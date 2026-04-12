@@ -126,6 +126,56 @@ button:active {
   background-color: var(--black);
 }
 
+/* ── AI button ────────────────────────────────────────── */
+.ai-btn {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1;
+  color: var(--gold-dim);
+  background: none;
+  border: 1px solid var(--gold-dim);
+  border-radius: 3px;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.ai-btn:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.1);
+}
+
+.ai-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ai-btn .ai-spinner {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--gold-dim);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: ai-spin 0.6s linear infinite;
+}
+
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-btn.ai-error {
+  color: var(--red-ink);
+  border-color: var(--red-ink);
+}
+
 /* ── Monospace utility ─────────────────────────────────── */
 .mono {
   font-family: var(--font-mono);
