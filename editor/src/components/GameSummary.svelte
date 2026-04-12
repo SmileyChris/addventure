@@ -70,7 +70,7 @@ Rules:
           </div>
           <textarea
             id="meta-description"
-            rows="10"
+            rows="16"
             value={store.game.metadata.description ?? ''}
             oninput={(e) =>
               store.mutate((g) => {

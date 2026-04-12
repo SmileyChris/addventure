@@ -1,6 +1,8 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
   import { displayName } from '../lib/helpers';
+  import { actionKey } from '../lib/factory';
+  import type { Action } from '../lib/types';
 
   function nameStyle(): string {
     return store.game?.metadata.name_style ?? 'upper_words';
@@ -68,6 +70,40 @@
     if (e.key === 'Enter') { e.preventDefault(); commitVerb(); }
     else if (e.key === 'Escape') cancelVerb();
   }
+
+  // Actions
+  function actions(): Action[] {
+    if (!store.game) return [];
+    return Object.values(store.game.actions);
+  }
+
+  function actionsByRoom(): Record<string, Action[]> {
+    const grouped: Record<string, Action[]> = {};
+    for (const action of actions()) {
+      if (!grouped[action.room]) grouped[action.room] = [];
+      grouped[action.room].push(action);
+    }
+    return grouped;
+  }
+
+  // Delete action
+  let pendingDeleteAction = $state<string | null>(null);
+
+  function deleteAction(room: string, name: string) {
+    const key = actionKey(room, name);
+    if (pendingDeleteAction === key) {
+      store.mutate((g) => {
+        delete g.actions[key];
+      });
+      pendingDeleteAction = null;
+    } else {
+      pendingDeleteAction = key;
+    }
+  }
+
+  function cancelDeleteAction() {
+    pendingDeleteAction = null;
+  }
 </script>
 
 <div class="verbs-page">
@@ -126,6 +162,53 @@
       </div>
     {:else}
       <button class="btn-add-verb" onclick={startAddVerb}>+ Add Verb</button>
+    {/if}
+    <!-- Actions section -->
+    <hr class="section-divider" />
+
+    <div class="section-header">
+      <h2>Actions</h2>
+      <p class="hint">
+        Pre-printed actions that players can look up directly, without adding verb + object.
+        Actions are created in the room editor using <code>&gt; ACTION_NAME</code>.
+      </p>
+    </div>
+
+    {#if actions().length === 0}
+      <p class="empty-message">No actions yet. Add them in the room editor using <code>&gt; ACTION_NAME</code>.</p>
+    {:else}
+      {#each Object.entries(actionsByRoom()) as [roomName, roomActions] (roomName)}
+        <div class="action-group">
+          <button class="room-label" onclick={() => store.showRoom(roomName)}>{roomName}</button>
+          <div class="action-list">
+            {#each roomActions as action (actionKey(action.room, action.name))}
+              {@const key = actionKey(action.room, action.name)}
+              <div class="action-row">
+                <div class="action-info">
+                  <span class="action-name">&gt; {action.name}</span>
+                  {#if action.narrative}
+                    <span class="action-narrative">{action.narrative}</span>
+                  {/if}
+                </div>
+                <div class="action-badges">
+                  {#if action.discovered}
+                    <span class="badge badge-discovered">discovered</span>
+                  {/if}
+                </div>
+                <div class="action-actions">
+                  {#if pendingDeleteAction === key}
+                    <span class="confirm-text">Delete?</span>
+                    <button class="btn-confirm-delete" onclick={() => deleteAction(action.room, action.name)}>Yes</button>
+                    <button class="btn-cancel" onclick={cancelDeleteAction}>No</button>
+                  {:else}
+                    <button class="btn-delete" onclick={() => deleteAction(action.room, action.name)} title="Delete action">✕</button>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/each}
     {/if}
   {:else}
     <p class="hint">No game loaded.</p>
@@ -385,5 +468,107 @@
     font-style: italic;
     font-size: 0.85rem;
     padding: 0.5rem 0;
+  }
+
+  /* ── Section divider ─────────────────── */
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--warm-gray);
+    margin: 2rem 0 1.5rem;
+  }
+
+  .section-header {
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Action groups ───────────────────── */
+  .action-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .room-label {
+    font-family: var(--font-title);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    padding: 0 0 0.4rem 0;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .room-label:hover {
+    color: var(--gold);
+  }
+
+  .action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--mid-dark);
+    border: 1px solid var(--warm-gray);
+    border-radius: 4px;
+    transition: border-color 0.15s;
+  }
+
+  .action-row:hover {
+    border-color: var(--parchment-dark);
+  }
+
+  .action-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .action-name {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--parchment-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .action-narrative {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .action-badges {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .action-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .badge-discovered {
+    background-color: var(--gold-dim);
+    color: var(--black);
+  }
+
+  .action-row:hover .btn-delete {
+    opacity: 1;
   }
 </style>

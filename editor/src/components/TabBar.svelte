@@ -6,7 +6,7 @@
     { id: 'editor',     label: 'Editor',       action: () => store.showEditor() },
     { id: 'map',        label: 'Room Map',     action: () => store.showMap() },
     { id: 'puzzleflow', label: 'Puzzle Flow',  action: () => store.showPuzzleFlow() },
-    { id: 'verbs',      label: 'Verbs',        action: () => store.showVerbs() },
+    { id: 'verbs',      label: 'Verbs & Actions', action: () => store.showVerbs() },
     { id: 'inventory',  label: 'Inventory',    action: () => store.showInventory() },
   ] as const;
 
