@@ -6,6 +6,8 @@
   import TargetBuilder from './TargetBuilder.svelte';
   import ArrowEditor from './ArrowEditor.svelte';
   import SignalCheckEditor from './SignalCheckEditor.svelte';
+  import GenerateButton from './GenerateButton.svelte';
+  import { interactionPrompt, sealedContentPrompt } from '../lib/ollama';
 
   interface Props {
     interaction: Interaction;
@@ -107,7 +109,13 @@
 
   <!-- Narrative -->
   <div class="field-row field-row-col">
-    <label class="field-label" for="narrative-{interactionIndex}">Narrative</label>
+    <div class="label-row">
+      <label class="field-label" for="narrative-{interactionIndex}">Narrative</label>
+      <GenerateButton
+        prompt={interactionPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game?.metadata.title ?? '')}
+        ongenerated={(text) => update((i) => { i.narrative = text; })}
+      />
+    </div>
     <textarea
       id="narrative-{interactionIndex}"
       class="narrative-area"
@@ -134,7 +142,15 @@
 
   <!-- Sealed content -->
   <div class="field-section">
-    <div class="section-label">Sealed Content</div>
+    <div class="label-row">
+      <div class="section-label">Sealed Content</div>
+      {#if interaction.sealedContent !== null}
+        <GenerateButton
+          prompt={sealedContentPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game?.metadata.title ?? '')}
+          ongenerated={(text) => update((i) => { i.sealedContent = text; })}
+        />
+      {/if}
+    </div>
     {#if interaction.sealedContent === null}
       <button class="add-sealed-btn" onclick={addSealedContent}>+ Add sealed content</button>
     {:else}
@@ -225,6 +241,13 @@
     flex-direction: column;
     align-items: stretch;
     gap: 4px;
+  }
+
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
   }
 
   .field-label {

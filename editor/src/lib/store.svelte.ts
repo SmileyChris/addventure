@@ -12,6 +12,9 @@ import {
   loadProject,
   saveUndoStack,
   loadUndoStack,
+  loadSettings,
+  saveSettings,
+  type EditorSettings,
 } from './persistence';
 
 let _project = $state<GameProject | null>(null);
@@ -20,6 +23,7 @@ let _redoStack = $state<string[]>([]);
 let _saveTimer: ReturnType<typeof setTimeout> | null = null;
 let _activeView = $state<'summary' | 'room' | 'map'>('summary');
 let _activeRoom = $state<string | null>(null);
+let _settings = $state<EditorSettings>(loadSettings());
 
 export const store = {
   // Getters
@@ -40,6 +44,14 @@ export const store = {
   },
   get canRedo() {
     return _redoStack.length > 0;
+  },
+  get settings() {
+    return _settings;
+  },
+
+  updateSettings(settings: EditorSettings) {
+    _settings = settings;
+    saveSettings(settings);
   },
 
   // Project lifecycle

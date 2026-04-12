@@ -6,6 +6,8 @@
   import ObjectCard from './ObjectCard.svelte';
   import InteractionCard from './InteractionCard.svelte';
   import SourceView from './SourceView.svelte';
+  import GenerateButton from './GenerateButton.svelte';
+  import { roomDescriptionPrompt } from '../lib/ollama';
 
   interface Props {
     roomName: string;
@@ -67,6 +69,9 @@
     const grouped = getRoomObjects(game, roomName);
     return Object.keys(grouped).sort();
   });
+
+  /** Flat list of object names for prompt building */
+  const objectNames = $derived(roomObjectBases);
 
   /** Freeform interactions: wildcard (*) or multi-group targets */
   const freeformInteractions = $derived.by(() => {
@@ -167,7 +172,13 @@
     <div class="room-content">
       <!-- Room Description -->
       <section class="section">
-        <label class="section-label" for="room-look">Room Description (LOOK)</label>
+        <div class="label-row">
+          <label class="section-label" for="room-look">Room Description (LOOK)</label>
+          <GenerateButton
+            prompt={roomDescriptionPrompt(roomName, objectNames, store.game?.metadata.title ?? '')}
+            ongenerated={(text) => updateLookText(text)}
+          />
+        </div>
         <textarea
           id="room-look"
           rows="3"
@@ -318,6 +329,13 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-mid);
+  }
+
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
   }
 
   .section-header-row {

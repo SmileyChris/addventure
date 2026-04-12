@@ -1,6 +1,31 @@
 import type { GameProject } from './types';
 
 const PROJECTS_KEY = 'addventure:projects';
+const SETTINGS_KEY = 'addventure:settings';
+
+export interface EditorSettings {
+  ollamaEnabled: boolean;
+  ollamaModel: string;
+}
+
+const DEFAULT_SETTINGS: EditorSettings = {
+  ollamaEnabled: false,
+  ollamaModel: '',
+};
+
+export function loadSettings(): EditorSettings {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (!raw) return { ...DEFAULT_SETTINGS };
+  try {
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export function saveSettings(settings: EditorSettings): void {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
 const projectKey = (id: string) => `addventure:project:${id}`;
 const undoKey = (id: string) => `addventure:project:${id}:undo`;
 const mapKey = (id: string) => `addventure:project:${id}:map`;

@@ -3,6 +3,9 @@
   import { exportZip, downloadBlob } from '../lib/export';
   import { parseGameFiles } from '../lib/parser';
   import JSZip from 'jszip';
+  import SettingsPanel from './SettingsPanel.svelte';
+
+  let showSettings = $state(false);
 
   let editingName = $state(false);
   let nameInput = $state('');
@@ -147,9 +150,20 @@
         onchange={onFileSelected}
         style="display:none"
       />
+      <button
+        class="btn-action btn-settings"
+        title="Settings"
+        onclick={() => (showSettings = true)}
+      >
+        ⚙
+      </button>
     </div>
   {/if}
 </header>
+
+{#if showSettings}
+  <SettingsPanel onclose={() => (showSettings = false)} />
+{/if}
 
 <style>
   .topbar {
@@ -255,5 +269,10 @@
     background-color: var(--gold);
     border-color: var(--gold);
     color: var(--black);
+  }
+
+  .btn-settings {
+    font-size: 0.9rem;
+    padding: 0.2em 0.5em;
   }
 </style>
