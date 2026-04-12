@@ -1,7 +1,10 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
-  import { getSignalEmissions } from '../lib/helpers';
-  import { displayName } from '../lib/helpers';
+  import { getSignalEmissions, displayName } from '../lib/helpers';
+
+  function nameStyle(): string {
+    return store.game?.metadata.name_style ?? 'upper_words';
+  }
 
   // Focus action (avoids a11y autofocus warning)
   function focusEl(el: HTMLElement) {
@@ -165,7 +168,7 @@
             class:active={isActiveRoom(room.name)}
             onclick={() => store.showRoom(room.name)}
           >
-            <span class="item-label">{displayName(room.name)}</span>
+            <span class="item-label">{displayName(room.name, nameStyle())}</span>
             {#if room.name === startRoom()}
               <span class="badge badge-start">start</span>
             {/if}
@@ -199,7 +202,7 @@
       {#each verbs() as verb (verb.name)}
         <li>
           <button class="list-item" onclick={() => {}}>
-            <span class="item-label">{displayName(verb.name)}</span>
+            <span class="item-label">{displayName(verb.name, nameStyle())}</span>
             {#if isStateVerb(verb.name)}
               <span class="badge badge-state">state</span>
             {/if}
@@ -234,7 +237,7 @@
       {#each inventory() as item (item.name)}
         <li>
           <button class="list-item" onclick={() => {}}>
-            <span class="item-label">{displayName(item.name)}</span>
+            <span class="item-label">{displayName(item.name, nameStyle())}</span>
           </button>
         </li>
       {/each}
@@ -265,7 +268,7 @@
         <li>
           <div class="list-item static-item">
             <span class="signal-icon">⚡</span>
-            <span class="item-label">{displayName(sig)}</span>
+            <span class="item-label">{displayName(sig, nameStyle())}</span>
           </div>
         </li>
       {/each}

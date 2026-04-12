@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Interaction } from '../lib/types';
   import { displayName } from '../lib/helpers';
+  import { store } from '../lib/store.svelte';
   import ArrowBadge from './ArrowBadge.svelte';
 
   interface Props {
@@ -10,11 +11,12 @@
 
   let { interaction, onclick }: Props = $props();
 
-  const verbLabel = $derived(displayName(interaction.verb));
+  const ns = $derived(store.game?.metadata.name_style ?? 'upper_words');
+  const verbLabel = $derived(displayName(interaction.verb, ns));
   const targetLabel = $derived(
     interaction.targetGroups.length === 0
       ? '@ROOM'
-      : interaction.targetGroups.map((g) => g.map(displayName).join(' | ')).join(' + '),
+      : interaction.targetGroups.map((g) => g.map((t) => displayName(t, ns)).join(' | ')).join(' + '),
   );
   const narrativePreview = $derived(
     interaction.narrative.length > 120

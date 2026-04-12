@@ -24,20 +24,28 @@ import {
 // ---- displayName ----
 
 describe('displayName', () => {
-  it('converts underscored name to title case', () => {
-    expect(displayName('STEEL_DOOR')).toBe('Steel Door');
+  it('upper_words (default): keeps uppercase, replaces underscores with spaces', () => {
+    expect(displayName('STEEL_DOOR')).toBe('STEEL DOOR');
   });
 
-  it('strips state suffix before converting', () => {
-    expect(displayName('STEEL_DOOR__OPEN')).toBe('Steel Door');
+  it('upper_words: strips state suffix', () => {
+    expect(displayName('STEEL_DOOR__OPEN')).toBe('STEEL DOOR');
   });
 
-  it('handles a single word', () => {
-    expect(displayName('LAMP')).toBe('Lamp');
+  it('upper_words: single word stays uppercase', () => {
+    expect(displayName('LAMP')).toBe('LAMP');
   });
 
-  it('handles mixed case gracefully', () => {
-    expect(displayName('red_LAMP')).toBe('Red Lamp');
+  it('title: converts to title case', () => {
+    expect(displayName('STEEL_DOOR', 'title')).toBe('Steel Door');
+  });
+
+  it('title: strips state suffix', () => {
+    expect(displayName('STEEL_DOOR__OPEN', 'title')).toBe('Steel Door');
+  });
+
+  it('title: single word', () => {
+    expect(displayName('LAMP', 'title')).toBe('Lamp');
   });
 });
 
@@ -135,13 +143,13 @@ describe('classifyArrow', () => {
 // ---- arrowLabel ----
 
 describe('arrowLabel', () => {
-  it('labels a destroy arrow', () => {
-    expect(arrowLabel(createArrow('CROWBAR', 'trash'))).toBe('× Crowbar');
+  it('labels a destroy arrow (upper_words default)', () => {
+    expect(arrowLabel(createArrow('CROWBAR', 'trash'))).toBe('× CROWBAR');
   });
 
-  it('labels a pickup arrow', () => {
+  it('labels a pickup arrow (upper_words)', () => {
     expect(arrowLabel(createArrow('CROWBAR', 'player'))).toBe(
-      '↑ Crowbar → inventory',
+      '↑ CROWBAR → inventory',
     );
   });
 
@@ -157,8 +165,14 @@ describe('arrowLabel', () => {
     expect(arrowLabel(createArrow('?', 'Basement'))).toBe('? → Basement');
   });
 
-  it('labels a transform arrow', () => {
+  it('labels a transform arrow (upper_words)', () => {
     expect(arrowLabel(createArrow('DOOR__CLOSED', 'DOOR__OPEN'))).toBe(
+      'DOOR → DOOR OPEN',
+    );
+  });
+
+  it('labels a transform arrow (title style)', () => {
+    expect(arrowLabel(createArrow('DOOR__CLOSED', 'DOOR__OPEN'), 'title')).toBe(
       'Door → Door Open',
     );
   });

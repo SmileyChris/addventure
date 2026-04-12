@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Arrow } from '../lib/types';
   import { classifyArrow, arrowLabel } from '../lib/helpers';
+  import { store } from '../lib/store.svelte';
 
   interface Props {
     arrow: Arrow;
@@ -8,8 +9,9 @@
 
   let { arrow }: Props = $props();
 
+  const nameStyle = $derived(store.game?.metadata.name_style ?? 'upper_words');
   const type = $derived(classifyArrow(arrow));
-  const label = $derived(arrowLabel(arrow));
+  const label = $derived(arrowLabel(arrow, nameStyle));
 </script>
 
 <span class="arrow-badge badge-{type}">{label}</span>

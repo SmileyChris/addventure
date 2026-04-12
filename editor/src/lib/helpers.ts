@@ -1,21 +1,33 @@
 import type { GameData, Arrow, Interaction } from './types';
 
-/** Format an entity name for display: STEEL_DOOR → "Steel Door" */
-export function displayName(name: string): string {
+/**
+ * Format an entity name for display, respecting name_style setting.
+ * "upper_words" (default): STEEL_DOOR → "STEEL DOOR"
+ * "title": STEEL_DOOR → "Steel Door"
+ * Strips state suffix: DOOR__OPEN → "DOOR" or "Door"
+ */
+export function displayName(name: string, style: string = 'upper_words'): string {
   const base = name.split('__')[0];
-  return base
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+  const words = base.replace(/_/g, ' ');
+  if (style === 'title') {
+    return words
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+  return words;
 }
 
-/** Format a full name including state: DOOR__OPEN → "Door Open" */
-function displayFullName(name: string): string {
-  return name
-    .replace('__', '_')
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+/** Format a full name including state: DOOR__OPEN → "DOOR OPEN" or "Door Open" */
+function displayFullName(name: string, style: string = 'upper_words'): string {
+  const words = name.replace(/__/g, ' ').replace(/_/g, ' ');
+  if (style === 'title') {
+    return words
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+  }
+  return words;
 }
 
 /** Get all signal names emitted in the game (scan all arrows with destination "signal") */
@@ -224,26 +236,26 @@ export function classifyArrow(arrow: Arrow): string {
 }
 
 /** Get a display label for an arrow */
-export function arrowLabel(arrow: Arrow): string {
+export function arrowLabel(arrow: Arrow, style: string = 'upper_words'): string {
   const type = classifyArrow(arrow);
   const { subject, destination } = arrow;
+  const dn = (n: string) => displayName(n, style);
+  const dfn = (n: string) => displayFullName(n, style);
 
   switch (type) {
     case 'destroy':
-      return `\u00d7 ${displayName(subject)}`;
+      return `\u00d7 ${dn(subject)}`;
     case 'pickup':
-      return `\u2191 ${displayName(subject)} \u2192 inventory`;
+      return `\u2191 ${dn(subject)} \u2192 inventory`;
     case 'move':
-      return `\u2192 ${displayName(destination)}`;
+      return `\u2192 ${dn(destination)}`;
     case 'transform': {
-      const subjectDisplay = displayName(subject);
-      const destDisplay = displayFullName(destination);
-      return `${subjectDisplay} \u2192 ${destDisplay}`;
+      return `${dn(subject)} \u2192 ${dfn(destination)}`;
     }
     case 'reveal':
-      return `${displayName(subject)} appears`;
+      return `${dn(subject)} appears`;
     case 'cue':
-      return `? \u2192 ${displayName(destination)}`;
+      return `? \u2192 ${dn(destination)}`;
     case 'signal':
       return `\u26a1 ${arrow.signalName ?? subject}`;
     case 'reveal_verb':
@@ -251,13 +263,10 @@ export function arrowLabel(arrow: Arrow): string {
     case 'discover_action':
       return `> ${subject.slice(1)}`;
     case 'room_state': {
-      const destDisplay = displayName(destination);
-      return `room \u2192 ${destDisplay}`;
+      return `room \u2192 ${dn(destination)}`;
     }
     case 'verb_restore': {
-      const stateDisplay = displayName(subject);
-      const baseDisplay = displayName(destination);
-      return `${stateDisplay} \u2192 ${baseDisplay}`;
+      return `${dn(subject)} \u2192 ${dn(destination)}`;
     }
     default:
       return `${subject} \u2192 ${destination}`;
