@@ -91,7 +91,7 @@ export const store = {
       clearTimeout(_saveTimer);
       _saveTimer = null;
     }
-    if (_project) {
+    if (_project && !_diskGameName) {
       saveProject(_project);
     }
     _project = null;
@@ -167,8 +167,10 @@ export const store = {
     autoCreateFromArrows(_project.game);
     _project.lastModified = Date.now();
 
-    // Persist undo stack and schedule a debounced save
-    saveUndoStack(_project.id, _undoStack);
+    // Persist undo stack (only for localStorage projects) and schedule save
+    if (!_diskGameName) {
+      saveUndoStack(_project.id, _undoStack);
+    }
     this._scheduleSave();
   },
 
@@ -188,7 +190,7 @@ export const store = {
     _project.game = JSON.parse(snapshot) as GameData;
     _project.lastModified = Date.now();
 
-    saveUndoStack(_project.id, _undoStack);
+    if (!_diskGameName) saveUndoStack(_project.id, _undoStack);
     this._scheduleSave();
   },
 
@@ -206,7 +208,7 @@ export const store = {
     _project.game = JSON.parse(snapshot) as GameData;
     _project.lastModified = Date.now();
 
-    saveUndoStack(_project.id, _undoStack);
+    if (!_diskGameName) saveUndoStack(_project.id, _undoStack);
     this._scheduleSave();
   },
 
@@ -256,13 +258,15 @@ export const store = {
     _saveTimer = setTimeout(async () => {
       _saveTimer = null;
       if (_project) {
-        saveProject(_project);
-        // Also save to disk if in disk mode
-        if (_diskGameName && _project.game) {
+        if (_diskGameName) {
+          // Disk mode: save to filesystem only, not localStorage
           const { serializeGame } = await import('./serializer');
           const { saveGameToDisk } = await import('./filesystem');
           const files = serializeGame(_project.game);
           await saveGameToDisk(_diskGameName, files);
+        } else {
+          // localStorage mode
+          saveProject(_project);
         }
       }
     }, 500);
