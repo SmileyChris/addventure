@@ -20,14 +20,14 @@ export async function listModels(): Promise<string[]> {
 }
 
 /** Generate text using Ollama */
-export async function generate(model: string, prompt: string, thinking = false): Promise<string> {
+export async function generate(model: string, prompt: string, thinking = false, maxTokens = 200): Promise<string> {
   const body: Record<string, unknown> = {
     model,
     prompt,
     stream: false,
     options: {
       temperature: 0.8,
-      num_predict: 200,
+      num_predict: maxTokens,
     },
   };
   if (!thinking) {

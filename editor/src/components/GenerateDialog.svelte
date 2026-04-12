@@ -36,7 +36,7 @@ ${direction ? `Author's direction: ${direction}\n` : ''}
 Write only the text content. No labels, no formatting, no quotation marks.`;
 
     try {
-      const result = await generate(model, prompt, store.settings.ollamaThinking);
+      const result = await generate(model, prompt, store.settings.ollamaThinking, 500);
       ongenerated(result);
       onclose();
     } catch (e) {
