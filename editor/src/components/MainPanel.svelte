@@ -6,6 +6,7 @@
   import PuzzleFlow from './PuzzleFlow.svelte';
   import VerbsPage from './VerbsPage.svelte';
   import InventoryPage from './InventoryPage.svelte';
+  import NarratorPage from './NarratorPage.svelte';
 </script>
 
 <div class="main-panel">
@@ -27,6 +28,8 @@
     <VerbsPage />
   {:else if store.activeView === 'inventory'}
     <InventoryPage />
+  {:else if store.activeView === 'narrator'}
+    <NarratorPage />
   {/if}
 </div>
 

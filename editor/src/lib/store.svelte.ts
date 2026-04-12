@@ -22,7 +22,7 @@ let _project = $state<GameProject | null>(null);
 let _undoStack = $state<string[]>([]);
 let _redoStack = $state<string[]>([]);
 let _saveTimer: ReturnType<typeof setTimeout> | null = null;
-let _activeView = $state<'summary' | 'editor' | 'map' | 'puzzleflow' | 'verbs' | 'inventory'>('summary');
+let _activeView = $state<'summary' | 'editor' | 'map' | 'puzzleflow' | 'verbs' | 'inventory' | 'narrator'>('summary');
 let _activeRoom = $state<string | null>(null);
 let _settings = $state<EditorSettings>(loadSettings());
 
@@ -125,6 +125,10 @@ export const store = {
 
   showInventory(): void {
     _activeView = 'inventory';
+  },
+
+  showNarrator(): void {
+    _activeView = 'narrator';
   },
 
   // Mutation
