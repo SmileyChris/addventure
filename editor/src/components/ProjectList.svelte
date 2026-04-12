@@ -1,8 +1,11 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
   import { loadProjectIndex, deleteProject } from '../lib/persistence';
+  import { parseGameFiles } from '../lib/parser';
+  import JSZip from 'jszip';
 
   let newGameName = $state('');
+  let fileInput: HTMLInputElement = $state()!;
   let projects = $state(loadProjectIndex());
 
   function refreshProjects() {
@@ -34,6 +37,47 @@
     });
   }
 
+  function handleImport() {
+    fileInput.click();
+  }
+
+  async function onFileSelected(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = '';
+
+    const files: Record<string, string> = {};
+    if (file.name.endsWith('.zip')) {
+      const zip = await JSZip.loadAsync(file);
+      for (const [path, entry] of Object.entries(zip.files)) {
+        if (entry.dir) continue;
+        const filename = path.split('/').pop();
+        if (filename && filename.endsWith('.md')) {
+          files[filename] = await entry.async('string');
+        }
+      }
+    } else if (file.name.endsWith('.md')) {
+      files[file.name] = await file.text();
+    }
+    if (Object.keys(files).length === 0) return;
+
+    const gameData = parseGameFiles(files);
+    const projectName = gameData.metadata['title'] ?? file.name.replace(/\.(zip|md)$/, '').replace(/[-_]/g, ' ');
+    store.create(projectName);
+    store.mutate((game) => {
+      game.metadata = gameData.metadata;
+      game.verbs = gameData.verbs;
+      game.objects = gameData.objects;
+      game.inventory = gameData.inventory;
+      game.rooms = gameData.rooms;
+      game.interactions = gameData.interactions;
+      game.cues = gameData.cues;
+      game.actions = gameData.actions;
+      game.signalChecks = gameData.signalChecks;
+    });
+  }
+
   const sorted = $derived(
     projects.slice().sort((a, b) => b.lastModified - a.lastModified)
   );
@@ -62,6 +106,8 @@
           New Game
         </button>
       </div>
+      <button class="btn btn-ghost" onclick={handleImport}>Import Existing Game</button>
+      <input type="file" accept=".zip,.md" bind:this={fileInput} onchange={onFileSelected} style="display:none" />
     </div>
   </section>
 
@@ -94,10 +140,6 @@
     </section>
   {/if}
 
-  <!-- Import hint -->
-  <div class="import-hint">
-    <p>Have an existing game? Drop a <code>.zip</code> of <code>.md</code> files onto the editor to import it.</p>
-  </div>
 </div>
 
 <style>
@@ -116,7 +158,7 @@
      HERO — matches site/index.html hero section
      ═══════════════════════════════════════════ */
   .hero {
-    min-height: 80vh;
+    min-height: 60vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -236,6 +278,10 @@
     animation: titleReveal 1s ease-out 0.7s both;
     width: 100%;
     max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   /* ═══════════════════════════════════════════
@@ -302,6 +348,18 @@
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--parchment);
+    border: 1px solid var(--warm-gray);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+    transform: translateY(-2px);
   }
 
   /* ═══════════════════════════════════════════
@@ -410,23 +468,4 @@
     color: var(--parchment-light);
   }
 
-  /* ═══════════════════════════════════════════
-     IMPORT HINT
-     ═══════════════════════════════════════════ */
-  .import-hint {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-dim);
-    font-size: 0.85rem;
-    font-style: italic;
-  }
-
-  .import-hint code {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--parchment-dark);
-    background: var(--mid-dark);
-    padding: 0.15em 0.4em;
-    border-radius: 3px;
-  }
 </style>

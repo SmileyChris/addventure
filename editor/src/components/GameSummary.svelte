@@ -2,9 +2,58 @@
   import { store } from '../lib/store.svelte';
   import { getSignalEmissions } from '../lib/helpers';
   import { buildGameContext } from '../lib/ollama';
+  import { exportZip, downloadBlob } from '../lib/export';
+  import { parseGameFiles } from '../lib/parser';
+  import { deleteProject } from '../lib/persistence';
+  import JSZip from 'jszip';
   import GenerateDialog from './GenerateDialog.svelte';
 
   let showDescriptionGen = $state(false);
+  let fileInput: HTMLInputElement = $state()!;
+
+  async function handleExport() {
+    if (!store.project || !store.game) return;
+    const blob = await exportZip(store.game, store.project.name);
+    const filename = store.project.name.toLowerCase().replace(/\s+/g, '-') + '.zip';
+    downloadBlob(blob, filename);
+  }
+
+  function handleImport() {
+    fileInput.click();
+  }
+
+  async function onFileSelected(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    input.value = '';
+    const files: Record<string, string> = {};
+    if (file.name.endsWith('.zip')) {
+      const zip = await JSZip.loadAsync(file);
+      for (const [path, entry] of Object.entries(zip.files)) {
+        if (entry.dir) continue;
+        const filename = path.split('/').pop();
+        if (filename && filename.endsWith('.md')) {
+          files[filename] = await entry.async('string');
+        }
+      }
+    } else if (file.name.endsWith('.md')) {
+      files[file.name] = await file.text();
+    }
+    if (Object.keys(files).length === 0) return;
+    const gameData = parseGameFiles(files);
+    store.mutate((game) => {
+      Object.assign(game, gameData);
+    });
+  }
+
+  function handleDelete() {
+    if (!store.project) return;
+    if (!confirm(`Delete "${store.project.name}"? This cannot be undone.`)) return;
+    const id = store.project.id;
+    store.close();
+    deleteProject(id);
+  }
 
   function signals() {
     if (!store.game) return [];
@@ -160,6 +209,14 @@ Rules:
             placeholder="A"
           />
         </div>
+
+        <!-- Project actions -->
+        <div class="project-actions">
+          <button class="btn-action-export" onclick={handleExport}>↓ Export .zip</button>
+          <button class="btn-action-import" onclick={handleImport}>Import</button>
+          <input type="file" accept=".zip,.md" bind:this={fileInput} onchange={onFileSelected} style="display:none" />
+          <button class="btn-action-delete" onclick={handleDelete}>Delete Project</button>
+        </div>
       </div>
     </form>
 
@@ -301,4 +358,55 @@ Rules:
   }
 
   /* .ai-btn defined globally in theme.css */
+
+  .project-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--warm-gray);
+  }
+
+  .btn-action-export,
+  .btn-action-import,
+  .btn-action-delete {
+    font-size: 0.75rem;
+    padding: 0.4em 0.8em;
+    text-align: left;
+    border-radius: 3px;
+  }
+
+  .btn-action-export {
+    background: var(--gold-dim);
+    color: var(--parchment-light);
+    border: none;
+  }
+
+  .btn-action-export:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  .btn-action-import {
+    background: none;
+    color: var(--text-mid);
+    border: 1px solid var(--warm-gray);
+  }
+
+  .btn-action-import:hover {
+    color: var(--parchment);
+    border-color: var(--parchment-dark);
+  }
+
+  .btn-action-delete {
+    background: none;
+    color: var(--text-dim);
+    border: 1px solid var(--warm-gray);
+  }
+
+  .btn-action-delete:hover {
+    color: var(--red-ink);
+    border-color: var(--red-ink);
+  }
 </style>

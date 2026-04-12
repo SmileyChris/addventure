@@ -17,7 +17,14 @@
       <RoomView roomName={store.activeRoom} />
     {:else}
       <div class="placeholder">
-        <p>Select a room from the sidebar, or add a new one.</p>
+        <p>Select a room from the sidebar, or</p>
+        <button class="placeholder-add" onclick={() => {
+          const name = prompt('Room name:');
+          if (name?.trim()) {
+            store.addRoom(name.trim());
+            store.showRoom(name.trim());
+          }
+        }}>+ Add Room</button>
       </div>
     {/if}
   {:else if store.activeView === 'map'}
@@ -42,11 +49,28 @@
 
   .placeholder {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 1rem;
     height: 100%;
     color: var(--text-dim);
     font-style: italic;
     font-size: 0.9rem;
+  }
+
+  .placeholder-add {
+    font-size: 0.85rem;
+    padding: 0.5em 1.5em;
+    background: var(--gold-dim);
+    color: var(--parchment-light);
+    border: none;
+    border-radius: 4px;
+    font-style: normal;
+  }
+
+  .placeholder-add:hover {
+    background: var(--gold);
+    color: var(--black);
   }
 </style>

@@ -138,25 +138,12 @@
       >
         ↪ Redo
       </button>
-      <button class="btn-export" onclick={handleExport} title="Export as .zip">
-        ↓ Export .zip
-      </button>
-      <button class="btn-action" title="Import .zip or .md" onclick={handleImport}>
-        Import
-      </button>
-      <input
-        type="file"
-        accept=".zip,.md"
-        bind:this={fileInput}
-        onchange={onFileSelected}
-        style="display:none"
-      />
       <button
-        class="btn-action btn-settings"
+        class="btn-action"
         title="Settings"
         onclick={() => (showSettings = true)}
       >
-        ⚙
+        ⚙ Settings
       </button>
     </div>
   {/if}
