@@ -7,6 +7,7 @@ import {
   createRoomObject,
   objectKey,
 } from './factory';
+import { autoCreateFromArrows } from './autocreate';
 import {
   saveProject,
   loadProject,
@@ -123,6 +124,7 @@ export const store = {
 
     // Apply the mutation
     fn(_project.game);
+    autoCreateFromArrows(_project.game);
     _project.lastModified = Date.now();
 
     // Persist undo stack and schedule a debounced save
