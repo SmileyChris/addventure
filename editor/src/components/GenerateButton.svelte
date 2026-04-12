@@ -21,7 +21,7 @@
     loading = true;
     error = false;
     try {
-      const text = await generate(store.settings.ollamaModel, prompt);
+      const text = await generate(store.settings.ollamaModel, prompt, store.settings.ollamaThinking);
       ongenerated(text);
     } catch (e) {
       console.error('Ollama generation error:', e);

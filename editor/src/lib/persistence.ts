@@ -6,11 +6,13 @@ const SETTINGS_KEY = 'addventure:settings';
 export interface EditorSettings {
   ollamaEnabled: boolean;
   ollamaModel: string;
+  ollamaThinking: boolean;
 }
 
 const DEFAULT_SETTINGS: EditorSettings = {
   ollamaEnabled: false,
   ollamaModel: '',
+  ollamaThinking: false,
 };
 
 export function loadSettings(): EditorSettings {

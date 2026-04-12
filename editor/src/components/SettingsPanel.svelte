@@ -109,6 +109,15 @@
           <button class="refresh-btn" onclick={fetchModels} disabled={loadingModels}>
             {loadingModels ? 'Refreshing…' : 'Refresh'}
           </button>
+
+          <label class="checkbox-row sub-option">
+            <input
+              type="checkbox"
+              checked={localSettings.ollamaThinking}
+              onchange={(e) => localSettings.ollamaThinking = (e.target as HTMLInputElement).checked}
+            />
+            <span>Enable thinking mode <span class="hint-inline">(slower, better quality — for models that support it)</span></span>
+          </label>
         </div>
       {/if}
     </section>
@@ -258,6 +267,16 @@
   select:focus {
     outline: none;
     border-color: var(--gold-dim);
+  }
+
+  .sub-option {
+    margin-top: 4px;
+    font-size: 0.85rem;
+  }
+
+  .hint-inline {
+    color: var(--text-dim);
+    font-size: 0.78rem;
   }
 
   .refresh-btn {
