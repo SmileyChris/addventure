@@ -177,15 +177,7 @@ Rules:
 
           <div class="narrator-preset-row">
             <select
-              value=""
-              onchange={(e) => {
-                const val = (e.target as HTMLSelectElement).value;
-                if (val) {
-                  narratorPreset = val;
-                  narratorExtra = '';
-                }
-                (e.target as HTMLSelectElement).value = '';
-              }}
+              bind:value={narratorPreset}
             >
               <option value="">Choose a style...</option>
               {#each NARRATOR_PRESETS as preset}
