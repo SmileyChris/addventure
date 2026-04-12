@@ -37,16 +37,16 @@ Rules:
 </script>
 
 <div class="game-summary">
-  <h2>Game Summary</h2>
   {#if store.game}
-    <form class="meta-form" onsubmit={(e) => e.preventDefault()}>
-      <div class="form-grid">
-        <!-- Title -->
+    <form class="summary-layout" onsubmit={(e) => e.preventDefault()}>
+      <!-- Main column: title + description -->
+      <div class="main-col">
         <div class="field">
           <label for="meta-title">Title</label>
           <input
             id="meta-title"
             type="text"
+            class="title-input"
             value={store.game.metadata.title ?? ''}
             oninput={(e) => {
               const val = (e.target as HTMLInputElement).value;
@@ -57,10 +57,47 @@ Rules:
                 store.project.name = val.trim();
               }
             }}
+            placeholder="Game title..."
           />
         </div>
 
-        <!-- Author -->
+        <div class="field">
+          <div class="label-row">
+            <label for="meta-description">Description</label>
+            {#if store.settings.ollamaEnabled && store.settings.ollamaModel}
+              <button class="ai-btn" onclick={() => showDescriptionGen = true} title="Generate with AI">✦ AI</button>
+            {/if}
+          </div>
+          <textarea
+            id="meta-description"
+            rows="10"
+            value={store.game.metadata.description ?? ''}
+            oninput={(e) =>
+              store.mutate((g) => {
+                g.metadata.description = (e.target as HTMLTextAreaElement).value;
+              })}
+            placeholder="Opening narrative that sets the scene for the player..."
+          ></textarea>
+        </div>
+
+        <!-- Signal Checks -->
+        {#if signals().length > 0}
+          <div class="field signals-section">
+            <span class="label-text">Signal Checks</span>
+            <p class="hint">
+              {signals().length} signal{signals().length === 1 ? '' : 's'} — edit in room interactions.
+            </p>
+            <ul class="signal-list">
+              {#each signals() as sig}
+                <li><span class="signal-chip">{sig}</span></li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+      </div>
+
+      <!-- Right column: meta fields -->
+      <div class="meta-col">
         <div class="field">
           <label for="meta-author">Author</label>
           <input
@@ -71,10 +108,10 @@ Rules:
               store.mutate((g) => {
                 g.metadata.author = (e.target as HTMLInputElement).value;
               })}
+            placeholder="Author name..."
           />
         </div>
 
-        <!-- Start Room -->
         <div class="field">
           <label for="meta-start">Start Room</label>
           <select
@@ -92,24 +129,6 @@ Rules:
           </select>
         </div>
 
-        <!-- Ledger Prefix -->
-        <div class="field field-narrow">
-          <label for="meta-prefix">Ledger Prefix</label>
-          <input
-            id="meta-prefix"
-            type="text"
-            maxlength="1"
-            value={store.game.metadata.ledger_prefix ?? ''}
-            oninput={(e) =>
-              store.mutate((g) => {
-                g.metadata.ledger_prefix = (
-                  e.target as HTMLInputElement
-                ).value.toUpperCase();
-              })}
-          />
-        </div>
-
-        <!-- Name Style -->
         <div class="field">
           <label for="meta-style">Name Style</label>
           <select
@@ -124,57 +143,34 @@ Rules:
             <option value="title">Title Case</option>
           </select>
         </div>
-      </div>
 
-      <!-- Narrator voice is now a separate tab -->
-
-      <!-- Description -->
-      <div class="field field-full">
-        <div class="label-row">
-          <label for="meta-description">Description</label>
-          {#if store.settings.ollamaEnabled && store.settings.ollamaModel}
-            <button class="ai-btn" onclick={() => showDescriptionGen = true} title="Generate with AI">✦ AI</button>
-          {/if}
+        <div class="field">
+          <label for="meta-prefix">Ledger Prefix</label>
+          <input
+            id="meta-prefix"
+            type="text"
+            maxlength="1"
+            value={store.game.metadata.ledger_prefix ?? ''}
+            oninput={(e) =>
+              store.mutate((g) => {
+                g.metadata.ledger_prefix = (
+                  e.target as HTMLInputElement
+                ).value.toUpperCase();
+              })}
+            placeholder="A"
+          />
         </div>
-        <textarea
-          id="meta-description"
-          rows="6"
-          value={store.game.metadata.description ?? ''}
-          oninput={(e) =>
-            store.mutate((g) => {
-              g.metadata.description = (e.target as HTMLTextAreaElement).value;
-            })}
-          placeholder="Opening narrative that sets the scene for the player..."
-        ></textarea>
       </div>
-
-      {#if showDescriptionGen}
-        <GenerateDialog
-          context={descriptionContext()}
-          label="Opening Description"
-          ongenerated={(text) => store.mutate((g) => { g.metadata.description = text; })}
-          onclose={() => showDescriptionGen = false}
-        />
-      {/if}
-
-      <!-- Signal Checks -->
-      {#if signals().length > 0}
-        <div class="field field-full signals-section">
-          <span class="label-text">Signal Checks</span>
-          <p class="hint">
-            This game uses {signals().length} signal{signals().length === 1
-              ? ''
-              : 's'}. Signal checks are defined inline in room interactions and
-            cannot be edited here — edit them in the room where they occur.
-          </p>
-          <ul class="signal-list">
-            {#each signals() as sig}
-              <li><span class="signal-chip">{sig}</span></li>
-            {/each}
-          </ul>
-        </div>
-      {/if}
     </form>
+
+    {#if showDescriptionGen}
+      <GenerateDialog
+        context={descriptionContext()}
+        label="Opening Description"
+        ongenerated={(text) => store.mutate((g) => { g.metadata.description = text; })}
+        onclose={() => showDescriptionGen = false}
+      />
+    {/if}
   {:else}
     <p class="hint">No game loaded.</p>
   {/if}
@@ -183,29 +179,29 @@ Rules:
 <style>
   .game-summary {
     padding: 2rem;
-    max-width: 680px;
   }
 
-  h2 {
-    font-family: var(--font-title);
-    font-weight: 900;
-    font-size: 1.5rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 1.5rem;
+  .summary-layout {
+    display: flex;
+    gap: 2rem;
+    max-width: 900px;
   }
 
-  .meta-form {
+  .main-col {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-width: 0;
   }
 
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+  .meta-col {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 0.2rem;
   }
 
   .field {
@@ -214,18 +210,16 @@ Rules:
     gap: 0.3rem;
   }
 
-  .field-narrow input {
-    width: 60px;
-  }
-
-  .field-full {
-    grid-column: 1 / -1;
+  .title-input {
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 0.5em 0.6em;
   }
 
   label,
   .label-text {
     font-family: var(--font-title);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 800;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -260,6 +254,11 @@ Rules:
 
   select {
     cursor: pointer;
+    width: 100%;
+  }
+
+  .meta-col input {
+    width: 100%;
   }
 
   .signals-section {
@@ -269,9 +268,9 @@ Rules:
 
   .hint {
     color: var(--text-mid);
-    font-size: 0.85rem;
-    margin: 0.4rem 0;
-    line-height: 1.5;
+    font-size: 0.8rem;
+    margin: 0.3rem 0;
+    line-height: 1.4;
   }
 
   .signal-list {
@@ -280,12 +279,12 @@ Rules:
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
   }
 
   .signal-chip {
     font-family: var(--font-title);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
