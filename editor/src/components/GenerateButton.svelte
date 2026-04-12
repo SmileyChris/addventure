@@ -58,22 +58,23 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
     line-height: 1;
     color: var(--gold-dim);
     background: none;
-    border: none;
-    padding: 0 2px;
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    padding: 1px 6px;
     cursor: pointer;
-    transition: color 0.15s;
-    min-width: 16px;
-    min-height: 16px;
+    transition: all 0.15s;
     flex-shrink: 0;
   }
 
   .generate-btn:hover:not(:disabled) {
     color: var(--gold);
-    background: none;
+    border-color: var(--gold);
+    background: rgba(201, 168, 76, 0.1);
   }
 
   .generate-btn:disabled {
