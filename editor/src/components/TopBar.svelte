@@ -117,6 +117,9 @@
           {store.project.name}
         </button>
       {/if}
+      {#if store.isDiskMode}
+        <span class="disk-badge">📂 disk</span>
+      {/if}
     {/if}
   </div>
 
@@ -290,5 +293,16 @@
   .btn-settings {
     font-size: 0.9rem;
     padding: 0.2em 0.5em;
+  }
+
+  .disk-badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--parchment-dark, #8a7a5a);
+    background: transparent;
+    padding: 0.15em 0.4em;
+    border-radius: 2px;
+    opacity: 0.7;
   }
 </style>

@@ -1,12 +1,16 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { store } from '../lib/store.svelte';
   import { loadProjectIndex, deleteProject } from '../lib/persistence';
   import { parseGameFiles } from '../lib/parser';
+  import { isDevMode, listGameDirs, loadGameFromDisk } from '../lib/filesystem';
   import JSZip from 'jszip';
 
   let newGameName = $state('');
   let fileInput: HTMLInputElement = $state()!;
   let projects = $state(loadProjectIndex());
+  let devMode = $state(false);
+  let diskGames = $state<{ name: string; files: string[] }[]>([]);
 
   function refreshProjects() {
     projects = loadProjectIndex();
@@ -81,6 +85,20 @@
   const sorted = $derived(
     projects.slice().sort((a, b) => b.lastModified - a.lastModified)
   );
+
+  onMount(async () => {
+    devMode = await isDevMode();
+    if (devMode) {
+      diskGames = await listGameDirs();
+    }
+  });
+
+  async function openDiskGame(name: string) {
+    const files = await loadGameFromDisk(name);
+    if (!files) return;
+    const gameData = parseGameFiles(files);
+    store.openFromDisk(name, gameData);
+  }
 </script>
 
 <div class="landing">
@@ -110,6 +128,28 @@
       <input type="file" accept=".zip,.md" bind:this={fileInput} onchange={onFileSelected} style="display:none" />
     </div>
   </section>
+
+  <!-- Dev: Games on Disk section -->
+  {#if devMode && diskGames.length > 0}
+    <section class="disk-games">
+      <div class="disk-games-inner">
+        <span class="section-label">Games on Disk</span>
+        <div class="project-grid">
+          {#each diskGames as game (game.name)}
+            <div class="project-card">
+              <button class="project-open" onclick={() => openDiskGame(game.name)}>
+                <span class="project-icon">📂</span>
+                <div class="project-info">
+                  <span class="project-name">{game.name}</span>
+                  <span class="project-date">{game.files.length} files</span>
+                </div>
+              </button>
+            </div>
+          {/each}
+        </div>
+      </div>
+    </section>
+  {/if}
 
   <!-- Projects section -->
   {#if sorted.length > 0}
@@ -466,6 +506,24 @@
     background: var(--red-ink);
     border-color: var(--red-ink);
     color: var(--parchment-light);
+  }
+
+  /* ═══════════════════════════════════════════
+     DISK GAMES SECTION (dev mode only)
+     ═══════════════════════════════════════════ */
+  .disk-games {
+    background: var(--dark);
+    border-top: 1px solid rgba(100, 160, 120, 0.15);
+    padding: 3rem 2rem 4rem;
+  }
+
+  .disk-games-inner {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .disk-games .section-label {
+    color: rgba(100, 200, 140, 0.6);
   }
 
 </style>

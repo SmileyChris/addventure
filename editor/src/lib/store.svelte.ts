@@ -25,6 +25,7 @@ let _saveTimer: ReturnType<typeof setTimeout> | null = null;
 let _activeView = $state<'summary' | 'editor' | 'map' | 'puzzleflow' | 'verbs' | 'inventory' | 'narrator'>('summary');
 let _activeRoom = $state<string | null>(null);
 let _settings = $state<EditorSettings>(loadSettings());
+let _diskGameName = $state<string | null>(null);
 
 export const store = {
   // Getters
@@ -48,6 +49,12 @@ export const store = {
   },
   get settings() {
     return _settings;
+  },
+  get diskGameName() {
+    return _diskGameName;
+  },
+  get isDiskMode() {
+    return _diskGameName !== null;
   },
 
   updateSettings(settings: EditorSettings) {
@@ -88,6 +95,18 @@ export const store = {
       saveProject(_project);
     }
     _project = null;
+    _diskGameName = null;
+    _undoStack = [];
+    _redoStack = [];
+    _activeView = 'summary';
+    _activeRoom = null;
+  },
+
+  openFromDisk(name: string, gameData: GameData): void {
+    const project = createGameProject(name);
+    project.game = gameData;
+    _project = project;
+    _diskGameName = name;
     _undoStack = [];
     _redoStack = [];
     _activeView = 'summary';
@@ -234,10 +253,17 @@ export const store = {
     if (_saveTimer !== null) {
       clearTimeout(_saveTimer);
     }
-    _saveTimer = setTimeout(() => {
+    _saveTimer = setTimeout(async () => {
       _saveTimer = null;
       if (_project) {
         saveProject(_project);
+        // Also save to disk if in disk mode
+        if (_diskGameName && _project.game) {
+          const { serializeGame } = await import('./serializer');
+          const { saveGameToDisk } = await import('./filesystem');
+          const files = serializeGame(_project.game);
+          await saveGameToDisk(_diskGameName, files);
+        }
       }
     }, 500);
   },
