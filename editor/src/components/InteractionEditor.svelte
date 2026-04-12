@@ -112,7 +112,7 @@
     <div class="label-row">
       <label class="field-label" for="narrative-{interactionIndex}">Narrative</label>
       <GenerateButton
-        prompt={interactionPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game?.metadata.title ?? '')}
+        prompt={interactionPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game!, interaction.narrative || undefined)}
         ongenerated={(text) => update((i) => { i.narrative = text; })}
       />
     </div>
@@ -146,7 +146,7 @@
       <div class="section-label">Sealed Content</div>
       {#if interaction.sealedContent !== null}
         <GenerateButton
-          prompt={sealedContentPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game?.metadata.title ?? '')}
+          prompt={sealedContentPrompt(interaction.verb, interaction.targetGroups.flat(), interaction.room, store.game!)}
           ongenerated={(text) => update((i) => { i.sealedContent = text; })}
         />
       {/if}

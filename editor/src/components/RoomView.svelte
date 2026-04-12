@@ -175,7 +175,7 @@
         <div class="label-row">
           <label class="section-label" for="room-look">Room Description (LOOK)</label>
           <GenerateButton
-            prompt={roomDescriptionPrompt(roomName, objectNames, store.game?.metadata.title ?? '')}
+            prompt={roomDescriptionPrompt(roomName, objectNames, store.game!)}
             ongenerated={(text) => updateLookText(text)}
           />
         </div>
