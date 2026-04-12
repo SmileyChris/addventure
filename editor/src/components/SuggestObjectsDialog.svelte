@@ -40,17 +40,18 @@ ${existingList}
 Suggest 6-8 objects that would belong in a room called "${roomName}" in this game.
 ${direction ? `Author direction: ${direction}` : ''}
 
-For each object, respond with exactly one line in this format:
-OBJECT_NAME: Brief description
+Respond with exactly one object per line in this format (example):
+RUSTY_KEY: A tarnished brass key with worn teeth
+WOODEN_CRATE: A heavy crate nailed shut
 
 Rules:
-- Names must be UPPER_CASE with underscores (e.g. RUSTY_KEY, WOODEN_CRATE)
-- No spaces in names, only underscores between words
+- Each line is a name, then a colon, then a brief description
+- Names are UPPER_CASE_WITH_UNDERSCORES (like SHEARING_TABLE or WOOL_BALE)
+- Do NOT use generic names like OBJECT_1 — use descriptive, specific names
 - Don't suggest objects already in the room
 - Each description should be 5-10 words
-- Objects should fit the room's theme and the game's world
 - Include a mix of interactive and atmospheric objects
-- No numbering, no bullets, just NAME: description`;
+- No numbering, no bullets, no extra text`;
 
     try {
       const result = await generate(model, prompt, store.settings.ollamaThinking, 400);
@@ -58,7 +59,9 @@ Rules:
       const parsed: { name: string; description: string; selected: boolean }[] = [];
 
       for (const line of lines) {
-        const match = line.match(/^([A-Z][A-Z0-9_]*)\s*:\s*(.+)$/);
+        // Strip leading numbers, bullets, dashes
+        const cleaned = line.replace(/^\s*[\d.\-*•]+\s*/, '');
+        const match = cleaned.match(/^([A-Z][A-Z0-9_]*)\s*:\s*(.+)$/);
         if (match) {
           const name = match[1];
           // Skip if already exists

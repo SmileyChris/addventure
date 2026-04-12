@@ -8,8 +8,13 @@
 
   let { value, onchange }: Props = $props();
 
-  let filterText = $state(() => value);
+  let filterText = $state(value);
   let open = $state(false);
+
+  // Sync filterText when the prop changes externally (e.g. undo)
+  $effect(() => {
+    if (!open) filterText = value;
+  });
   let containerEl = $state<HTMLDivElement | null>(null);
 
   const allVerbs = $derived(store.game ? Object.keys(store.game.verbs) : []);
