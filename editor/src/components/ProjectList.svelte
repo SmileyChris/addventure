@@ -86,6 +86,39 @@
     projects.slice().sort((a, b) => b.lastModified - a.lastModified)
   );
 
+  interface AdventureEntry {
+    kind: 'local' | 'disk';
+    id: string;
+    name: string;
+    detail: string;
+    icon: string;
+  }
+
+  const allAdventures = $derived.by(() => {
+    const entries: AdventureEntry[] = [];
+    // Disk games first
+    for (const game of diskGames) {
+      entries.push({
+        kind: 'disk',
+        id: `disk:${game.name}`,
+        name: game.name,
+        detail: `${game.files.length} files`,
+        icon: '📂',
+      });
+    }
+    // Local projects
+    for (const entry of sorted) {
+      entries.push({
+        kind: 'local',
+        id: entry.id,
+        name: entry.name,
+        detail: formatDate(entry.lastModified),
+        icon: '📜',
+      });
+    }
+    return entries;
+  });
+
   onMount(async () => {
     devMode = await isDevMode();
     if (devMode) {
@@ -98,6 +131,20 @@
     if (!files) return;
     const gameData = parseGameFiles(files);
     store.openFromDisk(name, gameData);
+  }
+
+  function openAdventure(entry: AdventureEntry) {
+    if (entry.kind === 'disk') {
+      openDiskGame(entry.name);
+    } else {
+      handleOpen(entry.id);
+    }
+  }
+
+  function deleteAdventure(entry: AdventureEntry) {
+    if (entry.kind === 'local') {
+      handleDelete(entry.id, entry.name);
+    }
   }
 </script>
 
@@ -129,50 +176,30 @@
     </div>
   </section>
 
-  <!-- Dev: Games on Disk section -->
-  {#if devMode && diskGames.length > 0}
-    <section class="disk-games">
-      <div class="disk-games-inner">
-        <span class="section-label">Games on Disk</span>
-        <div class="project-grid">
-          {#each diskGames as game (game.name)}
-            <div class="project-card">
-              <button class="project-open" onclick={() => openDiskGame(game.name)}>
-                <span class="project-icon">📂</span>
-                <div class="project-info">
-                  <span class="project-name">{game.name}</span>
-                  <span class="project-date">{game.files.length} files</span>
-                </div>
-              </button>
-            </div>
-          {/each}
-        </div>
-      </div>
-    </section>
-  {/if}
-
-  <!-- Projects section -->
-  {#if sorted.length > 0}
+  <!-- All adventures (disk + local) -->
+  {#if allAdventures.length > 0}
     <section class="projects">
       <div class="projects-inner">
         <span class="section-label">Your Adventures</span>
         <div class="project-grid">
-          {#each sorted as entry (entry.id)}
+          {#each allAdventures as entry (entry.id)}
             <div class="project-card">
-              <button class="project-open" onclick={() => handleOpen(entry.id)}>
-                <span class="project-icon">📜</span>
+              <button class="project-open" onclick={() => openAdventure(entry)}>
+                <span class="project-icon">{entry.icon}</span>
                 <div class="project-info">
                   <span class="project-name">{entry.name}</span>
-                  <span class="project-date">{formatDate(entry.lastModified)}</span>
+                  <span class="project-date">{entry.detail}</span>
                 </div>
               </button>
-              <button
-                class="btn-delete"
-                onclick={() => handleDelete(entry.id, entry.name)}
-                title="Delete project"
-              >
-                ✕
-              </button>
+              {#if entry.kind === 'local'}
+                <button
+                  class="btn-delete"
+                  onclick={() => deleteAdventure(entry)}
+                  title="Delete project"
+                >
+                  ✕
+                </button>
+              {/if}
             </div>
           {/each}
         </div>
@@ -508,22 +535,5 @@
     color: var(--parchment-light);
   }
 
-  /* ═══════════════════════════════════════════
-     DISK GAMES SECTION (dev mode only)
-     ═══════════════════════════════════════════ */
-  .disk-games {
-    background: var(--dark);
-    border-top: 1px solid rgba(100, 160, 120, 0.15);
-    padding: 3rem 2rem 4rem;
-  }
-
-  .disk-games-inner {
-    max-width: 640px;
-    margin: 0 auto;
-  }
-
-  .disk-games .section-label {
-    color: rgba(100, 200, 140, 0.6);
-  }
 
 </style>
