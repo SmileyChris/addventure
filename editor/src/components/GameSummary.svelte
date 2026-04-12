@@ -1,6 +1,10 @@
 <script lang="ts">
   import { store } from '../lib/store.svelte';
   import { getSignalEmissions } from '../lib/helpers';
+  import { buildGameContext } from '../lib/ollama';
+  import GenerateDialog from './GenerateDialog.svelte';
+
+  let showDescriptionGen = $state(false);
 
   function signals() {
     if (!store.game) return [];
@@ -10,6 +14,25 @@
   function baseRooms() {
     if (!store.game) return [];
     return Object.values(store.game.rooms).filter((r) => r.state === null);
+  }
+
+  function descriptionContext(): string {
+    if (!store.game) return '';
+    const ctx = buildGameContext(store.game);
+    const rooms = baseRooms().map(r => r.name).join(', ');
+    return `You are writing the opening narrative for a paper-based text adventure game.
+
+${ctx}
+
+${rooms ? `The game has these rooms: ${rooms}` : ''}
+
+Write an atmospheric opening description (2-4 paragraphs) that sets the scene and hooks the player. This text is the first thing players read before they begin exploring.
+
+Rules:
+- Write only the narrative text, no labels or formatting
+- Set the tone and atmosphere for the entire game
+- Be evocative — this is printed on paper and should feel literary
+- End with something that propels the player into action`;
   }
 </script>
 
@@ -105,7 +128,12 @@
 
       <!-- Description -->
       <div class="field field-full">
-        <label for="meta-description">Description</label>
+        <div class="label-row">
+          <label for="meta-description">Description</label>
+          {#if store.settings.ollamaEnabled && store.settings.ollamaModel}
+            <button class="ai-btn" onclick={() => showDescriptionGen = true} title="Generate with AI">✦ AI</button>
+          {/if}
+        </div>
         <textarea
           id="meta-description"
           rows="6"
@@ -114,8 +142,18 @@
             store.mutate((g) => {
               g.metadata.description = (e.target as HTMLTextAreaElement).value;
             })}
+          placeholder="Opening narrative that sets the scene for the player..."
         ></textarea>
       </div>
+
+      {#if showDescriptionGen}
+        <GenerateDialog
+          context={descriptionContext()}
+          label="Opening Description"
+          ongenerated={(text) => store.mutate((g) => { g.metadata.description = text; })}
+          onclose={() => showDescriptionGen = false}
+        />
+      {/if}
 
       <!-- Signal Checks -->
       {#if signals().length > 0}
@@ -253,5 +291,29 @@
     color: var(--parchment-light);
     padding: 0.2em 0.6em;
     border-radius: 2px;
+  }
+
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ai-btn {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    background: none;
+    color: var(--gold-dim);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ai-btn:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(201, 168, 76, 0.1);
   }
 </style>
