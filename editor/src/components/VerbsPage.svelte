@@ -77,32 +77,16 @@
     return Object.values(store.game.actions);
   }
 
-  function actionsByRoom(): Record<string, Action[]> {
-    const grouped: Record<string, Action[]> = {};
+  /** Group actions by name, listing rooms for each */
+  function actionsByName(): { name: string; rooms: { room: string; narrative: string; discovered: boolean }[] }[] {
+    const grouped: Record<string, { room: string; narrative: string; discovered: boolean }[]> = {};
     for (const action of actions()) {
-      if (!grouped[action.room]) grouped[action.room] = [];
-      grouped[action.room].push(action);
+      if (!grouped[action.name]) grouped[action.name] = [];
+      grouped[action.name].push({ room: action.room, narrative: action.narrative, discovered: action.discovered });
     }
-    return grouped;
-  }
-
-  // Delete action
-  let pendingDeleteAction = $state<string | null>(null);
-
-  function deleteAction(room: string, name: string) {
-    const key = actionKey(room, name);
-    if (pendingDeleteAction === key) {
-      store.mutate((g) => {
-        delete g.actions[key];
-      });
-      pendingDeleteAction = null;
-    } else {
-      pendingDeleteAction = key;
-    }
-  }
-
-  function cancelDeleteAction() {
-    pendingDeleteAction = null;
+    return Object.entries(grouped)
+      .map(([name, rooms]) => ({ name, rooms }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 </script>
 
@@ -175,40 +159,25 @@
     </div>
 
     {#if actions().length === 0}
-      <p class="empty-message">No actions yet. Add them in the room editor using <code>&gt; ACTION_NAME</code>.</p>
+      <p class="empty-message">No actions yet. Add them in the room editor.</p>
     {:else}
-      {#each Object.entries(actionsByRoom()) as [roomName, roomActions] (roomName)}
-        <div class="action-group">
-          <button class="room-label" onclick={() => store.showRoom(roomName)}>{roomName}</button>
-          <div class="action-list">
-            {#each roomActions as action (actionKey(action.room, action.name))}
-              {@const key = actionKey(action.room, action.name)}
-              <div class="action-row">
-                <div class="action-info">
-                  <span class="action-name">&gt; {action.name}</span>
-                  {#if action.narrative}
-                    <span class="action-narrative">{action.narrative}</span>
-                  {/if}
-                </div>
-                <div class="action-badges">
-                  {#if action.discovered}
-                    <span class="badge badge-discovered">discovered</span>
-                  {/if}
-                </div>
-                <div class="action-actions">
-                  {#if pendingDeleteAction === key}
-                    <span class="confirm-text">Delete?</span>
-                    <button class="btn-confirm-delete" onclick={() => deleteAction(action.room, action.name)}>Yes</button>
-                    <button class="btn-cancel" onclick={cancelDeleteAction}>No</button>
-                  {:else}
-                    <button class="btn-delete" onclick={() => deleteAction(action.room, action.name)} title="Delete action">✕</button>
-                  {/if}
-                </div>
+      <div class="action-list">
+        {#each actionsByName() as group (group.name)}
+          <div class="action-row">
+            <div class="action-info">
+              <span class="action-name">&gt; {group.name}</span>
+              <div class="action-rooms">
+                {#each group.rooms as entry}
+                  <button class="room-link" onclick={() => store.showRoom(entry.room)}>
+                    {entry.room}
+                    {#if entry.discovered}<span class="badge badge-discovered">discovered</span>{/if}
+                  </button>
+                {/each}
               </div>
-            {/each}
+            </div>
           </div>
-        </div>
-      {/each}
+        {/each}
+      </div>
     {/if}
   {:else}
     <p class="hint">No game loaded.</p>
@@ -481,39 +450,15 @@
     margin-bottom: 1.5rem;
   }
 
-  /* ── Action groups ───────────────────── */
-  .action-group {
-    margin-bottom: 1.5rem;
-  }
-
-  .room-label {
-    font-family: var(--font-title);
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    background: none;
-    border: none;
-    padding: 0 0 0.4rem 0;
-    cursor: pointer;
-    transition: color 0.15s;
-  }
-
-  .room-label:hover {
-    color: var(--gold);
-  }
-
+  /* ── Actions ───────────────────── */
   .action-list {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    margin-bottom: 1rem;
   }
 
   .action-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
     padding: 0.5rem 0.75rem;
     background-color: var(--mid-dark);
     border: 1px solid var(--warm-gray);
@@ -526,49 +471,47 @@
   }
 
   .action-info {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
-    min-width: 0;
+    gap: 0.3rem;
   }
 
   .action-name {
     font-family: var(--font-mono);
     font-size: 0.85rem;
     color: var(--parchment-light);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
-  .action-narrative {
+  .action-rooms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .room-link {
     font-family: var(--font-body);
     font-size: 0.75rem;
-    color: var(--text-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .action-badges {
-    display: flex;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--gold-dim);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.15s;
+    display: inline-flex;
+    align-items: center;
     gap: 0.3rem;
   }
 
-  .action-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    flex-shrink: 0;
+  .room-link:hover {
+    color: var(--gold);
+    background: none;
   }
 
   .badge-discovered {
     background-color: var(--gold-dim);
     color: var(--black);
-  }
-
-  .action-row:hover .btn-delete {
-    opacity: 1;
   }
 </style>
