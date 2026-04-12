@@ -5,10 +5,13 @@
   import { parseGameFiles } from '../lib/parser';
   import ObjectCard from './ObjectCard.svelte';
   import InteractionCard from './InteractionCard.svelte';
+  import InteractionEditor from './InteractionEditor.svelte';
   import SourceView from './SourceView.svelte';
   import GenerateButton from './GenerateButton.svelte';
   import SuggestObjectsDialog from './SuggestObjectsDialog.svelte';
+  import ArrowEditor from './ArrowEditor.svelte';
   import { roomDescriptionPrompt } from '../lib/ollama';
+  import type { Arrow } from '../lib/types';
 
   interface Props {
     roomName: string;
@@ -16,7 +19,7 @@
 
   let { roomName }: Props = $props();
 
-  import { objectKey } from '../lib/factory';
+  import { objectKey, actionKey, createAction, createArrow } from '../lib/factory';
 
   let sourceMode = $state(false);
   let showSuggestObjects = $state(false);
@@ -53,6 +56,10 @@
   let newObjectName = $state('');
   let addingFreeform = $state(false);
   let newFreeformVerb = $state('');
+  let editingFreeformIdx = $state<number | null>(null);
+  let addingAction = $state(false);
+  let newActionName = $state('');
+  let editingActionKey = $state<string | null>(null);
 
   function focusEl(el: HTMLElement) {
     el.focus();
@@ -98,6 +105,25 @@
     });
     newFreeformVerb = '';
     addingFreeform = false;
+  }
+
+  function submitAction() {
+    const name = newActionName.trim().toUpperCase().replace(/\s+/g, '_');
+    if (!name || !game) return;
+    const key = actionKey(roomName, name);
+    if (game.actions[key]) return; // already exists
+    store.mutate((g) => {
+      g.actions[key] = createAction(name, roomName);
+    });
+    newActionName = '';
+    addingAction = false;
+  }
+
+  function deleteAction(key: string) {
+    store.mutate((g) => {
+      delete g.actions[key];
+    });
+    if (editingActionKey === key) editingActionKey = null;
   }
 
   const game = $derived(store.game);
@@ -168,6 +194,19 @@
       if (i.targetGroups.length > 1) return true;
       return false;
     });
+  });
+
+  function freeformInteractionIndex(interaction: (typeof freeformInteractions)[number]): number {
+    if (!game) return -1;
+    return game.interactions.indexOf(interaction);
+  }
+
+  /** Room actions */
+  const roomActions = $derived.by(() => {
+    if (!game) return [] as { key: string; action: typeof game.actions[string] }[];
+    return Object.entries(game.actions)
+      .filter(([, a]) => a.room === roomName)
+      .map(([key, action]) => ({ key, action }));
   });
 
   /** Serialized content for this room's .md file */
@@ -307,38 +346,138 @@
       </section>
 
       <!-- Freeform interactions -->
-      {#if freeformInteractions.length > 0 || true}
-        <section class="section">
-          <div class="section-header-row">
-            <span class="section-label">Freeform Interactions</span>
-          </div>
-          {#if freeformInteractions.length === 0}
-            <p class="empty-hint">No wildcard or multi-target interactions.</p>
-          {:else}
-            {#each freeformInteractions as interaction (interaction.verb + JSON.stringify(interaction.targetGroups))}
-              <InteractionCard {interaction} />
-            {/each}
-          {/if}
-          {#if addingFreeform}
-            <div class="inline-add">
-              <input
-                type="text"
-                class="mono"
-                bind:value={newFreeformVerb}
-                placeholder="VERB (e.g. USE)"
-                use:focusEl
-                onkeydown={(e) => {
-                  if (e.key === 'Enter') submitFreeform();
-                  if (e.key === 'Escape') { addingFreeform = false; newFreeformVerb = ''; }
-                }}
-                onblur={() => { addingFreeform = false; newFreeformVerb = ''; }}
+      <section class="section">
+        <div class="section-header-row">
+          <span class="section-label">Freeform Interactions</span>
+        </div>
+        {#if freeformInteractions.length === 0}
+          <p class="empty-hint">No wildcard or multi-target interactions.</p>
+        {:else}
+          {#each freeformInteractions as interaction, localIdx (interaction.verb + JSON.stringify(interaction.targetGroups))}
+            {@const globalIdx = freeformInteractionIndex(interaction)}
+            {#if editingFreeformIdx === globalIdx && globalIdx !== -1}
+              <InteractionEditor
+                {interaction}
+                interactionIndex={globalIdx}
+                onclose={() => { editingFreeformIdx = null; }}
               />
-            </div>
-          {:else}
-            <button class="add-btn" onclick={() => addingFreeform = true}>+ Add freeform interaction</button>
-          {/if}
-        </section>
-      {/if}
+            {:else}
+              <button
+                class="card-btn"
+                onclick={() => { editingFreeformIdx = globalIdx; }}
+                title="Click to edit"
+              >
+                <InteractionCard {interaction} />
+              </button>
+            {/if}
+          {/each}
+        {/if}
+        {#if addingFreeform}
+          <div class="inline-add">
+            <input
+              type="text"
+              class="mono"
+              bind:value={newFreeformVerb}
+              placeholder="VERB (e.g. USE)"
+              use:focusEl
+              onkeydown={(e) => {
+                if (e.key === 'Enter') submitFreeform();
+                if (e.key === 'Escape') { addingFreeform = false; newFreeformVerb = ''; }
+              }}
+              onblur={() => { addingFreeform = false; newFreeformVerb = ''; }}
+            />
+          </div>
+        {:else}
+          <button class="add-btn" onclick={() => addingFreeform = true}>+ Add freeform interaction</button>
+        {/if}
+      </section>
+
+      <!-- Actions -->
+      <section class="section">
+        <div class="section-header-row">
+          <span class="section-label">Actions</span>
+        </div>
+        {#if roomActions.length === 0}
+          <p class="empty-hint">No direct actions (&gt; ACTION_NAME) in this room.</p>
+        {:else}
+          {#each roomActions as { key, action } (key)}
+            {#if editingActionKey === key}
+              <div class="action-editor">
+                <div class="action-editor-header">
+                  <span class="action-name mono">&gt; {action.name}</span>
+                  <div class="action-header-controls">
+                    <label class="discovered-label">
+                      <input
+                        type="checkbox"
+                        checked={action.discovered}
+                        onchange={(e) => store.mutate((g) => { g.actions[key].discovered = (e.target as HTMLInputElement).checked; })}
+                      />
+                      discovered
+                    </label>
+                    <button class="delete-action-btn" onclick={() => deleteAction(key)}>Delete</button>
+                    <button class="done-btn-small" onclick={() => { editingActionKey = null; }}>Done</button>
+                  </div>
+                </div>
+                <label class="field-label-sm" for="action-narrative-{key}">Narrative</label>
+                <textarea
+                  id="action-narrative-{key}"
+                  rows="3"
+                  class="action-narrative"
+                  value={action.narrative}
+                  oninput={(e) => store.mutate((g) => { g.actions[key].narrative = (e.target as HTMLTextAreaElement).value; })}
+                  placeholder="What happens when this action is used?"
+                ></textarea>
+                <div class="action-arrows">
+                  <div class="field-label-sm">Arrows</div>
+                  {#each action.arrows as arrow, i (i)}
+                    <ArrowEditor
+                      {arrow}
+                      onchange={(a: Arrow) => store.mutate((g) => { g.actions[key].arrows[i] = a; })}
+                      ondelete={() => store.mutate((g) => { g.actions[key].arrows.splice(i, 1); })}
+                      roomName={roomName}
+                    />
+                  {/each}
+                  <button class="add-arrow-btn-sm" onclick={() => store.mutate((g) => { g.actions[key].arrows.push(createArrow('', '')); })}>+ Add arrow</button>
+                </div>
+              </div>
+            {:else}
+              <div class="action-card">
+                <button
+                  class="action-card-inner"
+                  onclick={() => { editingActionKey = key; }}
+                  title="Click to edit"
+                >
+                  <span class="action-card-name mono">&gt; {action.name}</span>
+                  {#if action.discovered}
+                    <span class="badge-discovered">discovered</span>
+                  {/if}
+                  {#if action.narrative}
+                    <span class="action-card-narrative">{action.narrative.slice(0, 60)}{action.narrative.length > 60 ? '…' : ''}</span>
+                  {/if}
+                </button>
+              </div>
+            {/if}
+          {/each}
+        {/if}
+        {#if addingAction}
+          <div class="inline-add">
+            <input
+              type="text"
+              class="mono"
+              bind:value={newActionName}
+              placeholder="ACTION_NAME (e.g. GO_NORTH)"
+              use:focusEl
+              onkeydown={(e) => {
+                if (e.key === 'Enter') submitAction();
+                if (e.key === 'Escape') { addingAction = false; newActionName = ''; }
+              }}
+              onblur={() => { addingAction = false; newActionName = ''; }}
+            />
+          </div>
+        {:else}
+          <button class="add-btn" onclick={() => addingAction = true}>+ Add action</button>
+        {/if}
+      </section>
     </div>
   {/if}
 </div>
@@ -531,5 +670,198 @@
     width: 100%;
     font-size: 0.85rem;
     padding: 6px 10px;
+  }
+
+  /* Freeform card button wrapper */
+  .card-btn {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 4px;
+    transition: outline 0.1s;
+  }
+
+  .card-btn:hover {
+    outline: 1px solid var(--gold-dim);
+  }
+
+  /* Action editor */
+  .action-editor {
+    background: var(--dark-warm);
+    border: 1px solid rgba(201, 168, 76, 0.35);
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .action-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .action-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .action-name {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .action-narrative {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    resize: vertical;
+    background: var(--mid-dark);
+    border: 1px solid var(--warm-gray);
+    border-radius: 3px;
+    color: var(--text-light);
+    padding: 0.4em 0.6em;
+  }
+
+  .action-narrative:focus {
+    outline: none;
+    border-color: var(--gold-dim);
+  }
+
+  .action-arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-label-sm {
+    font-family: var(--font-title);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+  }
+
+  .add-arrow-btn-sm {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    background: transparent;
+    border: 1px dashed var(--warm-gray);
+    color: var(--text-dim);
+    padding: 2px 8px;
+    border-radius: 4px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    margin-top: 2px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .add-arrow-btn-sm:hover {
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .delete-action-btn {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    background: rgba(139, 58, 58, 0.2);
+    border-color: rgba(139, 58, 58, 0.5);
+    color: var(--red-ink);
+  }
+
+  .delete-action-btn:hover {
+    background: rgba(139, 58, 58, 0.35);
+  }
+
+  .done-btn-small {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
+
+  .discovered-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Action card (collapsed view) */
+  .action-card {
+    margin-bottom: 4px;
+  }
+
+  .action-card-inner {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    background: var(--mid-dark);
+    border: 1px solid var(--warm-gray);
+    border-radius: 4px;
+    padding: 7px 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s;
+  }
+
+  .action-card-inner:hover {
+    border-color: var(--gold-dim);
+  }
+
+  .action-card-name {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--gold);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .action-card-narrative {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .badge-discovered {
+    font-family: var(--font-title);
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.1em 0.4em;
+    border-radius: 2px;
+    background: rgba(201, 168, 76, 0.15);
+    color: var(--gold-dim);
+    border: 1px solid var(--gold-dim);
+    flex-shrink: 0;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
   }
 </style>
