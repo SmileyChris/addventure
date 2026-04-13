@@ -341,6 +341,7 @@ function parseFragmentBlock(
   const arrows: Arrow[] = [];
   let i = startI;
   let baseIndent: number | null = null;
+  let blankLineSeen = false;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -349,7 +350,12 @@ function parseFragmentBlock(
       i++;
       break;
     }
-    if (!lineStripped || isComment(lineStripped)) {
+    if (!lineStripped) {
+      if (contentLines.length > 0) blankLineSeen = true;
+      i++;
+      continue;
+    }
+    if (isComment(lineStripped)) {
       i++;
       continue;
     }
@@ -360,6 +366,10 @@ function parseFragmentBlock(
     if (marker === '-' && isArrow(content)) {
       arrows.push(parseArrow(stripTrailingComment(content)));
     } else {
+      if (blankLineSeen) {
+        contentLines.push('');
+        blankLineSeen = false;
+      }
       contentLines.push(lineStripped);
     }
     i++;
@@ -755,12 +765,9 @@ function parseArrowChildren(
   // -> VERBNAME (verb reveal, subject is empty string): no children
   if (!subj) return startI;
 
-  // Verb state transform (e.g. USE__RESTRAINED -> USE): no children
-  // Detect by checking if destination looks like a verb name with no __
-  // (simple name, not a stated object). We treat it as verb-like if it matches NAME_RE.
-  // We can't check game.verbs here since they may not include the state forms,
-  // so we use a heuristic: if neither subject nor dest contain '__', treat as verb transform
-  // if they are simple uppercase names. Actually we just proceed to entity-state handling.
+  // Verb state restore: VERB__STATE -> VERB (e.g. USE__RESTRAINED -> USE)
+  // index.md is parsed first so game.verbs has base verbs by this point
+  if (dest in game.verbs) return startI;
 
   // Entity state transform: ENTITY -> ENTITY__STATE
   // dest is a stated name like TERMINAL__UNLOCKED

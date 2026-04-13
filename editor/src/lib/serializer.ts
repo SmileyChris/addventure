@@ -1,6 +1,7 @@
 import type {
   GameData,
   Arrow,
+  Cue,
   Interaction,
   SignalCheck,
 } from './types';
@@ -60,9 +61,41 @@ export function serializeIndex(game: GameData): string {
     lines.push('');
   }
 
-  // Verbs section — skip verbs with __ (they're states)
+  // Compute auto-derivable verbs and inventory (from arrows) so we skip them
+  const autoVerbs = new Set<string>();
+  const autoInventory = new Set<string>();
+  const hasTake = 'TAKE' in game.verbs;
+
+  for (const interaction of game.interactions) {
+    const allArrows = [
+      ...interaction.arrows,
+      ...interaction.sealedArrows,
+      ...interaction.signalChecks.flatMap((c) => c.arrows),
+    ];
+    for (const arrow of allArrows) {
+      // -> VERBNAME (empty subject, uppercase destination)
+      if (
+        arrow.subject === '' &&
+        /^[A-Z][A-Z0-9_]*$/.test(arrow.destination) &&
+        !['trash', 'player', 'room', 'signal'].includes(arrow.destination)
+      ) {
+        autoVerbs.add(arrow.destination);
+      }
+      // OBJECT -> player (auto-inventory when TAKE exists)
+      if (
+        arrow.destination === 'player' &&
+        arrow.subject &&
+        arrow.subject !== 'player' &&
+        hasTake
+      ) {
+        autoInventory.add(arrow.subject.split('__')[0]);
+      }
+    }
+  }
+
+  // Verbs section — skip verb states (__) and auto-derived verbs
   const baseVerbs = Object.values(game.verbs).filter(
-    (v) => !v.name.includes('__'),
+    (v) => !v.name.includes('__') && !autoVerbs.has(v.name),
   );
   if (baseVerbs.length > 0) {
     lines.push('# Verbs');
@@ -72,9 +105,12 @@ export function serializeIndex(game: GameData): string {
     lines.push('');
   }
 
-  // Inventory section
+  // Inventory section — skip auto-derived inventory items
+  const explicitInventory = Object.values(game.inventory).filter(
+    (item) => !autoInventory.has(item.name),
+  );
   lines.push('# Inventory');
-  for (const item of Object.values(game.inventory)) {
+  for (const item of explicitInventory) {
     lines.push(item.name);
 
     // Inventory-level interactions (room === "")
@@ -95,6 +131,8 @@ export function serializeIndex(game: GameData): string {
 /** Serialize a room .md file */
 export function serializeRoom(game: GameData, roomName: string): string {
   const lines: string[] = [];
+  // Mutable copy of cues triggered from this room — consumed as they're serialized
+  const roomCues = game.cues.filter((c) => c.triggerRoom === roomName).slice();
 
   lines.push(`# ${roomName}`);
 
@@ -106,7 +144,15 @@ export function serializeRoom(game: GameData, roomName: string): string {
       i.targetGroups.length === 0,
   );
   if (lookInteraction && lookInteraction.narrative) {
-    lines.push(`LOOK: ${lookInteraction.narrative}`);
+    const narrativeLines = lookInteraction.narrative.split('\n');
+    lines.push(`LOOK: ${narrativeLines[0]}`);
+    for (let j = 1; j < narrativeLines.length; j++) {
+      if (narrativeLines[j] === '') {
+        lines.push('');
+      } else {
+        lines.push(`  ${narrativeLines[j]}`);
+      }
+    }
     lines.push('');
   }
 
@@ -121,6 +167,8 @@ export function serializeRoom(game: GameData, roomName: string): string {
   }
 
   // Serialize objects (base first, then states)
+  // Track emitted interactions so freeform section doesn't re-emit them
+  const emittedInteractions = new Set<Interaction>();
   const serializedBases = new Set<string>();
   for (const obj of Object.values(game.objects)) {
     if (obj.room !== roomName) continue;
@@ -135,14 +183,17 @@ export function serializeRoom(game: GameData, roomName: string): string {
     // Emit base object declaration
     lines.push(baseVariant);
 
-    // Interactions for the base object (those that target baseVariant)
+    // Interactions for the base object — only those whose FIRST target group
+    // contains this object (prevents duplicating multi-target interactions)
     const baseInteractions = game.interactions.filter(
       (i) =>
         i.room === roomName &&
-        i.targetGroups.some((group) => group.includes(baseVariant)),
+        i.targetGroups.length > 0 &&
+        i.targetGroups[0].includes(baseVariant),
     );
     for (const interaction of baseInteractions) {
-      lines.push(...serializeInteraction(interaction, '', baseVariant));
+      lines.push(...serializeInteraction(interaction, '', baseVariant, roomCues));
+      emittedInteractions.add(interaction);
     }
 
     // State variants (sub-objects) with their interactions
@@ -151,10 +202,12 @@ export function serializeRoom(game: GameData, roomName: string): string {
       const stateInteractions = game.interactions.filter(
         (i) =>
           i.room === roomName &&
-          i.targetGroups.some((group) => group.includes(stateVariant)),
+          i.targetGroups.length > 0 &&
+          i.targetGroups[0].includes(stateVariant),
       );
       for (const interaction of stateInteractions) {
-        lines.push(...serializeInteraction(interaction, '  ', stateVariant));
+        lines.push(...serializeInteraction(interaction, '  ', stateVariant, roomCues));
+        emittedInteractions.add(interaction);
       }
     }
 
@@ -191,8 +244,9 @@ export function serializeRoom(game: GameData, roomName: string): string {
 
   const freeformInteractions = game.interactions.filter((i) => {
     if (i.room !== roomName) return false;
+    if (emittedInteractions.has(i)) return false; // already emitted under an object
     if (i.targetGroups.length === 0) return false; // LOOK description handled above
-    // Freeform if none of its targets are in room objects
+    // Freeform if targets include wildcard or no first-target match to room objects
     const allTargets = i.targetGroups.flat();
     if (allTargets.includes('*')) return true; // wildcard = freeform
     return !allTargets.some((t) => coveredObjects.has(t));
@@ -202,7 +256,7 @@ export function serializeRoom(game: GameData, roomName: string): string {
     lines.push('## Interactions');
     lines.push('');
     for (const interaction of freeformInteractions) {
-      lines.push(...serializeFreeformInteraction(interaction));
+      lines.push(...serializeFreeformInteraction(interaction, roomCues));
       lines.push('');
     }
   }
@@ -220,6 +274,7 @@ export function serializeInteraction(
   interaction: Interaction,
   indent: string,
   implicitTarget?: string,
+  cues?: Cue[],
 ): string[] {
   const lines: string[] = [];
 
@@ -253,15 +308,33 @@ export function serializeInteraction(
   } else if (isMultilineNarrative) {
     lines.push(`${headerBase}:`);
     for (const narrativeLine of narrative.split('\n')) {
-      lines.push(`${bIndent}${narrativeLine}`);
+      if (narrativeLine === '') {
+        lines.push('');
+      } else {
+        lines.push(`${bIndent}${narrativeLine}`);
+      }
     }
   } else {
     lines.push(`${headerBase}: ${narrative}`);
   }
 
-  // Arrows
+  // Arrows (with cue children for ? -> "Room" arrows)
   for (const arrow of interaction.arrows) {
     lines.push(`${bIndent}- ${serializeArrow(arrow)}`);
+    // Emit cue children after ? -> "Room" arrows
+    if (arrow.subject === '?' && arrow.destination.startsWith('"') && cues) {
+      const targetRoom = arrow.destination.slice(1, -1);
+      const cue = cues.find(
+        (c) => c.triggerRoom === interaction.room && c.targetRoom === targetRoom,
+      );
+      if (cue) {
+        const cueIndent = bIndent + '  ';
+        lines.push(...serializeCueChildren(cue, cueIndent));
+        // Remove from cues array so each cue is emitted only once
+        const idx = cues.indexOf(cue);
+        if (idx !== -1) cues.splice(idx, 1);
+      }
+    }
   }
 
   // Signal checks
@@ -273,7 +346,11 @@ export function serializeInteraction(
   if (interaction.sealedContent !== null) {
     lines.push(`${bIndent}::: fragment`);
     for (const contentLine of interaction.sealedContent.split('\n')) {
-      lines.push(`${bIndent}${contentLine}`);
+      if (contentLine === '') {
+        lines.push('');
+      } else {
+        lines.push(`${bIndent}${contentLine}`);
+      }
     }
     for (const arrow of interaction.sealedArrows) {
       lines.push(`${bIndent}- ${serializeArrow(arrow)}`);
@@ -284,8 +361,26 @@ export function serializeInteraction(
   return lines;
 }
 
+/** Serialize cue children (narrative + arrows) after a ? -> "Room" arrow */
+function serializeCueChildren(cue: Cue, indent: string): string[] {
+  const lines: string[] = [];
+  if (cue.narrative) {
+    for (const narrativeLine of cue.narrative.split('\n')) {
+      if (narrativeLine === '') {
+        lines.push('');
+      } else {
+        lines.push(`${indent}${narrativeLine}`);
+      }
+    }
+  }
+  for (const arrow of cue.arrows) {
+    lines.push(`${indent}- ${serializeArrow(arrow)}`);
+  }
+  return lines;
+}
+
 /** Serialize a freeform interaction (in ## Interactions section, unindented header) */
-function serializeFreeformInteraction(interaction: Interaction): string[] {
+function serializeFreeformInteraction(interaction: Interaction, cues?: Cue[]): string[] {
   const lines: string[] = [];
 
   const verbPart = interaction.verb;
@@ -310,6 +405,17 @@ function serializeFreeformInteraction(interaction: Interaction): string[] {
 
   for (const arrow of interaction.arrows) {
     lines.push(`  - ${serializeArrow(arrow)}`);
+    if (arrow.subject === '?' && arrow.destination.startsWith('"') && cues) {
+      const targetRoom = arrow.destination.slice(1, -1);
+      const cue = cues.find(
+        (c) => c.triggerRoom === interaction.room && c.targetRoom === targetRoom,
+      );
+      if (cue) {
+        lines.push(...serializeCueChildren(cue, '    '));
+        const idx = cues.indexOf(cue);
+        if (idx !== -1) cues.splice(idx, 1);
+      }
+    }
   }
 
   for (const check of interaction.signalChecks) {
@@ -319,7 +425,11 @@ function serializeFreeformInteraction(interaction: Interaction): string[] {
   if (interaction.sealedContent !== null) {
     lines.push('  ::: fragment');
     for (const contentLine of interaction.sealedContent.split('\n')) {
-      lines.push(`  ${contentLine}`);
+      if (contentLine === '') {
+        lines.push('');
+      } else {
+        lines.push(`  ${contentLine}`);
+      }
     }
     for (const arrow of interaction.sealedArrows) {
       lines.push(`  - ${serializeArrow(arrow)}`);

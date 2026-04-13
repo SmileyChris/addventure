@@ -102,8 +102,8 @@ export const store = {
     _activeRoom = null;
   },
 
-  openFromDisk(name: string, gameData: GameData): void {
-    const project = createGameProject(name);
+  openFromDisk(name: string, gameData: GameData, displayName?: string): void {
+    const project = createGameProject(displayName ?? name);
     project.game = gameData;
     _project = project;
     _diskGameName = name;

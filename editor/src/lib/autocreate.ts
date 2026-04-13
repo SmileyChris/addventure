@@ -21,7 +21,8 @@ export function autoCreateFromArrows(game: GameData): void {
 
   for (const cue of game.cues) {
     for (const arrow of cue.arrows) {
-      arrowsWithContext.push({ arrow, room: cue.triggerRoom, verb: 'CUE' });
+      // Cue arrows operate in the target room, not the trigger room
+      arrowsWithContext.push({ arrow, room: cue.targetRoom, verb: 'CUE' });
     }
   }
 

@@ -130,7 +130,8 @@
     const files = await loadGameFromDisk(name);
     if (!files) return;
     const gameData = parseGameFiles(files);
-    store.openFromDisk(name, gameData);
+    const displayName = gameData.metadata['title'] ?? name;
+    store.openFromDisk(name, gameData, displayName);
   }
 
   function openAdventure(entry: AdventureEntry) {

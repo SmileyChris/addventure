@@ -205,12 +205,14 @@ describe('Integration: example game parse', () => {
   it('parses cue from Cell Block to Basement (PRISONER -> room)', () => {
     const cellBlockCues = game.cues.filter((c) => c.triggerRoom === 'Cell Block');
     expect(cellBlockCues.length).toBeGreaterThan(0);
-    const basementCue = cellBlockCues.find((c) => c.targetRoom === 'Basement');
-    expect(basementCue).toBeDefined();
-    const prisonerArrow = basementCue!.arrows.find(
-      (a) => a.subject === 'PRISONER' && a.destination === 'room',
+    // Find the cue that has the PRISONER arrow (there may be duplicates if
+    // extra .md files exist in the example dir alongside the originals)
+    const basementCue = cellBlockCues.find(
+      (c) =>
+        c.targetRoom === 'Basement' &&
+        c.arrows.some((a) => a.subject === 'PRISONER' && a.destination === 'room'),
     );
-    expect(prisonerArrow).toBeDefined();
+    expect(basementCue).toBeDefined();
   });
 
   it('has multiple interactions total', () => {
