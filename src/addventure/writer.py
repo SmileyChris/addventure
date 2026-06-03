@@ -63,6 +63,9 @@ class GameWriter:
             # player -> "Room" or player -> "Chapter"
             if subj == "player" and dest.startswith('"'):
                 room_name = dest[1:-1]
+                # Trailing __ = explicit base-state reference
+                if room_name.endswith("__"):
+                    room_name = room_name[:-2]
                 rm = self.game.rooms.get(room_name)
                 if rm:
                     if self.blind:

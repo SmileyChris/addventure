@@ -60,6 +60,16 @@ The entity appears on the current room sheet. Use this to reveal hidden objects 
 
 Sends the player to a different room. The room name must match a `#` header exactly and be wrapped in quotes. The story entry tells the player to switch to that room sheet. The player can then LOOK to read the room description.
 
+If the target room has state variants, you can be explicit about which state you mean:
+
+```markdown
+- player -> "Tower"       # base room (or any state — ambiguous if Tower has variants)
+- player -> "Tower__"      # explicit: always the base room
+- player -> "Tower__RUINED" # explicit: only the RUINED state
+```
+
+The trailing `__` on a room name means "base state only." In blind mode this is especially useful — the compiler knows to use the base room's ID and won't warn about stale references after a room transform.
+
 To affect another room *without* moving the player there, use [cue checks](advanced.md#cue-checks-cross-room-effects) (`? -> "Room Name"`).
 
 ### `ENTITY__STATE` — transform an entity
@@ -157,6 +167,16 @@ When the room changes state:
 - The room's LOOK description changes
 
 Room states work just like entity states — new room objects and interactions nest under the arrow, and observations not overridden are inherited (actions are not).
+
+You can revert a room to its base state with `room__` (no state suffix):
+
+```markdown
++ USE + CIRCUIT_BREAKER:
+  You reset the breakers. The room powers down.
+  - room -> room__
+```
+
+This returns the room to the base state with its original ID.
 
 ## Chaining arrows
 

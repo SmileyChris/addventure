@@ -7,10 +7,63 @@ import sys
 from pathlib import Path
 
 from . import compile_game, print_build_summary, generate_pdf, find_typst, generate_markdown
+from .models import GameData
+
+
+def _warn_stale_blind_room_refs(game: GameData) -> None:
+    """Warn about movement arrows that target base rooms with state variants.
+
+    In blind mode, movement instructions reference rooms by numeric ID.
+    If a room has state transforms (e.g. Tower -> Tower__COLLAPSED), the
+    transformed room gets a different ID. A later `player -> "Tower"` arrow
+    would reference the base room's ID, which may be stale.
+    """
+    # Base rooms that have state variants
+    stateful_bases: set[str] = {
+        rm.base for rm in game.rooms.values() if rm.state is not None
+    }
+    if not stateful_bases:
+        return
+
+    # Collect room names targeted by player-movement arrows.
+    # Skip targets ending in __ — the author is explicitly saying
+    # "I mean the base state, I know what I'm doing."
+    def _targeted(stateful: set[str]) -> set[str]:
+        targeted: set[str] = set()
+        for ri in game.resolved:
+            for a in ri.arrows:
+                if a.subject == "player" and a.destination.startswith('"'):
+                    name = a.destination[1:-1]
+                    if name.endswith("__"):
+                        continue  # explicit base-state reference
+                    if name in stateful:
+                        targeted.add(name)
+        for cue in game.cues:
+            for a in cue.arrows:
+                if a.subject == "player" and a.destination.startswith('"'):
+                    name = a.destination[1:-1]
+                    if name.endswith("__"):
+                        continue  # explicit base-state reference
+                    if name in stateful:
+                        targeted.add(name)
+        return targeted
+
+    stale_targets = _targeted(stateful_bases)
+    if stale_targets:
+        names = ", ".join(sorted(stale_targets))
+        print(
+            f"⚠ Stale blind-mode room refs ({names}): movement arrows "
+            f"target these rooms by base name, but each has state variants "
+            f"with different room-sheet IDs",
+            file=sys.stderr,
+        )
 
 
 def load_game(game_dir: Path) -> tuple[str, list[str]]:
     """Load index.md and all room .md files from a game directory."""
+    if not game_dir.is_dir():
+        print(f"ERROR: Directory not found: {game_dir}")
+        sys.exit(1)
     index_file = game_dir / "index.md"
     if not index_file.exists():
         print(f"ERROR: No index.md found in {game_dir}")
@@ -52,6 +105,10 @@ def cmd_build(args: list[str]):
 
     if parsed.game_dir:
         game_dir = Path(parsed.game_dir)
+        if not game_dir.is_dir() and not parsed.game_dir.startswith(("games/", "games\\", "/", "~")):
+            fallback = Path("games") / parsed.game_dir
+            if fallback.is_dir():
+                game_dir = fallback
     elif _in_game_dir():
         game_dir = Path(".")
     elif Path("games/example").is_dir():
@@ -107,20 +164,11 @@ def _build_single(game_dir: Path, parsed) -> None:
     for warning in validate_reachability(game):
         print(f"⚠ {warning}", file=sys.stderr)
 
-    # Blind mode: warn if room state changes could cause stale ID references
+    # Blind mode: warn if movement arrows target base rooms that have state
+    # variants — the numeric room ID in the blind-mode instruction may be stale
+    # if the room has already transformed to a different state.
     if parsed.blind:
-        rooms_with_states = set()
-        for name, rm in game.rooms.items():
-            if rm.state is not None:
-                rooms_with_states.add(rm.base)
-        if rooms_with_states:
-            names = ", ".join(sorted(rooms_with_states))
-            print(
-                f"⚠ Room state changes ({names}): blind mode movement "
-                f"instructions reference room IDs that become stale "
-                f"after state transforms",
-                file=sys.stderr,
-            )
+        _warn_stale_blind_room_refs(game)
 
     writer_warnings = []
     if parsed.markdown:

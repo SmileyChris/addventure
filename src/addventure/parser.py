@@ -146,7 +146,10 @@ def _validate_arrow_endpoint(value: str, ln: int, what: str) -> None:
     if value.startswith('"') and value.endswith('"'):
         return
     if value.startswith("room__"):
-        _require_name(value.split("__", 1)[1], ln, f"{what} room state")
+        state_suffix = value.split("__", 1)[1]
+        if state_suffix:
+            _require_name(state_suffix, ln, f"{what} room state")
+        # else: empty suffix = base room (room__)
         return
     if value == "signal":
         return
@@ -162,7 +165,7 @@ def _validate_target_groups(target_groups: list[list[str]], ln: int) -> None:
 
 _KNOWN_FRONTMATTER_KEYS = {
     "title", "author", "start", "ledger_prefix",
-    "image", "image_height", "name_style",
+    "image", "image_height", "image_style", "image_edge", "name_style",
 }
 
 
@@ -779,7 +782,11 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
     if dest_name.startswith("@") or dest_name.startswith("room__"):
         # Room state transform
         if dest_name.startswith("room__"):
-            dest_name = f"@{room_name}__{dest_name.split('__', 1)[1]}"
+            state_suffix = dest_name.split('__', 1)[1]
+            if state_suffix:
+                dest_name = f"@{room_name}__{state_suffix}"
+            else:
+                dest_name = f"@{room_name}"
             arrow.destination = dest_name
         clean = dest_name.lstrip("@")
         base, state = _split_name(clean)

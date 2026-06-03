@@ -43,7 +43,7 @@ STATED-NAME     = NAME , [ "__" , STATE-NAME ] ;
    action-name  — plain NAME; actions do not have state variants. *)
 
 object-state-ref  = NAME , "__" , STATE-NAME ;
-room-state-ref    = "room__" , STATE-NAME ;
+room-state-ref    = "room__" , [ STATE-NAME ] ;
 
 object-ref        = "*" | object-state-ref | NAME ;
 
