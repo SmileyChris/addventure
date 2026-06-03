@@ -1,0 +1,5 @@
+interface:
+  display_name: "Addventure Authoring"
+  short_description: "Write and validate Addventure games"
+  default_prompt: "Use $addventure-authoring to draft or review an Addventure game."
+
