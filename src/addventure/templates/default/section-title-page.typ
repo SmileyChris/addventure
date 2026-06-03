@@ -1,6 +1,31 @@
 // section-title-page.typ — Chapter title page: image, description, signal checks, cues, potentials
 #import "style.typ": sheet-title, section-title, id-box
 
+// styled-image — wraps a cover image with optional visual effects
+#let styled-image(path, height, style, edge, scratch-overlay: none) = {
+  if style == "scratches" and scratch-overlay != none {
+    context {
+      let img-size = measure(image(path, height: height))
+      block(width: img-size.width, height: img-size.height)[
+        #place(top + left, image(path, height: height))
+        #place(top + left, image(scratch-overlay, height: height))
+      ]
+    }
+  } else if style == "border" {
+    block(stroke: 0.5pt + black, inset: 0pt, width: auto, height: auto)[
+      image(path, height: height)
+    ]
+  } else if edge == "torn-edge" {
+    // Slightly rotated — torn scraps are never perfectly aligned
+    rotate(-1.2deg, image(path, height: height))
+  } else if edge == "burned-edge" {
+    // Burned paper — char fills the border, no rotation needed
+    image(path, height: height)
+  } else {
+    image(path, height: height)
+  }
+}
+
 #let potentials-grid(pots, prefix) = {
   context {
     let pot-cols = calc.max(3, calc.min(6, int(page.width / 1.4in)))
@@ -64,10 +89,14 @@
   let prefix = chapter.at("ledger_prefix", default: "A")
 
   sheet-title(display-title)
+  v(-0.4em)
 
   // Cover image + description + inline signal checks
   let cover-image = chapter.metadata.at("image", default: none)
   let image-height = eval(chapter.metadata.at("image_height", default: "12em"))
+  let image-style = chapter.metadata.at("image_style", default: "")
+  let image-edge = chapter.metadata.at("image_edge", default: "")
+  let scratch-overlay = chapter.metadata.at("scratch_overlay", default: none)
   let description = chapter.metadata.at("description", default: none)
   let signal-checks = chapter.at("signal_checks", default: ())
 
@@ -91,7 +120,7 @@
         columns: (auto, 1fr),
         gutter: 1em,
         align(top)[
-          #image(cover-image, height: image-height)
+          #styled-image(cover-image, image-height, image-style, image-edge, scratch-overlay: scratch-overlay)
         ],
         align(left + top)[
           #text(size: 11pt)[#eval(description, mode: "markup")]
@@ -102,8 +131,8 @@
     line(length: 100%, stroke: (paint: luma(150), thickness: 0.5pt))
     v(0.8em)
   } else if cover-image != none {
-    block(below: 0.8em)[
-      #align(center)[#image(cover-image, height: image-height)]
+    block(above: 0em, below: 0.8em)[
+      #align(center)[#styled-image(cover-image, image-height, image-style, image-edge, scratch-overlay: scratch-overlay)]
     ]
     if signal-check-content != none { block(below: 0.8em)[#signal-check-content] }
     line(length: 100%, stroke: (paint: luma(150), thickness: 0.5pt))

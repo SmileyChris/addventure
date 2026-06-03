@@ -4,6 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from addventure import compile_game, GameWriter
+from addventure.image_effects import HAS_PILLOW, process_image
 from addventure.pdf_writer import serialize_game_data, find_typst, generate_pdf
 
 
@@ -100,6 +101,50 @@ def test_generate_pdf_custom_theme_missing(tmp_path):
         assert False, "Should have raised"
     except FileNotFoundError:
         pass
+
+
+def test_burned_edge_preserves_transparent_corners(tmp_path):
+    if not HAS_PILLOW:
+        return
+
+    from PIL import Image
+
+    src = tmp_path / "cover.png"
+    Image.new("RGB", (240, 320), (80, 120, 160)).save(src)
+
+    out = process_image(src, "burned-edge")
+    assert out is not None
+
+    img = Image.open(out)
+    assert img.mode == "RGBA"
+
+    alpha = img.getchannel("A")
+    assert alpha.getpixel((0, 0)) == 0
+    assert alpha.getpixel((img.width - 1, 0)) == 0
+    assert alpha.getpixel((0, img.height - 1)) == 0
+    assert alpha.getpixel((img.width - 1, img.height - 1)) == 0
+    assert alpha.getpixel((img.width // 2, img.height // 2)) == 255
+
+
+def test_sepia_style_can_feed_burned_edge(tmp_path):
+    if not HAS_PILLOW:
+        return
+
+    from PIL import Image
+
+    src = tmp_path / "cover.png"
+    Image.new("RGB", (240, 320), (80, 120, 160)).save(src)
+
+    sepia = process_image(src, "sepia")
+    assert sepia is not None
+    burned = process_image(sepia, "burned-edge")
+    assert burned is not None
+
+    img = Image.open(burned)
+    assert img.mode == "RGBA"
+    alpha = img.getchannel("A")
+    assert alpha.getpixel((0, 0)) == 0
+    assert alpha.getpixel((img.width // 2, img.height // 2)) == 255
 
 
 def test_end_to_end_example_game(tmp_path):

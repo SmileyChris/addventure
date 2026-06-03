@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from shutil import which
 
+from .image_effects import process_image, generate_scratch_overlay
 from .jigsaw import checkerboard_flips, compute_grid, detect_empty_cells, interleave_pieces
 from .models import GameData, ResolvedInteraction
 from .writer import GameWriter
@@ -12,6 +13,21 @@ from .writer import GameWriter
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 MEASURE_MARGIN_MM = 2
+EDGE_STYLES = {"torn-edge", "burned-edge"}
+PREPROCESS_STYLES = {"sepia", "greyscale", "grayscale"}
+
+
+def _image_style_and_edge(metadata: dict) -> tuple[str, str]:
+    """Return non-edge image style and edge treatment.
+
+    Backwards compatibility: older games used image_style for edge effects.
+    Prefer image_edge going forward.
+    """
+    image_style = metadata.get("image_style", "")
+    image_edge = metadata.get("image_edge", "")
+    if not image_edge and image_style in EDGE_STYLES:
+        return "", image_style
+    return image_style, image_edge
 
 # Friendly aliases for common paper sizes
 PAPER_ALIASES = {
@@ -422,10 +438,31 @@ def generate_pdf(
 
     # Resolve cover image path relative to game directory
     image_rel = game.metadata.get("image")
+    image_style, image_edge = _image_style_and_edge(game.metadata)
+    style_image_path = None
+    scratch_overlay_path = None
     if image_rel and game_dir is not None:
         image_path = (game_dir / image_rel).resolve()
         if image_path.is_file():
-            data["metadata"]["image"] = str(image_path)
+            current_image_path = image_path
+            if image_style in PREPROCESS_STYLES:
+                processed_style_path = process_image(current_image_path, image_style)
+                if processed_style_path:
+                    current_image_path = processed_style_path
+            # Pre-process edge treatments that need Python
+            if image_edge:
+                style_image_path = process_image(current_image_path, image_edge)
+                if style_image_path:
+                    current_image_path = style_image_path
+            if image_style == "scratches":
+                from PIL import Image as _PILImage
+                with _PILImage.open(current_image_path) as _img:
+                    scratch_overlay_path = generate_scratch_overlay(*_img.size)
+                if scratch_overlay_path:
+                    data["metadata"]["scratch_overlay"] = str(scratch_overlay_path)
+            data["metadata"]["image"] = str(current_image_path)
+            data["metadata"]["image_style"] = image_style
+            data["metadata"]["image_edge"] = image_edge
         else:
             print(f"⚠ Image not found: {image_path}", file=__import__('sys').stderr)
 
@@ -510,10 +547,22 @@ def generate_combined_pdf(
 
         # Resolve cover image
         image_rel = game.metadata.get("image")
+        image_style, image_edge = _image_style_and_edge(game.metadata)
         if image_rel and game_dir is not None:
             image_path = (game_dir / image_rel).resolve()
             if image_path.is_file():
-                data["metadata"]["image"] = str(image_path)
+                current_image_path = image_path
+                if image_style in PREPROCESS_STYLES:
+                    processed_style_path = process_image(current_image_path, image_style)
+                    if processed_style_path:
+                        current_image_path = processed_style_path
+                if image_edge:
+                    style_image_path = process_image(current_image_path, image_edge)
+                    if style_image_path:
+                        current_image_path = style_image_path
+                data["metadata"]["image"] = str(current_image_path)
+                data["metadata"]["image_style"] = image_style
+                data["metadata"]["image_edge"] = image_edge
 
         data["chapter_label"] = label
         chapter_data_list.append(data)
