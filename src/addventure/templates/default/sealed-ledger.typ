@@ -1,6 +1,6 @@
 #import "style.typ": *
 
-#let sealed-ledger(data) = {
+#let sealed-ledger(data, hidden-ledger: false) = {
   if data.sealed_texts.len() == 0 { return }
 
   sheet-title("SEALED TEXTS")
@@ -21,14 +21,21 @@
         Sealed Text #st.ref
       ]
       #v(0.3em)
-      #text(size: 9pt)[#eval(st.content, mode: "markup")]
-      #if st.at("instructions", default: "") != "" {
-        v(0.5em)
-        for inst in st.instructions.split("\n") {
-          block(below: 0.2em)[
-            #text(size: 9pt, style: "italic")[→ #eval(inst, mode: "markup")]
-          ]
+      #let content-block = {
+        text(size: 9pt)[#eval(st.content, mode: "markup")]
+        if st.at("instructions", default: "") != "" {
+          v(0.5em)
+          for inst in st.instructions.split("\n") {
+            block(below: 0.2em)[
+              #text(size: 9pt, style: "italic")[→ #eval(inst, mode: "markup")]
+            ]
+          }
         }
+      }
+      #if fillable and hidden-ledger {
+        cover-text(content-block)
+      } else {
+        content-block
       }
     ]
   }

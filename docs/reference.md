@@ -37,6 +37,7 @@ addventure build [dir] --md          # Compile to markdown
 addventure build [dir] -o FILE       # Custom output path
 addventure build [dir] --paper SIZE  # Paper size: a4 (default), letter, legal
 addventure build [dir] --blind       # Blind mode: room names/IDs hidden until discovered
+addventure build [dir] --hidden-ledger # Obscure story entries behind reveal-to-see checkboxes (fillable PDF only)
 addventure build [dir] --no-cover    # Omit the How to Play cover page
 addventure build [dir] --fragment MODE  # Fragment output mode (see below)
 addventure build [dir] --all           # Build all chapters into one output

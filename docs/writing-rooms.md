@@ -203,6 +203,8 @@ The default `addventure build` produces a PDF via Typst. A few options affect ho
 
 **Blind mode** — `--blind` hides room names and IDs on room sheets until the player discovers them via a LOOK interaction. This prevents players from mapping the game before exploring it, but means room state changes (rooms that transform mid-game) can produce stale ID references — the compiler will warn you if this applies to your game.
 
+**Hidden ledger** — `--hidden-ledger` wraps each story ledger entry and sealed text in a light-gray cover checkbox when used in the fillable (interactive) PDF. The player unchecks to reveal the narrative underneath. Use when the published PDF will be played on a device rather than printed — prevent accidental spoilers from reading the whole ledger at once.
+
 **Cover page** — `--no-cover` omits the How to Play introduction page. Useful if you're distributing your own instructions.
 
 **Fragment output** — controls where `::: fragment` content is printed. See [Fragment modes](reference.md#fragment-modes) in the Reference.

@@ -95,6 +95,8 @@ def cmd_build(args: list[str]):
                         help="Paper size: a4, letter (default: a4)")
     parser.add_argument("--blind", action="store_true",
                         help="Blind mode: room sheets hide names/IDs until discovered via LOOK")
+    parser.add_argument("--hidden-ledger", action="store_true",
+                        help="Obfuscate story ledger entries behind reveal-to-see checkboxes (fillable PDF only)")
     parser.add_argument("--no-cover", action="store_true",
                         help="Omit the How to Play cover page")
     parser.add_argument("--fragment", choices=["included", "separate", "jigsaw"],
@@ -196,7 +198,7 @@ def _build_single(game_dir: Path, parsed) -> None:
                 output_path = Path(f"{_slugify(parent)}_{_slugify(name)}.pdf")
             else:
                 output_path = Path(f"{_slugify(name)}.pdf")
-        success, writer_warnings = generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=not parsed.no_cover, fragment=parsed.fragment)
+        success, writer_warnings = generate_pdf(game, output_path, theme=parsed.theme, game_dir=game_dir.resolve(), paper=parsed.paper, blind=parsed.blind, cover=not parsed.no_cover, fragment=parsed.fragment, hidden_ledger=parsed.hidden_ledger)
         if success:
             print(f"PDF written to {output_path}", file=sys.stderr)
 
@@ -350,7 +352,7 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
             chapter_tuples, output_path,
             theme=parsed.theme, paper=parsed.paper,
             blind=parsed.blind, cover=not parsed.no_cover,
-            fragment=parsed.fragment,
+            fragment=parsed.fragment, hidden_ledger=parsed.hidden_ledger,
         )
         for warning in writer_warnings:
             print(f"⚠ {warning}", file=sys.stderr)

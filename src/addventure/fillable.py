@@ -93,6 +93,53 @@ def _make_cross_checkbox(rect: list[float], name: str) -> DictionaryObject:
     return field
 
 
+def _make_cover_checkbox(rect: list[float], name: str) -> DictionaryObject:
+    """Create a checkbox that draws an opaque box covering text when checked.
+
+    Use for hidden-ledger mode: the narrative text is rendered as page content,
+    then this checkbox overlays it with a white fill. The player unchecks to
+    reveal the hidden text underneath.
+    """
+    x1, y1, x2, y2 = rect
+    w = x2 - x1
+    h = y2 - y1
+
+    field = DictionaryObject()
+    field[NameObject("/Type")] = NameObject("/Annot")
+    field[NameObject("/Subtype")] = NameObject("/Widget")
+    field[NameObject("/FT")] = NameObject("/Btn")
+    field[NameObject("/T")] = TextStringObject(name)
+    field[NameObject("/Rect")] = ArrayObject([FloatObject(v) for v in rect])
+    field[NameObject("/F")] = NumberObject(4)  # Print flag
+    field[NameObject("/V")] = NameObject("/Yes")  # Start covered
+    field[NameObject("/AS")] = NameObject("/Yes")
+    field[NameObject("/Border")] = ArrayObject(
+        [NumberObject(0), NumberObject(0), NumberObject(0)]
+    )
+
+    # "Yes" appearance: light gray box with no border
+    on_data = (
+        f"q "
+        f"0.95 0.95 0.95 rg "  # Light gray fill
+        f"0 0 {w:.1f} {h:.1f} re f "  # Draw filled rectangle
+        f"Q"
+    ).encode()
+    on_stream = _make_appearance_stream(w, h, on_data)
+    off_stream = _make_appearance_stream(w, h, b"")
+
+    n_dict = DictionaryObject()
+    n_dict[NameObject("/Yes")] = on_stream
+    n_dict[NameObject("/Off")] = off_stream
+
+    ap = DictionaryObject()
+    ap[NameObject("/N")] = n_dict
+
+    field[NameObject("/AP")] = ap
+    field[NameObject("/MK")] = DictionaryObject()
+
+    return field
+
+
 def _make_strike_checkbox(rect: list[float], name: str) -> DictionaryObject:
     """Create a checkbox that draws a horizontal strikethrough line when checked."""
     x1, y1, x2, y2 = rect
@@ -200,6 +247,8 @@ def make_fillable(input_path: Path, output_path: Path | None = None) -> Path:
                         field = _make_cross_checkbox(rect, name)
                     elif field_type == "strike":
                         field = _make_strike_checkbox(rect, name)
+                    elif field_type == "cover":
+                        field = _make_cover_checkbox(rect, name)
                     elif field_type == "id":
                         field = _make_text_field(rect, name, font_size=8, bold=True, centered=True, uppercase=True)
                     elif field_type == "desc":

@@ -37,7 +37,7 @@ PAPER_ALIASES = {
 }
 
 
-def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False) -> dict:
+def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False, hidden_ledger: bool = False) -> dict:
     """Transform GameData into a JSON-serializable dict for Typst templates."""
     verbs = []
     for v in game.verbs.values():
@@ -227,6 +227,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False)
         "start_room": start_room,
         "ledger_prefix": entry_prefix,
         "blind": blind,
+        "hidden_ledger": hidden_ledger,
         "jigsaw": False,
         "verbs": verbs,
         "rooms": rooms,
@@ -406,6 +407,7 @@ def generate_pdf(
     blind: bool = False,
     cover: bool = False,
     fragment: str = "included",
+    hidden_ledger: bool = False,
 ) -> tuple[bool, list[str]]:
     """Generate a PDF from GameData. Returns (success, warnings).
 
@@ -422,7 +424,7 @@ def generate_pdf(
 
     jigsaw = fragment == "jigsaw"
     writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
-    data = serialize_game_data(game, writer, blind=blind)
+    data = serialize_game_data(game, writer, blind=blind, hidden_ledger=hidden_ledger)
 
     if jigsaw and game.sealed_texts:
         jigsaw_result = _jigsaw_pipeline(game, writer, theme_dir)
@@ -520,6 +522,7 @@ def generate_combined_pdf(
     blind: bool = False,
     cover: bool = True,
     fragment: str = "included",
+    hidden_ledger: bool = False,
 ) -> tuple[bool, list[str]]:
     """Generate a single combined PDF from multiple chapters.
 
@@ -542,7 +545,7 @@ def generate_combined_pdf(
     for label, game, game_dir in chapters:
         jigsaw = fragment == "jigsaw"
         writer = GameWriter(game, blind=blind, jigsaw=jigsaw)
-        data = serialize_game_data(game, writer, blind=blind)
+        data = serialize_game_data(game, writer, blind=blind, hidden_ledger=hidden_ledger)
         all_warnings.extend(writer.warnings)
 
         # Resolve cover image

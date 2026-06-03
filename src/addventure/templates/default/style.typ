@@ -82,6 +82,19 @@
   }
 }
 
+// cover-text: text hidden under an opaque box when fillable mode is active.
+// The text renders as page content, then a checkbox overlays it with a
+// light gray fill. The player unchecks to reveal the hidden content.
+#let cover-text(body) = {
+  let b = box(baseline: 0pt, inset: (y: 3pt))[#body]
+  if fillable {
+    form-counter.step()
+    context link("form://cover/" + str(form-counter.get().first()))[#b]
+  } else {
+    b
+  }
+}
+
 // separator: decorative separator between ledger entries
 #let separator() = {
   v(0.5em)

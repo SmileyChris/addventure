@@ -15,6 +15,7 @@
 
 #let game-title = upper(data.at("game_title", default: "Addventure"))
 #let blind = data.at("blind", default: false)
+#let hidden-ledger = data.at("hidden_ledger", default: false)
 
 #let page-paper = sys.inputs.at("paper", default: default-paper)
 #let logo-path = "addventure.jpg"
@@ -91,12 +92,12 @@
   // Ledger
   pagebreak()
   section-label.update("Ledger")
-  story-ledger(chapter, display-title)
+  story-ledger(chapter, display-title, hidden-ledger: hidden-ledger)
 
   // Fragments
   if not chapter.at("jigsaw", default: false) and chapter.at("sealed_texts", default: ()).len() > 0 {
     pagebreak(weak: true)
     section-label.update("Fragments")
-    sealed-ledger(chapter)
+    sealed-ledger(chapter, hidden-ledger: hidden-ledger)
   }
 }

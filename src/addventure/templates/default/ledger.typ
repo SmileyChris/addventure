@@ -1,7 +1,7 @@
 // ledger.typ — Story Ledger entries (two-column layout)
-#import "style.typ": sheet-title, section-title, separator, title-font
+#import "style.typ": sheet-title, section-title, separator, title-font, cover-text, fillable
 
-#let ledger-entry(entry, prefix) = {
+#let ledger-entry(entry, prefix, hidden-ledger: false) = {
   block(
     width: 100%,
     below: 0.5em,
@@ -13,19 +13,26 @@
       #prefix\-#str(entry.entry)
     ]
     #v(0.15em)
-    #text(size: 9pt)[#eval(entry.narrative, mode: "markup")]
-    #if entry.instructions.len() > 0 {
-      v(0.3em)
-      for instr in entry.instructions {
-        block(below: 0.2em)[
-          #text(size: 8pt, style: "italic")[→ #eval(instr, mode: "markup")]
-        ]
+    #let narrative-block = {
+      text(size: 9pt)[#eval(entry.narrative, mode: "markup")]
+      if entry.instructions.len() > 0 {
+        v(0.3em)
+        for instr in entry.instructions {
+          block(below: 0.2em)[
+            #text(size: 8pt, style: "italic")[→ #eval(instr, mode: "markup")]
+          ]
+        }
       }
+    }
+    #if fillable and hidden-ledger {
+      cover-text(narrative-block)
+    } else {
+      narrative-block
     }
   ]
 }
 
-#let story-ledger(data, game-title) = {
+#let story-ledger(data, game-title, hidden-ledger: false) = {
   sheet-title("STORY LEDGER")
 
   block(below: 0.8em)[
@@ -38,7 +45,7 @@
 
   columns(2, gutter: 1.5em)[
     #for entry in data.ledger {
-      ledger-entry(entry, prefix)
+      ledger-entry(entry, prefix, hidden-ledger: hidden-ledger)
     }
   ]
 }

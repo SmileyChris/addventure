@@ -18,6 +18,7 @@
 #let game-title = if parent-title != none { upper(parent-title) + " — " + chapter-title } else { chapter-title }
 #let start-room = data.at("start_room", default: none)
 #let blind = data.at("blind", default: false)
+#let hidden-ledger = data.at("hidden_ledger", default: false)
 
 #let page-paper = sys.inputs.at("paper", default: default-paper)
 #let logo-path = "addventure.jpg"
@@ -95,14 +96,14 @@
 #if not sealed-only {
   pagebreak()
   section-label.update("Ledger")
-  story-ledger(data, game-title)
+  story-ledger(data, game-title, hidden-ledger: hidden-ledger)
 }
 
 // 5. Fragments
 #if not data.at("jigsaw", default: false) and data.at("sealed_texts", default: ()).len() > 0 {
   if not sealed-only { pagebreak(weak: true) }
   section-label.update("Fragments")
-  sealed-ledger(data)
+  sealed-ledger(data, hidden-ledger: hidden-ledger)
 }
 #if not sealed-only and data.at("jigsaw", default: false) and data.at("jigsaw_data", default: none) != none {
   pagebreak(weak: true)
