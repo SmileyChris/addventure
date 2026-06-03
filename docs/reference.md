@@ -86,6 +86,18 @@ start: Entrance Hall
 
 Unknown keys are accepted but produce a build warning.
 
+Frontmatter is YAML-style. Inside the `---` fences, use `#` for comments:
+
+```markdown
+---
+title: My Game
+# image: draft-cover.png
+start: Entrance Hall # optional inline comment
+---
+```
+
+The rest of Addventure script syntax uses `//` comments.
+
 ### Description
 
 Body text between the frontmatter and the first `#` header is used as the game description, shown on the title page alongside the `image` (if set).
@@ -273,7 +285,8 @@ On the printed sheet, signal checks render as: "Check your signals: **64745** �
 |---|---|
 | `ENTITY__STATE` | Double-underscore separates base name from state |
 | `*` | Wildcard — matches all room objects in an interaction (see [Wildcards](advanced.md#wildcards)) |
-| `//` | Comment — ignored by the compiler |
+| `//` | Comment — ignored by the compiler in game script bodies |
+| `#` in frontmatter | YAML-style frontmatter comment |
 | `## Interactions` | Section for freeform interactions in a room file (see [The Interactions section](advanced.md#the-interactions-section)) |
 | `? -> "Room"` | Cue arrow — deferred effect in another room |
 | `? -> "Room__STATE"` | Cue targeting a specific room state |

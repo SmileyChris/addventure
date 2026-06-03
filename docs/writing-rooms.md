@@ -140,7 +140,7 @@ Use spaces, not tabs. Each child line must be indented deeper than its parent. I
 
 ### Comments
 
-Use `//` to add comments that the compiler ignores:
+Use `//` to add comments that the compiler ignores in game script bodies:
 
 ```markdown
 // TODO: add a puzzle here
@@ -157,6 +157,16 @@ KEYCARD // starts hidden
 ```
 
 Trailing comments are not stripped from narrative prose, so `//` inside story text is treated as literal text.
+
+Inside frontmatter (`---` fences at the top of `index.md`), use YAML-style `#` comments instead:
+
+```markdown
+---
+title: My Game
+# image: draft-cover.png
+start: Entrance Hall # optional inline comment
+---
+```
 
 ### Narrative formatting
 

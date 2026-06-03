@@ -14,6 +14,7 @@ newline         = "\n" ;
 space           = " " ;
 
 comment-line    = indent , "//" , { any-char-except-newline } , newline ;
+frontmatter-comment-line = indent , "#" , { any-char-except-newline } , newline ;
 blank-line      = indent , newline ;
 
 indent          = { space } ;
@@ -82,10 +83,11 @@ room-file       = [ frontmatter ] ,
 (* ══════════════════════════════════════════════════════════ *)
 
 frontmatter     = "---" , newline ,
-                  { frontmatter-line | blank-line | comment-line } ,
+                  { frontmatter-line | blank-line | comment-line | frontmatter-comment-line } ,
                   "---" , newline ;
 
-frontmatter-line = text , ":" , [ text ] , newline ;
+frontmatter-line = text , ":" , [ text ] , [ frontmatter-inline-comment ] , newline ;
+frontmatter-inline-comment = space , "#" , { any-char-except-newline } ;
 
 description     = description-line , { blank-line | comment-line | description-line } ;
 description-line = indent0 , text , newline ;

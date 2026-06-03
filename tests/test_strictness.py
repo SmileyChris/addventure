@@ -129,6 +129,31 @@ def test_unknown_frontmatter_key_warns():
     assert any("Unknown frontmatter key: foobar" in w for w in game.warnings)
 
 
+def test_frontmatter_hash_comments_are_ignored():
+    global_src = """---
+title: Test # inline YAML-style comment
+# author: Commented Out
+# just a comment
+name_style: title # comment
+---
+# Verbs
+LOOK
+
+# Inventory
+"""
+    game = parse_global(global_src)
+    assert game.metadata["title"] == "Test"
+    assert "author" not in game.metadata
+    assert game.metadata["name_style"] == "title"
+    assert game.warnings == []
+
+
+def test_frontmatter_hash_inside_quotes_is_not_a_comment():
+    global_src = "---\ntitle: 'Test #1'\n---\n# Verbs\nLOOK\n\n# Inventory\n"
+    game = parse_global(global_src)
+    assert game.metadata["title"] == "'Test #1'"
+
+
 def test_known_frontmatter_keys_no_warnings():
     global_src = "---\ntitle: Test\nauthor: Me\nstart: Forest\nname_style: title\n---\n# Verbs\nLOOK\n\n# Inventory\n"
     game = parse_global(global_src)

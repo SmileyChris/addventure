@@ -8,6 +8,7 @@ from pathlib import Path
 
 from . import compile_game, print_build_summary, generate_pdf, find_typst, generate_markdown
 from .models import GameData
+from .parser import ParseError, _parse_frontmatter
 
 
 def _warn_stale_blind_room_refs(game: GameData) -> None:
@@ -135,14 +136,13 @@ def _detect_parent_title(game_dir: Path) -> str | None:
         if "# Verbs" not in content and "# verbs" not in content:
             return None
         # Parse frontmatter for title
-        if content.startswith("---"):
-            end = content.find("---", 3)
-            if end != -1:
-                for line in content[3:end].splitlines():
-                    if line.strip().startswith("title:"):
-                        return line.split(":", 1)[1].strip()
+        lines = content.splitlines()
+        if lines and lines[0].strip() == "---":
+            meta, _ = _parse_frontmatter(lines)
+            if meta.get("title"):
+                return meta["title"]
         return parent.name
-    except OSError:
+    except (OSError, ParseError):
         return None
 
 
@@ -451,15 +451,14 @@ def _read_ledger_prefix(index_path: Path) -> str | None:
         content = index_path.read_text()
     except OSError:
         return None
-    if not content.startswith("---"):
+    lines = content.splitlines()
+    if not lines or lines[0].strip() != "---":
         return None
-    end = content.find("---", 3)
-    if end == -1:
+    try:
+        meta, _ = _parse_frontmatter(lines)
+    except ParseError:
         return None
-    for line in content[3:end].splitlines():
-        if line.strip().startswith("ledger_prefix:"):
-            return line.split(":", 1)[1].strip()
-    return None
+    return meta.get("ledger_prefix")
 
 
 def _find_chapters(game_dir: Path) -> list[Path]:

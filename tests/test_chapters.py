@@ -8,6 +8,7 @@ import pytest
 from addventure.compiler import compile_game
 from addventure.md_writer import generate_markdown
 from addventure.cli import (
+    _detect_parent_title,
     _find_chapters,
     _next_chapter_prefix,
     _read_ledger_prefix,
@@ -20,6 +21,19 @@ def test_read_ledger_prefix(tmp_path):
     index = tmp_path / "index.md"
     index.write_text("---\nledger_prefix: B\n---\n\n# Verbs\nLOOK\n")
     assert _read_ledger_prefix(index) == "B"
+
+
+def test_read_ledger_prefix_ignores_hash_comments(tmp_path):
+    index = tmp_path / "index.md"
+    index.write_text("---\n# ledger_prefix: Z\nledger_prefix: B # assigned prefix\n---\n\n# Verbs\nLOOK\n")
+    assert _read_ledger_prefix(index) == "B"
+
+
+def test_detect_parent_title_ignores_hash_comments(tmp_path):
+    (tmp_path / "index.md").write_text("---\n# title: Wrong\ntitle: Parent # comment\n---\n\n# Verbs\nLOOK\n")
+    child = tmp_path / "chapter-b"
+    child.mkdir()
+    assert _detect_parent_title(child) == "Parent"
 
 
 def test_read_ledger_prefix_missing(tmp_path):
