@@ -240,8 +240,11 @@ def _apply_arrows(state: GameState, arrows: list[Arrow], room: str, game: GameDa
             objects.add((room, subj))
 
         elif subj == "player" and dest.startswith('"') and dest.endswith('"'):
-            # Movement
-            new_room = dest[1:-1]
+            # Movement — trailing __ means explicit base state
+            room_name = dest[1:-1]
+            if room_name.endswith("__"):
+                room_name = room_name[:-2]
+            new_room = room_name
 
         elif subj == "?":
             # Cue — find the cue and add its ID
