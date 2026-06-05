@@ -337,6 +337,10 @@
     }
 
     .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
       font-family: var(--font-title);
       font-weight: 800;
       font-size: 0.8rem;
@@ -347,6 +351,12 @@
       cursor: pointer;
       transition: all 0.2s;
       text-decoration: none;
+    }
+
+    .btn svg {
+      width: 1.15em;
+      height: 1.15em;
+      flex: 0 0 auto;
     }
 
     .btn-primary {
@@ -378,11 +388,25 @@
       transform: translateX(-50%);
       z-index: 1;
       animation: bounce 2s ease-in-out infinite 2s;
+      opacity: 1;
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity;
     }
     .hero-scroll svg {
       width: 24px;
       height: 24px;
       stroke: var(--text-dim);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: center;
+    }
+
+    .hero-scroll--dismissed {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .hero-scroll--dismissed svg {
+      transform: translateY(14px) scale(2);
     }
 
     @keyframes bounce {
@@ -1959,8 +1983,14 @@
     <h2 class="reveal">Create Your First Game</h2>
     <p class="reveal">Scaffold a game, write some rooms, compile, print, play.</p>
     <div class="hero-cta reveal">
-      <a href="getting-started/" class="btn btn-primary">Read the Docs</a>
-      <a href="https://github.com/SmileyChris/addventure" class="btn btn-ghost">View on GitHub</a>
+      <a href="getting-started/" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Read the Docs
+      </a>
+      <a href="https://github.com/SmileyChris/addventure" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        View on GitHub
+      </a>
     </div>
     <div class="install-cmd reveal">
       <div class="install-cmd-bar"><span></span><span></span><span></span><button class="install-cmd-reload" title="New game idea" aria-label="Randomize game title">&#8635;</button></div>
@@ -1988,6 +2018,28 @@
     }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    (() => {
+      const cue = document.querySelector('.hero-scroll');
+      if (!cue) return;
+
+      let ticking = false;
+      const updateCueState = () => {
+        const cueCenter = cue.getBoundingClientRect().top + cue.offsetHeight / 2;
+        cue.classList.toggle('hero-scroll--dismissed', cueCenter <= window.innerHeight / 2);
+        ticking = false;
+      };
+      const requestUpdate = () => {
+        if (!ticking) {
+          requestAnimationFrame(updateCueState);
+          ticking = true;
+        }
+      };
+
+      updateCueState();
+      window.addEventListener('scroll', requestUpdate, { passive: true });
+      window.addEventListener('resize', requestUpdate);
+    })();
 
     // Random game title in CTA command
     (() => {
