@@ -47,6 +47,7 @@ class Interaction:
     sealed_content: str | None = None
     sealed_arrows: list[Arrow] = field(default_factory=list)
     signal_checks: list['SignalCheck'] = field(default_factory=list)
+    alias_verbs: list[str] = field(default_factory=list)
 
     @property
     def label(self):
@@ -78,6 +79,7 @@ class DirectPotential:
     avoids: set[int]     # Numbers to prevent from being verb+entity sums
     source_line: int
     room: str
+    alias_verbs: list[str] = field(default_factory=list)
 
 @dataclass
 class Cue:

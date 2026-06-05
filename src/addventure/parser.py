@@ -39,27 +39,6 @@ def _strip_trailing_comment(line: str) -> str:
         return line
     return line[:idx].rstrip()
 
-
-def _strip_frontmatter_comment(line: str) -> str:
-    """Strip comments from YAML-style frontmatter lines.
-
-    Addventure uses `//` comments in game script bodies, but frontmatter is
-    YAML-style and also accepts `#` comments. A `#` starts a frontmatter comment
-    when it is outside quotes and either begins the line or follows whitespace.
-    """
-    line = _strip_trailing_comment(line)
-    in_single = False
-    in_double = False
-    for idx, ch in enumerate(line):
-        if ch == '"' and not in_single:
-            in_double = not in_double
-        elif ch == "'" and not in_double:
-            in_single = not in_single
-        elif ch == "#" and not in_single and not in_double:
-            if idx == 0 or line[idx - 1].isspace():
-                return line[:idx].rstrip()
-    return line.rstrip()
-
 def _normalize_structural_line(line: str) -> str:
     """Normalize a structural line before parsing.
 
@@ -125,6 +104,10 @@ def _is_action(s: str) -> bool:
 def _is_direct_potential(s: str) -> bool:
     return bool(_DIRECT_POTENTIAL_RE.match(s.lstrip()))
 
+def _is_alias_line(s: str) -> bool:
+    """Check if a + line (after marker stripped) is an alias verb: NAME with no colon."""
+    return _is_name(s) and ":" not in s
+
 def _expand_permutations(digits: str, exclude: int) -> set[int]:
     """Generate all unique permutations of digits as integers, excluding `exclude`.
 
@@ -186,10 +169,7 @@ def _validate_arrow_endpoint(value: str, ln: int, what: str) -> None:
     if value.startswith('"') and value.endswith('"'):
         return
     if value.startswith("room__"):
-        state_suffix = value.split("__", 1)[1]
-        if state_suffix:
-            _require_name(state_suffix, ln, f"{what} room state")
-        # else: empty suffix = base room (room__)
+        _require_name(value.split("__", 1)[1], ln, f"{what} room state")
         return
     if value == "signal":
         return
@@ -205,7 +185,7 @@ def _validate_target_groups(target_groups: list[list[str]], ln: int) -> None:
 
 _KNOWN_FRONTMATTER_KEYS = {
     "title", "author", "start", "ledger_prefix",
-    "image", "image_height", "image_style", "image_edge", "name_style",
+    "image", "image_height", "name_style",
 }
 
 
@@ -218,7 +198,7 @@ def _parse_frontmatter(lines: list[str]) -> tuple[dict[str, str], int]:
     meta = {}
     i = 1
     while i < len(lines):
-        line = _strip_frontmatter_comment(lines[i]).strip()
+        line = _strip_trailing_comment(lines[i]).strip()
         if line == "---":
             return meta, i + 1
         if ":" in line and line:
@@ -635,6 +615,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     sealed_signal_checks_content = []
     blank_line_seen = False
     signal_checks = []
+    alias_verbs = []
 
     while i < len(lines):
         bline = lines[i]
@@ -659,9 +640,12 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             blank_line_seen = False
             i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=arrows)
         elif bmarker == "+":
-            # A + line inside an interaction is a child of a prior arrow's state
-            # This shouldn't happen at this level — break out
-            raise ParseError(i + 1, f"Unexpected line in interaction body: {bstripped}")
+            if _is_alias_line(bcontent):
+                alias_verbs.append(bcontent)
+                i += 1
+                blank_line_seen = False
+            else:
+                raise ParseError(i + 1, f"Unexpected line in interaction body: {bstripped}")
         elif _is_sealed_fence(bstripped):
             if sealed_content is not None:
                 raise ParseError(i + 1, "Multiple fragment blocks in one interaction")
@@ -705,6 +689,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
         sealed_content=sealed_content,
         sealed_arrows=sealed_arrows,
         signal_checks=signal_checks,
+        alias_verbs=alias_verbs,
     )
     _register_interaction(game, ix)
     return i
@@ -824,11 +809,7 @@ def _parse_arrow_children(lines, i, game, room_name, arrow, child_indent, propag
     if dest_name.startswith("@") or dest_name.startswith("room__"):
         # Room state transform
         if dest_name.startswith("room__"):
-            state_suffix = dest_name.split('__', 1)[1]
-            if state_suffix:
-                dest_name = f"@{room_name}__{state_suffix}"
-            else:
-                dest_name = f"@{room_name}"
+            dest_name = f"@{room_name}__{dest_name.split('__', 1)[1]}"
             arrow.destination = dest_name
         clean = dest_name.lstrip("@")
         base, state = _split_name(clean)
@@ -985,6 +966,7 @@ def _parse_direct_potential(lines, i, game, room_name):
 
     narrative = inline_narrative
     arrows = []
+    alias_verbs: list[str] = []
     dead_numbers: set[int] = set()
 
     while i < len(lines):
@@ -1022,6 +1004,12 @@ def _parse_direct_potential(lines, i, game, room_name):
                 i += 1
             else:
                 raise ParseError(i + 1, f"Unexpected line in direct potential: {bstripped}")
+        elif bmarker == "+":
+            if _is_alias_line(bcontent):
+                alias_verbs.append(bcontent)
+                i += 1
+            else:
+                raise ParseError(i + 1, f"Unexpected line in direct potential: {bstripped}")
         elif _is_narrative(bstripped):
             if narrative:
                 # Previous blank line means paragraph break
@@ -1041,6 +1029,7 @@ def _parse_direct_potential(lines, i, game, room_name):
         avoids=dead_numbers,
         source_line=source_line,
         room=room_name,
+        alias_verbs=alias_verbs,
     )
     game.direct_potentials.append(dp)
 
@@ -1067,6 +1056,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
             i += 1
             narrative = ""
             arrows = []
+            alias_verbs = []
             while i < len(lines) and not _is_header(lines[i]):
                 bline = lines[i]
                 bs = bline.strip()
@@ -1085,7 +1075,11 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                     i += 1
                     i = _parse_arrow_children(lines, i, game, room_name, a, arr_indent + 1, propagated_arrows=arrows)
                 elif bmarker == "+":
-                    break
+                    if _is_alias_line(bcontent):
+                        alias_verbs.append(bcontent)
+                        i += 1
+                    else:
+                        break
                 elif _is_action(bs):
                     action_name = bs[2:].strip()
                     action_line = i + 1
@@ -1103,6 +1097,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                 verb=verb, target_groups=target_groups,
                 narrative=narrative, arrows=arrows,
                 source_line=source_line, room=room_name,
+                alias_verbs=alias_verbs,
             ))
             continue
         raise ParseError(i + 1, f"Unexpected: {line}")

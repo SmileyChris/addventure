@@ -368,12 +368,7 @@ def duplicate_inventory_interactions(game: GameData):
 
 
 def _add_direct_potentials(game: GameData):
-    """Convert DirectPotential objects into ResolvedInteraction entries.
-
-    Both active and dead-end potentials are added to game.resolved so they
-    appear in the potentials list and ledger. Dead-end ones (empty narrative)
-    serve as decoys — the player can't distinguish them by number alone.
-    """
+    """Convert DirectPotential objects into ResolvedInteraction entries."""
     for dp in game.direct_potentials:
         game.resolved.append(ResolvedInteraction(
             verb="DIRECT",
@@ -386,6 +381,25 @@ def _add_direct_potentials(game: GameData):
             parent_label=f"#{dp.number}",
             is_direct=True,
         ))
+        # Alias verbs create additional routes: verb.id + number
+        for alias_name in dp.alias_verbs:
+            avid = game.verbs.get(alias_name)
+            if not avid:
+                continue
+            alias_sum = avid.id + dp.number
+            game.resolved.append(ResolvedInteraction(
+                verb=alias_name,
+                targets=[],
+                sum_id=alias_sum,
+                narrative=dp.narrative,
+                arrows=list(dp.arrows),
+                source_line=dp.source_line,
+                room=dp.room,
+                parent_label=f"#{dp.number}",
+                is_direct=True,
+            ))
+            # Gate alias wins — remove from avoided if present
+            game.avoided_numbers.discard(alias_sum)
 
 
 def resolve_interactions(game: GameData):
@@ -439,9 +453,64 @@ def resolve_interactions(game: GameData):
                 parent_label=ix.label,
             ))
 
+    # Add alias verb entries for interactions
+    _resolve_interaction_aliases(game)
+
     # Assign entry numbers
     for idx, ri in enumerate(game.resolved, 1):
         ri.entry_number = idx
+
+
+def _resolve_interaction_aliases(game: GameData):
+    """Create ResolvedInteraction entries for alias verbs on interactions.
+
+    For each interaction with alias_verbs, find the ResolvedInteraction(s)
+    produced from it and create copies with the alias verb's ID.
+    The alias sum overrides any avoided-number collision (gate wins).
+    """
+    # Build a mapping from (verb, targets, room, source_line) → ResolvedInteraction
+    originals: dict[tuple, list[ResolvedInteraction]] = {}
+    for ri in game.resolved:
+        if ri.is_direct:
+            continue
+        key = (ri.verb, tuple(ri.targets), ri.room, ri.source_line)
+        originals.setdefault(key, []).append(ri)
+
+    new_entries = []
+    for ix in game.interactions:
+        if not ix.alias_verbs:
+            continue
+        vid = game.verbs.get(ix.verb)
+        if not vid:
+            continue
+        for alias_name in ix.alias_verbs:
+            avid = game.verbs.get(alias_name)
+            if not avid:
+                continue
+            # Find matching resolved entries (same source_line identifies this interaction)
+            for ri in game.resolved:
+                if ri.is_direct:
+                    continue
+                if ri.source_line != ix.source_line or ri.room != ix.room:
+                    continue
+                # Compute alias sum: swap verb ID
+                sum_diff = avid.id - vid.id
+                alias_sum = ri.sum_id + sum_diff
+                new_entries.append(ResolvedInteraction(
+                    verb=alias_name,
+                    targets=list(ri.targets),
+                    sum_id=alias_sum,
+                    narrative=ri.narrative,
+                    arrows=list(ri.arrows),
+                    source_line=ri.source_line,
+                    room=ri.room,
+                    parent_label=ix.label,
+                    from_inventory=ri.from_inventory,
+                ))
+                # Gate alias wins — remove from avoided if present
+                game.avoided_numbers.discard(alias_sum)
+
+    game.resolved.extend(new_entries)
 
 
 # ── Collision Detection ────────────────────────────────────────────────────

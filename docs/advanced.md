@@ -394,6 +394,22 @@ Direct potentials support the same body content as interactions: narrative lines
   - -> OVERRIDE
 ```
 
+### Alias verbs
+
+`+ NAME` in the body creates an alternate route to the same entry using a different verb:
+
+```markdown
+312: The safe clicks open.
+  + USE
+  + ENTER
+  - ^312
+  - KEY -> player
+```
+
+The player can look up 312 directly, or compute `USE + 312` or `ENTER + 312`. All three sums point to the same ledger entry.
+
+This works in regular interactions too — `+ GET` under a `+ USE: ...` interaction means `GET + THING` resolves to the same entry.
+
 ### Avoiding wrong guesses
 
 A code puzzle is only interesting if the player can't just try random numbers. List numbers to exclude from the potentials list with `- NUMBER`:
@@ -414,6 +430,8 @@ For permutation codes, `- ^DIGITS` is a shorthand that blocks all other arrangem
 ```
 
 This blocks 123, 132, 213, 231, and 321. The compiler retries ID allocation until no verb+entity sum accidentally hits an avoided number — see [Compiler](#compiler) for details.
+
+If an [alias verb](#alias-verbs) happens to produce a sum that matches an avoided number, the alias wins. The author explicitly chose to add that route.
 
 ## Chapters
 
