@@ -41,6 +41,14 @@ class GameWriter:
         dn = self.display_name
         current_room = ri.room
 
+        # Direct potentials have no verb+entity addition
+        if ri.is_direct:
+            if not ri.narrative and not ri.arrows:
+                # Dead-end decoy — no instruction needed
+                return []
+            # Active direct potential — proceed to arrow instructions below
+            pass
+
         for arrow in ri.arrows:
             subj = arrow.subject
             dest = arrow.destination

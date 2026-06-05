@@ -295,6 +295,8 @@ On the printed sheet, signal checks render as: "Check your signals: **64745** â†
 | `player -> "Room__"` | Move to a room, explicitly targeting the base state |
 | `room -> room__STATE` | Transform the current room to a new state |
 | `room -> room__` | Revert the current room to its base state |
+| `NUMBER:` | Direct potential â€” a code/password the player can look up without addition. Supports `- ^DIGITS` and `- NUMBER` for permutation/number avoids (see [Advanced](advanced.md#direct-potentials)) |
+=======
 
 `*` is only valid as the entire target of an interaction (`LOOK + *:`). It is not valid inside multi-target or alternation forms (`USE + * + KEY:`, `USE + BOX|*:`).
 

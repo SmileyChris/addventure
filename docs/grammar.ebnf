@@ -128,7 +128,8 @@ room-body       = { blank-line | comment-line | room-body-line } ;
 room-body-line  = room-interaction
                 | room-arrow
                 | object-declaration
-                | action-declaration ;
+                | action-declaration
+                | direct-potential ;
 
 room-interaction = indent0 , interaction-header ;
 room-arrow      = indent0 , arrow , newline , [ arrow-children(0, arrow) ] ;
@@ -298,7 +299,47 @@ freeform-body-line(m) = narrative-line(m)
 
 
 (* ══════════════════════════════════════════════════════════ *)
-(*  13b. Signals                                            *)
+(*  13b. Direct Potentials                                  *)
+(* ══════════════════════════════════════════════════════════ *)
+
+(* Direct potentials are NUMBER: entries the player can look up for
+   matches in the Story Ledger — no verb+entity addition needed.
+   They are used for code/password puzzles where the player must
+   discover a specific number.
+
+   Defined at room-body level (indent0), but the potential is global —
+   the player can look it up from any room. The containing room file
+   provides arrow resolution context only (e.g. which TERMINAL entity
+   a transform arrow refers to). Direct potentials are not scoped to
+   their room and cannot appear inside entity blocks. *)
+
+NUMBER          = DIGIT , { DIGIT } ;
+
+direct-potential = indent0 , NUMBER , ": " , [ inline-narrative ] , newline ,
+                   { blank-line | comment-line | dp-body-line(0) } ;
+
+dp-body-line(n)  = dp-avoid-line(n+1)
+                 | arrow-line(n+1)
+                 | narrative-line(n+1) ;
+
+dp-avoid-line(m) = indent(m) , "- " , dp-avoid , newline ;
+dp-avoid         = NUMBER | "^" , DIGIT , { DIGIT } ;
+
+(* dp-avoid:
+   - NUMBER     — exclude this specific number
+   - ^DIGITS    — exclude all unique permutations of these digits
+                   (leading-zero permutations are skipped to maintain
+                   digit count). The direct potential's own number
+                   is excluded from the permutation expansion.
+
+   Avoided numbers do not appear as potential entries. The compiler
+   will retry ID allocation if any verb+entity sum collides with
+   an avoided number (to prevent accidental discovery through
+   normal gameplay). *)
+
+
+(* ══════════════════════════════════════════════════════════ *)
+(*  13c. Signals                                            *)
 (* ══════════════════════════════════════════════════════════ *)
 
 (* ── Signals ────────────────────────────────────────────────────────────── *)
@@ -359,4 +400,15 @@ signal_check_group  = { signal_check } [ otherwise_check ] ;
        lines, and comments are allowed between (and after) global sections.
    19. Unknown frontmatter keys are syntactically valid but produce build
        warnings. Known keys: title, author, start, ledger_prefix, image,
-       image_height, name_style. *)
+       image_height, name_style.
+   20. Direct potentials (NUMBER: lines) appear at room-body level
+       (indent0) but are global — the player can look them up from any
+       room. The containing room provides arrow-resolution context only.
+       Their indented body supports `- NUMBER` (explicit avoid),
+       `- ^DIGITS` (permutation avoid), `-` arrows (game effects), and
+       narrative lines. Direct potentials cannot appear inside entity
+       blocks — they have no mechanical relationship to entities or rooms.
+   21. Two direct potentials with the same number are a collision.
+   22. `^DIGITS` permutations exclude the direct potential's own number.
+       Leading-zero permutations are skipped to maintain digit count
+       (e.g., `^012` only produces 3-digit results 102, 120, 201, 210). *)
