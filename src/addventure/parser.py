@@ -39,6 +39,26 @@ def _strip_trailing_comment(line: str) -> str:
         return line
     return line[:idx].rstrip()
 
+def _strip_frontmatter_comment(line: str) -> str:
+    """Strip comments from YAML-style frontmatter lines.
+
+    Addventure uses `//` comments in game script bodies, but frontmatter is
+    YAML-style and also accepts `#` comments. A `#` starts a frontmatter comment
+    when it is outside quotes and either begins the line or follows whitespace.
+    """
+    line = _strip_trailing_comment(line)
+    in_single = False
+    in_double = False
+    for idx, ch in enumerate(line):
+        if ch == '"' and not in_single:
+            in_double = not in_double
+        elif ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == "#" and not in_single and not in_double:
+            if idx == 0 or line[idx - 1].isspace():
+                return line[:idx].rstrip()
+    return line.rstrip()
+
 def _normalize_structural_line(line: str) -> str:
     """Normalize a structural line before parsing.
 
@@ -198,7 +218,7 @@ def _parse_frontmatter(lines: list[str]) -> tuple[dict[str, str], int]:
     meta = {}
     i = 1
     while i < len(lines):
-        line = _strip_trailing_comment(lines[i]).strip()
+        line = _strip_frontmatter_comment(lines[i]).strip()
         if line == "---":
             return meta, i + 1
         if ":" in line and line:
