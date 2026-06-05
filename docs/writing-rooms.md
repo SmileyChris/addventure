@@ -179,11 +179,11 @@ Actions are direct ledger lookups — navigation and other things the player can
   - player -> "Clearing"
 ```
 
-Actions can also be discovered mid-game (nested under an interaction) or removed when they're no longer valid. See [Actions](advanced.md#actions) in Advanced Mechanics for full details.
+Actions can also be discovered mid-game (nested under an interaction) or removed when they're no longer valid. See [Actions](advanced.md#actions) in Addvanced Mechanics for full details.
 
 ### Fragments
 
-A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. Fragment content uses the same [narrative formatting](#narrative-formatting) as regular prose. See [Fragments](advanced.md#fragments) in Advanced Mechanics.
+A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. Fragment content uses the same [narrative formatting](#narrative-formatting) as regular prose. See [Fragments](advanced.md#fragments) in Addvanced Mechanics.
 
 ### PDF output
 

@@ -82,7 +82,7 @@ You can also revert to the base state:
 - USE -> USE__RESTRAINED
 ```
 
-Changes a verb's ID. On the verb sheet, the player crosses out the old ID and writes the new one. This makes the verb behave differently — any interactions defined for `USE__RESTRAINED` now activate instead of the normal `USE` interactions. Use this to temporarily replace a verb's behaviour — for example, blocking all USE actions while the player is restrained. See [Advanced Mechanics](advanced.md#verb-states) for a complete walkthrough.
+Changes a verb's ID. On the verb sheet, the player crosses out the old ID and writes the new one. This makes the verb behave differently — any interactions defined for `USE__RESTRAINED` now activate instead of the normal `USE` interactions. Use this to temporarily replace a verb's behaviour — for example, blocking all USE actions while the player is restrained. See [Addvanced Mechanics](advanced.md#verb-states) for a complete walkthrough.
 
 ### `-> VERB` — reveal a new verb
 
@@ -258,4 +258,4 @@ Arrows handle immediate, local state changes. For effects that reach further:
 - **Cue checks** trigger deferred effects in other rooms — pull a lever here, open a gate there. See [Cue checks](advanced.md#cue-checks-cross-room-effects).
 - **Signals** branch the narrative based on earlier decisions — choose an ending, and a later scene plays out differently. Signals work within a single game or across chapters. See [Signals](advanced.md#signals).
 
-Next: [Advanced Mechanics](advanced.md) covers multi-target interactions, verb states, wildcards, and more.
+Next: [Addvanced Mechanics](advanced.md) covers multi-target interactions, verb states, wildcards, and more.

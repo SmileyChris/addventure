@@ -1,4 +1,4 @@
-# Advanced Mechanics
+# Addvanced Mechanics
 
 Once you're comfortable with rooms, room objects, interactions, and arrows, these features let you build richer puzzles.
 

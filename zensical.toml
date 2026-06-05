@@ -30,7 +30,7 @@ accent = "custom"
 "State & Transformation" = "state-and-transformation.md"
 
 [[project.nav]]
-"Advanced Mechanics" = "advanced.md"
+"Addvanced Mechanics" = "advanced.md"
 
 [[project.nav]]
 "Reference" = "reference.md"
