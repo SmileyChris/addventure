@@ -96,6 +96,58 @@ KEY
     with pytest.raises(ParseError):
         compile_game(global_src, [room_src])
 
+
+def test_fragment_arrows_parse():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  Text.
+
+  ::: fragment
+  Secret text.
+  - AFTER -> room
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    st = game.sealed_texts[0]
+    assert st.arrows[0].subject == "AFTER"
+    assert st.arrows[0].destination == "room"
+
+
+def test_fragment_signal_checks_rejected():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  Text.
+
+  ::: fragment
+  SIGNAL_A?
+    Branch.
+  :::
+"""
+    with pytest.raises(ParseError, match="Signal checks are not allowed inside fragment"):
+        compile_game(global_src, [room_src])
+
+
+def test_fragment_must_be_last_content_in_interaction():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  Text.
+
+  ::: fragment
+  Secret text.
+  :::
+
+  Visible after.
+"""
+    with pytest.raises(ParseError, match="Fragment block must be the last content"):
+        compile_game(global_src, [room_src])
+
+
 def test_sealed_text_created_with_ref():
     global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon

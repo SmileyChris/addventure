@@ -84,6 +84,8 @@ start: Entrance Hall
 
 Unknown keys are accepted but produce a build warning.
 
+Frontmatter must be closed with a matching `---` line.
+
 ### Description
 
 Body text between the frontmatter and the first `#` header is used as the game description, shown on the title page alongside the `image` (if set).
@@ -192,6 +194,7 @@ Room-level interactions not tied to a specific room object. Goes at the bottom o
 ```
 
 Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-modes).
+Fragments must be the final content in their interaction. They may include arrows for effects that happen after the fragment is read, but they may not contain signal checks.
 
 ## Script reference
 
@@ -259,7 +262,7 @@ In interaction bodies (fires during play):
     Default text.
 ```
 
-All matching branches fire — if the player has multiple signals, they read every matching entry. `otherwise?` fires only when no signal matches.
+The first matching branch fires. If the player has multiple matching signals, they read the first matching entry in source order. `otherwise?` fires only when no signal matches and must follow at least one named signal branch. Every branch must contain narrative, arrows, or both.
 
 On the printed sheet, signal checks render as: "Check your signals: **64745** → read B-3. **92951** → read B-7. Otherwise → read B-12."
 
@@ -305,4 +308,3 @@ name_style: title
 | `title` | `GO_NORTH` → `Go North` |
 
 This affects verbs, room objects, inventory objects, states, and actions on the printed sheets. It does not affect free-text room names or narrative prose.
-

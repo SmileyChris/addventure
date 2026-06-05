@@ -160,6 +160,12 @@ def test_known_frontmatter_keys_no_warnings():
     assert game.warnings == []
 
 
+def test_unclosed_frontmatter_rejected():
+    global_src = "---\ntitle: Test\nauthor: Me\n"
+    with pytest.raises(ParseError, match="Unclosed frontmatter block"):
+        parse_global(global_src)
+
+
 # ── Room name rules ───────────────────────────────────────────────────────────
 
 

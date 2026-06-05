@@ -235,7 +235,7 @@ VAULT_DOOR
 
 When this entry fires, the ledger instruction tells the player which fragment to turn to (e.g. "Turn to Fragment Alpha"). Fragments are printed in a separate section at the back of the ledger, or as a separate document — see [Fragment modes](reference.md#fragment-modes).
 
-Fragment content uses the same narrative formatting as regular prose — see [Narrative formatting](writing-rooms.md#narrative-formatting) for the full syntax.
+Fragment content uses the same narrative formatting as regular prose — see [Narrative formatting](writing-rooms.md#narrative-formatting) for the full syntax. A fragment must be the final content in its interaction. It may include arrows for effects that happen after the fragment is read, but it may not contain signal checks.
 
 ### Cue checks (cross-room effects)
 
@@ -333,7 +333,7 @@ Signal names follow the same ALL_CAPS naming rules as other identifiers. Choose 
 
 #### Checking signals
 
-Signal checks use `NAME?` syntax with `otherwise?` as the default. All matching branches fire — if the player has multiple signals, they read every matching entry. `otherwise?` fires only when no signal matches.
+Signal checks use `NAME?` syntax with `otherwise?` as the default. The first matching branch fires; if the player has multiple matching signals, they read the first matching entry in source order. `otherwise?` fires only when no signal matches and must follow at least one named signal branch. Every branch must contain narrative, arrows, or both.
 
 In the index description (checked when starting the chapter):
 

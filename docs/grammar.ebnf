@@ -87,7 +87,8 @@ frontmatter     = "---" , newline ,
 
 frontmatter-line = text , ":" , [ text ] , newline ;
 
-description     = description-line , { blank-line | comment-line | description-line } ;
+description     = description-item , { blank-line | comment-line | description-item } ;
+description-item = description-line | signal-check-group ;
 description-line = indent0 , text , newline ;
 
 indent0         = "" ;
@@ -165,13 +166,15 @@ verb-target-spec   = STATED-NAME , { "+" , target-group } ;
 target-group       = object-ref , { "|" , object-ref } ;
 inline-narrative   = text ;
 
-interaction-body(n) = interaction-body-line(n+1) ,
-                      { blank-line | comment-line | interaction-body-line(n+1) } ;
+interaction-body(n) = interaction-body-item(n+1) ,
+                      { blank-line | comment-line | interaction-body-item(n+1) } ,
+                      [ fragment-block ] ;
 
-interaction-body-line(m) = narrative-line(m)
+interaction-body-item(m) = narrative-line(m)
                          | arrow-line(m)
                          | action-line(m)
-                         | alias-line(m) ;
+                         | alias-line(m)
+                         | signal-check-group ;
 
 alias-line(m)    = indent(m) , "+ " , NAME , newline ;
 
@@ -179,14 +182,13 @@ narrative-line(m) = indent(m) , text , newline ;
 (* Consecutive narrative-lines (no blank-line between) are joined as one paragraph.
    A blank-line between narrative-lines starts a new paragraph. *)
 
-(* Fragment blocks — long-form hidden content within an interaction *)
+(* Fragment blocks — long-form hidden content within an interaction.
+   A fragment block must be the final content in its interaction body. *)
 fragment-block   = fragment-open , { fragment-line } , fragment-close ;
 fragment-open    = indent , "::: fragment" , newline ;
 fragment-close   = indent , ":::" , newline ;
-fragment-line    = indent , text-line ;
-
-(* interaction-body optionally ends with a fragment-block:
-   interaction-body(n) = ... , [ fragment-block ] *)
+fragment-line    = narrative-line(any-deeper-indent)
+                 | arrow-line(any-deeper-indent) ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -296,7 +298,9 @@ freeform-body(n)     = freeform-body-line(n+1) ,
 
 freeform-body-line(m) = narrative-line(m)
                       | arrow-line(m)
-                      | action-line(m) ;
+                      | action-line(m)
+                      | alias-line(m)
+                      | signal-check-group ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -352,15 +356,17 @@ dp-avoid         = NUMBER | "^" , DIGIT , { DIGIT } ;
    No declaration section is needed. *)
 
 signal_names        = NAME { " + " NAME } ;
-signal_check        = signal_names "?" newline indented_block ;
-otherwise_check     = "otherwise?" newline indented_block ;
-signal_check_group  = { signal_check } [ otherwise_check ] ;
+signal_branch_body  = indented block containing at least one narrative-line or arrow-line ;
+signal_check        = signal_names "?" newline signal_branch_body ;
+otherwise_check     = "otherwise?" newline signal_branch_body ;
+signal_check_group  = signal_check , { signal_check } , [ otherwise_check ] ;
 
 (* Signal emission: NAME -> signal (subject is the signal name, destination is `signal`)
    Signal check groups can appear in:
    - The description block (between frontmatter and `# Verbs`) — fires at chapter start
    - Interaction bodies (after narrative and arrows) — fires during play
-   First matching branch wins — the player reads the first check that matches. *)
+   First matching branch wins — the player reads the first check that matches.
+   `otherwise?` may only appear after at least one named signal branch. *)
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -402,21 +408,24 @@ signal_check_group  = { signal_check } [ otherwise_check ] ;
        and comments are allowed. Unrecognized lines are parse errors.
    18. The global file is strict outside sections: only section headers, blank
        lines, and comments are allowed between (and after) global sections.
-   19. Unknown frontmatter keys are syntactically valid but produce build
+   19. Frontmatter opened with `---` must be closed with `---`.
+   20. Unknown frontmatter keys are syntactically valid but produce build
        warnings. Known keys: title, author, start, ledger_prefix, image,
        image_height, name_style.
-   20. Direct potentials (NUMBER: lines) appear at room-body level
+   21. Direct potentials (NUMBER: lines) appear at room-body level
        (indent0) but are global — the player can look them up from any
        room. The containing room provides arrow-resolution context only.
        Their indented body supports `- NUMBER` (explicit avoid),
        `- ^DIGITS` (permutation avoid), `-` arrows (game effects), and
        narrative lines. Direct potentials cannot appear inside entity
        blocks — they have no mechanical relationship to entities or rooms.
-   21. Two direct potentials with the same number are a collision.
-   22. `^DIGITS` permutations exclude the direct potential's own number.
+   22. Two direct potentials with the same number are a collision.
+   23. `^DIGITS` permutations exclude the direct potential's own number.
        Leading-zero permutations are skipped to maintain digit count
        (e.g., `^012` only produces 3-digit results 102, 120, 201, 210).
-   23. `+ NAME` without a colon in an interaction body or direct potential
+   24. `+ NAME` without a colon in an interaction body or direct potential
        body declares an alias verb — an alternate verb route to the same
        ledger entry. If an alias sum collides with an avoided number, the
-       alias takes priority (it was explicitly authored). *)
+       alias takes priority (it was explicitly authored).
+   25. Signal check branches must contain narrative, arrows, or both.
+   26. Signal checks are not allowed inside fragment blocks. *)

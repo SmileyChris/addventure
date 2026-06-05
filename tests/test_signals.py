@@ -143,7 +143,7 @@ def test_parse_otherwise_before_signal_check_errors():
         "  Branch A.\n\n"
         "# Verbs\nLOOK\n\n# Inventory\n"
     )
-    with pytest.raises(ParseError, match="otherwise\\? must be the last branch"):
+    with pytest.raises(ParseError, match="otherwise\\? must follow"):
         compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
 
 
@@ -464,6 +464,40 @@ def test_interaction_and_signal_check():
     game = compile_game(global_src, [room_src])
     ix = [i for i in game.interactions if i.verb == "USE"][0]
     assert ix.signal_checks[0].signal_names == ["SIGNAL_A", "SIGNAL_B"]
+
+
+def test_freeform_interaction_signal_check():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = (
+        "# Room\n\n"
+        "THING\n\n"
+        "## Interactions\n"
+        "USE + THING:\n"
+        "  Common.\n"
+        "  SIGNAL_A?\n"
+        "    Branch.\n"
+        "  otherwise?\n"
+        "    Default.\n"
+    )
+    game = compile_game(global_src, [room_src])
+    ix = [i for i in game.interactions if i.verb == "USE"][0]
+    assert ix.narrative == "Common."
+    assert len(ix.signal_checks) == 2
+    assert ix.signal_checks[0].signal_names == ["SIGNAL_A"]
+    assert "Branch" in ix.signal_checks[0].narrative
+
+
+def test_empty_signal_branch_errors():
+    import pytest
+    from addventure.parser import ParseError
+    global_src = (
+        "SIGNAL_A?\n"
+        "otherwise?\n"
+        "  Default.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    with pytest.raises(ParseError, match="Signal branch has no content"):
+        compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
 
 
 def test_duplicate_otherwise_errors():

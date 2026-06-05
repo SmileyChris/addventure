@@ -128,6 +128,15 @@ def _is_alias_line(s: str) -> bool:
     """Check if a + line (after marker stripped) is an alias verb: NAME with no colon."""
     return _is_name(s) and ":" not in s
 
+def _is_signal_check_header(s: str) -> bool:
+    return (
+        s == "otherwise?" or
+        (
+            s.endswith("?") and len(s) > 1 and
+            all(_is_name(n.strip()) for n in s[:-1].split("+"))
+        )
+    )
+
 def _expand_permutations(digits: str, exclude: int) -> set[int]:
     """Generate all unique permutations of digits as integers, excluding `exclude`.
 
@@ -227,7 +236,7 @@ def _parse_frontmatter(lines: list[str]) -> tuple[dict[str, str], int]:
         elif line:
             raise ParseError(i + 1, f"Invalid frontmatter line: {line}")
         i += 1
-    return meta, i
+    raise ParseError(len(lines), "Unclosed frontmatter block")
 
 
 def _unexpected_child_line(lines, i, child_indent):
@@ -273,9 +282,9 @@ def _parse_content_block(lines, i, game, room_name, fence_close=None):
             continue
 
         # Signal checks
-        if (sstripped == "otherwise?" or
-              (sstripped.endswith("?") and len(sstripped) > 1 and
-               all(_is_name(n.strip()) for n in sstripped[:-1].split("+")))):
+        if _is_signal_check_header(sstripped):
+            if fence_close:
+                raise ParseError(i + 1, "Signal checks are not allowed inside fragment blocks")
             i, block_signal_checks = _parse_signal_check_group(lines, i, game=game, room_name=room_name)
             continue
 
@@ -318,6 +327,8 @@ def _parse_signal_check_group(lines, i, game=None, room_name=""):
             break
 
         if stripped == "otherwise?":
+            if not checks:
+                raise ParseError(i + 1, "otherwise? must follow at least one signal branch")
             if saw_otherwise:
                 raise ParseError(i + 1, "Duplicate otherwise? in signal check")
             saw_otherwise = True
@@ -367,6 +378,9 @@ def _parse_signal_check_group(lines, i, game=None, room_name=""):
                 i += 1
 
         narrative = "\n".join(narrative_lines)
+        if not narrative and not arrows:
+            label = "otherwise?" if not signal_names else " + ".join(signal_names) + "?"
+            raise ParseError(i + 1, f"Signal branch has no content: {label}")
         checks.append(SignalCheck(signal_names=signal_names, narrative=narrative, arrows=arrows))
 
     return i, checks
@@ -395,9 +409,7 @@ def parse_global(source: str) -> GameData:
             i += 1
             continue
         # Check for signal check block: NAME? or NAME + NAME? or otherwise?
-        if (stripped == "otherwise?" or
-              (stripped.endswith("?") and len(stripped) > 1 and
-               all(_is_name(n.strip()) for n in stripped[:-1].split("+")))):
+        if _is_signal_check_header(stripped):
             start = game.metadata.get("start", "")
             i, checks = _parse_signal_check_group(lines, i, game=game, room_name=start)
             game.signal_checks = checks
@@ -636,6 +648,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     blank_line_seen = False
     signal_checks = []
     alias_verbs = []
+    fragment_seen = False
 
     while i < len(lines):
         bline = lines[i]
@@ -647,6 +660,8 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             continue
         if _indent(bline, i + 1) <= current_indent or _is_header(bline):
             break
+        if fragment_seen:
+            raise ParseError(i + 1, f"Fragment block must be the last content in an interaction: {bstripped}")
 
         bmarker, bcontent = _strip_marker(bstripped)
 
@@ -675,15 +690,14 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             i, sealed_content, sealed_arrows, sealed_signal_checks_content = _parse_content_block(
                 lines, i, game, room_name, fence_close=":::",
             )
+            fragment_seen = True
         elif _is_action(bstripped):
             action_name = bstripped[2:].strip()
             action_line = i + 1
             blank_line_seen = False
             i = _parse_action(lines, i, game, room_name, discovered=True, parent_indent=current_indent)
             arrows.append(Arrow(f">{action_name}", "room", action_line))
-        elif (bstripped == "otherwise?" or
-              (bstripped.endswith("?") and len(bstripped) > 1 and
-               all(_is_name(n.strip()) for n in bstripped[:-1].split("+")))):
+        elif _is_signal_check_header(bstripped):
             # Signal check block — parse it and break out of body loop
             i, signal_checks = _parse_signal_check_group(lines, i, game=game, room_name=room_name)
             break
@@ -1076,6 +1090,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
             i += 1
             narrative = ""
             arrows = []
+            signal_checks = []
             alias_verbs = []
             while i < len(lines) and not _is_header(lines[i]):
                 bline = lines[i]
@@ -1100,6 +1115,9 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                         i += 1
                     else:
                         break
+                elif _is_signal_check_header(bs):
+                    i, signal_checks = _parse_signal_check_group(lines, i, game=game, room_name=room_name)
+                    break
                 elif _is_action(bs):
                     action_name = bs[2:].strip()
                     action_line = i + 1
@@ -1117,6 +1135,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                 verb=verb, target_groups=target_groups,
                 narrative=narrative, arrows=arrows,
                 source_line=source_line, room=room_name,
+                signal_checks=signal_checks,
                 alias_verbs=alias_verbs,
             ))
             continue
