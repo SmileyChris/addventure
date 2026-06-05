@@ -67,6 +67,17 @@ class ResolvedInteraction:
     parent_label: str
     entry_number: int = 0
     from_inventory: frozenset[str] = frozenset()
+    is_direct: bool = False
+
+
+@dataclass
+class DirectPotential:
+    number: int          # The lookup number (e.g., 312)
+    narrative: str       # What happens when the player looks it up
+    arrows: list[Arrow]  # Game effects
+    avoids: set[int]     # Numbers to prevent from being verb+entity sums
+    source_line: int
+    room: str
 
 @dataclass
 class Cue:
@@ -124,3 +135,5 @@ class GameData:
     sealed_texts: list[SealedText] = field(default_factory=list)
     signal_checks: list[SignalCheck] = field(default_factory=list)  # Index-level
     signal_emissions: set[str] = field(default_factory=set)
+    direct_potentials: list[DirectPotential] = field(default_factory=list)
+    avoided_numbers: set[int] = field(default_factory=set)

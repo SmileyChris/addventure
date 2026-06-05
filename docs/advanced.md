@@ -370,6 +370,51 @@ When building with `--all`, the compiler validates signal usage across chapters 
 
 See the [Signals reference](reference.md#signals) for the full syntax summary.
 
+## Direct potentials
+
+Direct potentials are numbers the player can look up for matches in the Story Ledger. No addition required — the number itself is the lookup key. They're for code puzzles, password locks, and combinations the player must deduce from clues.
+
+```markdown
+312: You type the override code into the terminal. The system grants access.
+  - TERMINAL -> TERMINAL__UNLOCKED
+```
+
+The number 312 appears in the master potentials list alongside all the verb+entity sums. When the player looks it up, they get the narrative and instructions.
+
+Direct potentials are defined in room files (at indent 0) but the number is **global** — the player can look it up from any room. The containing room is only used to resolve arrows (like `TERMINAL -> TERMINAL__UNLOCKED` needs to know which TERMINAL entity).
+
+### Narrative and arrows
+
+Direct potentials support the same body content as interactions: narrative lines, arrows, and nested arrow children.
+
+```markdown
+143: You piece together the clues. The answer is 143.
+  A hidden panel slides open.
+  - PANEL -> room
+  - -> OVERRIDE
+```
+
+### Avoiding wrong guesses
+
+A code puzzle is only interesting if the player can't just try random numbers. List numbers to exclude from the potentials list with `- NUMBER`:
+
+```markdown
+312: The correct code.
+  - 111
+  - 222
+  - 333
+```
+
+For permutation codes, `- ^DIGITS` is a shorthand that blocks all other arrangements of those digits:
+
+```markdown
+312: You enter 312. The safe clicks open.
+  - ^312
+  - KEY -> player
+```
+
+This blocks 123, 132, 213, 231, and 321. The compiler retries ID allocation until no verb+entity sum accidentally hits an avoided number — see [Compiler](#compiler) for details.
+
 ## Chapters
 
 Chapters let you split a game across multiple booklets — sequels, side quests, epilogues. Each chapter is a subdirectory within your game directory, with its own `index.md` and room files. Chapters are independently compiled with their own ID space.
@@ -439,6 +484,8 @@ The compiler randomly assigns IDs to verbs and entities, then checks that no two
 | ~80–100 | 3-digit | ~1–10% (finds in 20–100 tries) | Pushes the limit |
 | 100+ | 4-digit (auto) | >50% again | Compiler falls back automatically |
 | 300+ | 4-digit | Starts getting tight | Consider splitting into chapters |
+
+**Avoided numbers** from [direct potentials](#direct-potentials) also compete for ID space — each avoided number must stay clear of all verb+entity sums. A few codes with `- ^DIGITS` (~6 avoids each) adds minimal pressure. Dozens of explicit avoids across many codes will tighten the space.
 
 
 The compiler tries 3-digit IDs first (200 attempts). If no collision-free allocation is found, it automatically retries with 4-digit entity IDs (1000–9999, 7200 possible values) and 3-digit verb IDs (101–999). The wider verb range spreads sums out more, making it harder for players to reverse-engineer which verb was used. This is seamless — larger games just get slightly bigger numbers on the sheets.

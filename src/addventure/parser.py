@@ -1,6 +1,7 @@
+import itertools
 import re
 from .models import (
-    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action, SignalCheck,
+    GameData, Verb, RoomObject, InventoryObject, Room, Arrow, Interaction, Cue, Action, SignalCheck, DirectPotential,
 )
 
 
@@ -14,6 +15,7 @@ class ParseError(Exception):
 _NAME_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$")
 _STATED_NAME_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*(?:__[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)?$")
 _OBJECT_REF_RE = re.compile(r"^(?:[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*(?:__[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)?|\*)$")
+_DIRECT_POTENTIAL_RE = re.compile(r'^(\d+):\s*(.*)$')
 
 def _indent(line: str, ln: int | None = None) -> int:
     prefix = line[:len(line) - len(line.lstrip(" \t"))]
@@ -98,6 +100,23 @@ def _has_colon_header(s: str) -> bool:
 
 def _is_action(s: str) -> bool:
     return s.startswith("> ")
+
+def _is_direct_potential(s: str) -> bool:
+    return bool(_DIRECT_POTENTIAL_RE.match(s.lstrip()))
+
+def _expand_permutations(digits: str, exclude: int) -> set[int]:
+    """Generate all unique permutations of digits as integers, excluding `exclude`.
+
+    Leading-zero permutations are skipped to maintain consistent digit count.
+    """
+    result = set()
+    for perm in set(itertools.permutations(digits)):
+        if perm[0] == '0':
+            continue
+        num = int(''.join(perm))
+        if num != exclude:
+            result.add(num)
+    return result
 
 def _is_sealed_fence(s: str) -> bool:
     """Check if a line is a fragment block fence (opening or closing)."""
@@ -460,7 +479,9 @@ def _parse_room_body(lines, i, game, room_name):
 
         if ind == 0 and not marker:
             # Bare name at indent 0 = entity or room-level interaction
-            if _has_colon_header(stripped) and not _is_arrow(stripped):
+            if _is_direct_potential(stripped):
+                i = _parse_direct_potential(lines, i, game, room_name)
+            elif _has_colon_header(stripped) and not _is_arrow(stripped):
                 # Room-level interaction: LOOK: desc or USE + ITEM:
                 i = _parse_inline_interaction(
                     lines, i, game, room_name,
@@ -912,6 +933,93 @@ def _parse_action(lines, i, game, room_name, discovered, parent_indent):
         arrows=arrows,
         discovered=discovered,
     )
+    return i
+
+
+def _parse_direct_potential(lines, i, game, room_name):
+    """Parse a NUMBER: direct potential block. Returns next line index.
+
+    The NUMBER: line is the active direct potential (has narrative + arrows).
+    Indented `- NUMBER` and `- ^DIGITS` lines create dead-end direct potentials
+    (empty narrative, no arrows) that appear in the potentials list as decoys.
+    """
+    line = lines[i]
+    stripped = line.strip()
+    source_line = i + 1
+    current_indent = _indent(line, i + 1)
+
+    m = _DIRECT_POTENTIAL_RE.match(stripped)
+    number_str = m.group(1)
+    number = int(number_str)
+    inline_narrative = m.group(2)
+
+    i += 1
+
+    narrative = inline_narrative
+    arrows = []
+    dead_numbers: set[int] = set()
+
+    while i < len(lines):
+        bline = lines[i]
+        bstripped = bline.strip()
+        if not bstripped or _is_comment(bstripped):
+            i += 1
+            continue
+        if _indent(bline, i + 1) <= current_indent or _is_header(bline):
+            break
+
+        bmarker, bcontent = _strip_marker(bstripped)
+
+        if bmarker == "-":
+            if _is_arrow(bcontent):
+                # Arrow: standard arrow syntax
+                arrow = _parse_arrow(_strip_trailing_comment(bcontent), i + 1)
+                if arrow.subject == "room":
+                    arrow.subject = f"@{room_name}"
+                arrows.append(arrow)
+                arr_indent = _indent(bline, i + 1)
+                i += 1
+                i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=arrows)
+            elif bcontent.startswith("^"):
+                # Permutation dead-end: ^DIGITS
+                digits = bcontent[1:].strip()
+                if not digits.isdigit():
+                    raise ParseError(i + 1, f"Invalid permutation pattern: {bstripped}")
+                perms = _expand_permutations(digits, number)
+                dead_numbers.update(perms)
+                i += 1
+            elif bcontent and bcontent[0].isdigit():
+                # Explicit number dead-end
+                dead_numbers.add(int(bcontent))
+                i += 1
+            else:
+                raise ParseError(i + 1, f"Unexpected line in direct potential: {bstripped}")
+        elif _is_narrative(bstripped):
+            if narrative:
+                # Previous blank line means paragraph break
+                narrative += "\n\n" + bstripped
+            else:
+                narrative = bstripped
+            i += 1
+        else:
+            # Structural line (entity name, interaction, action, etc.) — not ours
+            break
+
+    # The main active direct potential
+    dp = DirectPotential(
+        number=number,
+        narrative=narrative,
+        arrows=arrows,
+        avoids=dead_numbers,
+        source_line=source_line,
+        room=room_name,
+    )
+    game.direct_potentials.append(dp)
+
+    # Track all avoided numbers for collision detection
+    game.avoided_numbers.add(number)
+    game.avoided_numbers.update(dead_numbers)
+
     return i
 
 

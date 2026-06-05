@@ -274,6 +274,7 @@ On the printed sheet, signal checks render as: "Check your signals: **64745** �
 | `? -> "Room"` | Cue arrow — deferred effect in another room |
 | `? -> "Room__STATE"` | Cue targeting a specific room state |
 | `? -> "Room__"` | Cue targeting only the base room state |
+| `NUMBER:` | Direct potential — a code/password the player can look up without addition. Supports `- ^DIGITS` and `- NUMBER` for permutation/number avoids (see [Advanced](advanced.md#direct-potentials)) |
 
 `*` is only valid as the entire target of an interaction (`LOOK + *:`). It is not valid inside multi-target or alternation forms (`USE + * + KEY:`, `USE + BOX|*:`).
 

@@ -3,7 +3,7 @@ import random
 from itertools import combinations, product as cart_product
 
 from .models import (
-    GameData, Verb, RoomObject, InventoryObject, Interaction, ResolvedInteraction, Cue, Action, SealedText,
+    GameData, Verb, RoomObject, InventoryObject, Interaction, ResolvedInteraction, Cue, Action, SealedText, DirectPotential,
 )
 from .parser import parse_global, parse_room_file, _split_name, ParseError
 
@@ -367,6 +367,27 @@ def duplicate_inventory_interactions(game: GameData):
     game.resolved.extend(new_resolved)
 
 
+def _add_direct_potentials(game: GameData):
+    """Convert DirectPotential objects into ResolvedInteraction entries.
+
+    Both active and dead-end potentials are added to game.resolved so they
+    appear in the potentials list and ledger. Dead-end ones (empty narrative)
+    serve as decoys — the player can't distinguish them by number alone.
+    """
+    for dp in game.direct_potentials:
+        game.resolved.append(ResolvedInteraction(
+            verb="DIRECT",
+            targets=[],
+            sum_id=dp.number,
+            narrative=dp.narrative,
+            arrows=dp.arrows,
+            source_line=dp.source_line,
+            room=dp.room,
+            parent_label=f"#{dp.number}",
+            is_direct=True,
+        ))
+
+
 def resolve_interactions(game: GameData):
     game.resolved = []
     game.suppressed_interactions = []
@@ -461,10 +482,19 @@ def check_potential_collisions(game: GameData) -> list[str]:
             s = v.id + all_ids[a] + all_ids[b]
             sums.setdefault(s, []).append(f"{v.name} + {a} + {b}")
 
-    return [
-        f"sum {s}: {' | '.join(exprs)}"
-        for s, exprs in sums.items() if len(exprs) > 1
-    ]
+    errors = []
+    for s, exprs in sums.items():
+        if len(exprs) > 1:
+            errors.append(f"sum {s}: {' | '.join(exprs)}")
+
+    # Check for collisions with avoided numbers (direct potential excludes)
+    for s, exprs in sums.items():
+        if s in game.avoided_numbers:
+            errors.append(
+                f"sum {s} (avoided by direct potential): {' | '.join(exprs)}"
+            )
+
+    return errors
 
 
 # ── Auto-generation ───────────────────────────────────────────────────────
@@ -535,11 +565,20 @@ def _try_compile_pass(game: GameData, max_retries: int, four_digit: bool = False
         register_verb_states(game)
         apply_inheritance(game)
         resolve_interactions(game)
-        if not check_authored_collisions(game):
-            duplicate_inventory_interactions(game)
-            if not check_authored_collisions(game):
-                return True
-        _reset_mutable(game)
+        _add_direct_potentials(game)
+        if check_authored_collisions(game):
+            _reset_mutable(game)
+            continue
+        duplicate_inventory_interactions(game)
+        if check_authored_collisions(game):
+            _reset_mutable(game)
+            continue
+        # Check for avoided-number collisions (permutations of direct potential codes)
+        pc = check_potential_collisions(game)
+        if any("avoided" in e for e in pc):
+            _reset_mutable(game)
+            continue
+        return True
     return False
 
 
