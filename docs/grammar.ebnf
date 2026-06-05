@@ -170,7 +170,10 @@ interaction-body(n) = interaction-body-line(n+1) ,
 
 interaction-body-line(m) = narrative-line(m)
                          | arrow-line(m)
-                         | action-line(m) ;
+                         | action-line(m)
+                         | alias-line(m) ;
+
+alias-line(m)    = indent(m) , "+ " , NAME , newline ;
 
 narrative-line(m) = indent(m) , text , newline ;
 (* Consecutive narrative-lines (no blank-line between) are joined as one paragraph.
@@ -318,7 +321,10 @@ direct-potential = indent0 , NUMBER , ": " , [ inline-narrative ] , newline ,
 
 dp-body-line(n)  = dp-avoid-line(n+1)
                  | arrow-line(n+1)
-                 | narrative-line(n+1) ;
+                 | narrative-line(n+1)
+                 | dp-alias-line(n+1) ;
+
+dp-alias-line(m) = indent(m) , "+ " , NAME , newline ;
 
 dp-avoid-line(m) = indent(m) , "- " , dp-avoid , newline ;
 dp-avoid         = NUMBER | "^" , DIGIT , { DIGIT } ;
@@ -409,4 +415,8 @@ signal_check_group  = { signal_check } [ otherwise_check ] ;
    21. Two direct potentials with the same number are a collision.
    22. `^DIGITS` permutations exclude the direct potential's own number.
        Leading-zero permutations are skipped to maintain digit count
-       (e.g., `^012` only produces 3-digit results 102, 120, 201, 210). *)
+       (e.g., `^012` only produces 3-digit results 102, 120, 201, 210).
+   23. `+ NAME` without a colon in an interaction body or direct potential
+       body declares an alias verb — an alternate verb route to the same
+       ledger entry. If an alias sum collides with an avoided number, the
+       alias takes priority (it was explicitly authored). *)

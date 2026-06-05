@@ -104,6 +104,10 @@ def _is_action(s: str) -> bool:
 def _is_direct_potential(s: str) -> bool:
     return bool(_DIRECT_POTENTIAL_RE.match(s.lstrip()))
 
+def _is_alias_line(s: str) -> bool:
+    """Check if a + line (after marker stripped) is an alias verb: NAME with no colon."""
+    return _is_name(s) and ":" not in s
+
 def _expand_permutations(digits: str, exclude: int) -> set[int]:
     """Generate all unique permutations of digits as integers, excluding `exclude`.
 
@@ -611,6 +615,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     sealed_signal_checks_content = []
     blank_line_seen = False
     signal_checks = []
+    alias_verbs = []
 
     while i < len(lines):
         bline = lines[i]
@@ -635,9 +640,12 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             blank_line_seen = False
             i = _parse_arrow_children(lines, i, game, room_name, arrow, arr_indent + 1, propagated_arrows=arrows)
         elif bmarker == "+":
-            # A + line inside an interaction is a child of a prior arrow's state
-            # This shouldn't happen at this level — break out
-            raise ParseError(i + 1, f"Unexpected line in interaction body: {bstripped}")
+            if _is_alias_line(bcontent):
+                alias_verbs.append(bcontent)
+                i += 1
+                blank_line_seen = False
+            else:
+                raise ParseError(i + 1, f"Unexpected line in interaction body: {bstripped}")
         elif _is_sealed_fence(bstripped):
             if sealed_content is not None:
                 raise ParseError(i + 1, "Multiple fragment blocks in one interaction")
@@ -681,6 +689,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
         sealed_content=sealed_content,
         sealed_arrows=sealed_arrows,
         signal_checks=signal_checks,
+        alias_verbs=alias_verbs,
     )
     _register_interaction(game, ix)
     return i
@@ -957,6 +966,7 @@ def _parse_direct_potential(lines, i, game, room_name):
 
     narrative = inline_narrative
     arrows = []
+    alias_verbs: list[str] = []
     dead_numbers: set[int] = set()
 
     while i < len(lines):
@@ -994,6 +1004,12 @@ def _parse_direct_potential(lines, i, game, room_name):
                 i += 1
             else:
                 raise ParseError(i + 1, f"Unexpected line in direct potential: {bstripped}")
+        elif bmarker == "+":
+            if _is_alias_line(bcontent):
+                alias_verbs.append(bcontent)
+                i += 1
+            else:
+                raise ParseError(i + 1, f"Unexpected line in direct potential: {bstripped}")
         elif _is_narrative(bstripped):
             if narrative:
                 # Previous blank line means paragraph break
@@ -1013,6 +1029,7 @@ def _parse_direct_potential(lines, i, game, room_name):
         avoids=dead_numbers,
         source_line=source_line,
         room=room_name,
+        alias_verbs=alias_verbs,
     )
     game.direct_potentials.append(dp)
 
@@ -1039,6 +1056,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
             i += 1
             narrative = ""
             arrows = []
+            alias_verbs = []
             while i < len(lines) and not _is_header(lines[i]):
                 bline = lines[i]
                 bs = bline.strip()
@@ -1057,7 +1075,11 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                     i += 1
                     i = _parse_arrow_children(lines, i, game, room_name, a, arr_indent + 1, propagated_arrows=arrows)
                 elif bmarker == "+":
-                    break
+                    if _is_alias_line(bcontent):
+                        alias_verbs.append(bcontent)
+                        i += 1
+                    else:
+                        break
                 elif _is_action(bs):
                     action_name = bs[2:].strip()
                     action_line = i + 1
@@ -1075,6 +1097,7 @@ def _parse_freeform_interactions(lines, i, game, room_name):
                 verb=verb, target_groups=target_groups,
                 narrative=narrative, arrows=arrows,
                 source_line=source_line, room=room_name,
+                alias_verbs=alias_verbs,
             ))
             continue
         raise ParseError(i + 1, f"Unexpected: {line}")
