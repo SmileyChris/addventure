@@ -1,29 +1,47 @@
 # Deploying
 
-## Publishing to PyPI
+## Release Process
 
-Requires PyPI credentials in your keyring (see below).
+1. Bump `version` in `pyproject.toml`.
+2. Run `uv lock`.
+3. Commit `bump version to X.Y.Z`.
+4. Push to `main`.
+5. Create a GitHub release:
+   ```bash
+   gh release create vX.Y.Z --generate-notes
+   ```
+6. Edit the release notes to match the project format (see below).
+7. PyPI publish runs automatically from the GitHub release workflow.
 
-Tag the current release and push it:
+### Release Notes Format
 
-```bash
-git pull
-git tag --list "v*"
-git tag -a vX.Y.Z -m "Release vX.Y.Z"
-git push --tags
+Replace the auto-generated notes with a human-written summary following this structure:
+
+```markdown
+## Addventure X.Y.Z: Short Descriptive Subtitle
+
+### Feature Area One
+Brief context sentence.
+
+- Bullet point describing a change
+- Another change in the same area
+
+### Feature Area Two
+Brief context sentence.
+
+- Bullet point
+- Another bullet point
+
+---
+
+**Full Changelog**: https://github.com/SmileyChris/addventure/compare/vPREVIOUS...vX.Y.Z
 ```
 
-Build and publish:
-
-```bash
-rm -rf dist
-uv build
-uv publish
-```
+Use `## Addventure X.Y.Z: Subtitle` as the title. Group changes under `###` section headings. End with the full changelog comparison link.
 
 ## PyPI Credentials Setup
 
-Install keyring (used by uv for publishing) and set your token:
+PyPI publishing runs via GitHub Actions. For local publishing, install keyring (used by uv) and set your token:
 
 ```bash
 uv tool install keyring

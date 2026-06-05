@@ -35,13 +35,6 @@ uv run addventure new "My Game"
 - When changing output behavior, check both the shared writer logic and the concrete Markdown/PDF writers for consistency.
 - Keep generated build artifacts out of commits unless the task explicitly calls for them.
 
-## Release Notes
+## Release Process
 
-Release process is manual:
-
-1. Bump `version` in `pyproject.toml`.
-2. Run `uv lock`.
-3. Commit `bump version to X.Y.Z`.
-4. Push to `main`.
-5. Create a GitHub release with `gh release create vX.Y.Z --generate-notes`, adding a human summary above generated notes.
-6. PyPI publish runs from the GitHub release workflow.
+See [DEPLOY.md](DEPLOY.md) for the release workflow and release notes format.
