@@ -370,6 +370,8 @@ def duplicate_inventory_interactions(game: GameData):
 def _add_direct_potentials(game: GameData):
     """Convert DirectPotential objects into ResolvedInteraction entries."""
     for dp in game.direct_potentials:
+        # Direct potential's own number wins over avoids
+        game.avoided_numbers.discard(dp.number)
         game.resolved.append(ResolvedInteraction(
             verb="DIRECT",
             targets=[],
@@ -616,6 +618,85 @@ def _generate_sealed_refs(count: int) -> list[str]:
 
 # ── Compile Pipeline ───────────────────────────────────────────────────────
 
+def _avoided_collision_exists(game: GameData) -> bool:
+    """Check if any actually-playable verb+entity combo hits an avoided number.
+
+    Coverage:
+      - Single-entity: every entity (room objects, inventory, @rooms)
+      - Two-entity: inventory × anything (carried items go anywhere)
+      - Two-entity: room objects × same-room room objects (co-located)
+      - Two-entity: room object × @room (both accessible in that room)
+    """
+    if not game.avoided_numbers:
+        return False
+
+    # Build entity pools keyed by room
+    room_objs: dict[str, list[tuple[str, int]]] = {}  # room -> [(name, id)]
+    inv_objs: list[tuple[str, int]] = []
+    room_ats: dict[str, list[tuple[str, int]]] = {}  # room -> [(@Name, id)]
+
+    for key, obj in game.objects.items():
+        room_objs.setdefault(obj.room, []).append((obj.name, obj.id))
+    for name, inv_obj in game.inventory.items():
+        label = f"{name}(inv)" if name in game.auto_inventory else name
+        inv_objs.append((label, inv_obj.id))
+    for name, rm in game.rooms.items():
+        base = name.split("__")[0]
+        room_ats.setdefault(base, []).append((f"@{name}", rm.id))
+
+    for v in game.verbs.values():
+        # Single-entity combos: verb + any entity
+        for room, objs in room_objs.items():
+            for ename, eid in objs:
+                if v.id + eid in game.avoided_numbers:
+                    return True
+        for ename, eid in inv_objs:
+            if v.id + eid in game.avoided_numbers:
+                return True
+        for room, ats in room_ats.items():
+            for ename, eid in ats:
+                if v.id + eid in game.avoided_numbers:
+                    return True
+
+        # Two-entity: inventory × anything (player carries between rooms)
+        for inv_name, inv_id in inv_objs:
+            base = v.id + inv_id
+            # inventory × room objects
+            for room, objs in room_objs.items():
+                for ename, eid in objs:
+                    if base + eid in game.avoided_numbers:
+                        return True
+            # inventory × @room
+            for room, ats in room_ats.items():
+                for ename, eid in ats:
+                    if base + eid in game.avoided_numbers:
+                        return True
+            # inventory × inventory
+            for inv_name2, inv_id2 in inv_objs:
+                if inv_id <= inv_id2:  # avoid double-counting
+                    continue
+                if base + inv_id2 in game.avoided_numbers:
+                    return True
+
+        # Two-entity: same-room room objects × room objects
+        for room, objs in room_objs.items():
+            for i in range(len(objs)):
+                for j in range(i + 1, len(objs)):
+                    s = v.id + objs[i][1] + objs[j][1]
+                    if s in game.avoided_numbers:
+                        return True
+
+        # Two-entity: room object × @room for that room
+        for room, objs in room_objs.items():
+            ats = room_ats.get(room, [])
+            for ename, eid in objs:
+                for aname, aid in ats:
+                    if v.id + eid + aid in game.avoided_numbers:
+                        return True
+
+    return False
+
+
 def _reset_mutable(game: GameData):
     """Reset state that changes between allocation attempts."""
     game.resolved = []
@@ -642,9 +723,8 @@ def _try_compile_pass(game: GameData, max_retries: int, four_digit: bool = False
         if check_authored_collisions(game):
             _reset_mutable(game)
             continue
-        # Check for avoided-number collisions (permutations of direct potential codes)
-        pc = check_potential_collisions(game)
-        if any("avoided" in e for e in pc):
+        # Check avoided-number collisions on actually-playable combos
+        if _avoided_collision_exists(game):
             _reset_mutable(game)
             continue
         return True

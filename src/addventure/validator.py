@@ -164,6 +164,23 @@ def validate_reachability(game: GameData) -> list[str]:
             if new_state != state:
                 queue.append(new_state)
 
+        # Find all direct potentials the player can trigger in this state
+        for dp in game.direct_potentials:
+            # Must be in matching room (or room state)
+            current_room_state = None
+            for base, sname in state.room_states:
+                if base == state.room or sname == state.room:
+                    current_room_state = sname
+                    break
+
+            if dp.room != state.room and dp.room != current_room_state:
+                continue
+
+            # Direct potentials are always triggerable if in the right room
+            new_state = _apply_arrows(state, dp.arrows, dp.room, game)
+            if new_state != state:
+                queue.append(new_state)
+
     # Check which interactions were never triggered
     for ix in game.interactions:
         if ix.target_groups == [["*"]]:

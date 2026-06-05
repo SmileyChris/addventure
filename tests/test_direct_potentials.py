@@ -287,6 +287,33 @@ BUTTON
     assert ix.alias_verbs == ['PUSH']
 
 
+def test_reachability_with_direct_potential():
+    """Validator should not flag interactions reachable only via direct potential."""
+    from addventure.validator import validate_reachability
+
+    global_src = "# Verbs\nUSE\nLOOK\nTAKE\n\n# Inventory\n"
+    room_src = """# Vault
+LOOK: You are in a vault. A keypad glows on the wall.
+
+312: The vault door hisses open.
+  - ^312
+  - player -> "Inner"
+
+# Inner
+LOOK: You step inside.
+GEM
++ USE:
+  You pocket the gem.
+  - GEM -> player
+"""
+    game = compile_game(global_src, [room_src])
+    warnings = validate_reachability(game)
+    # USE + GEM in Inner is only reachable after entering 312
+    assert not any("USE + GEM" in w for w in warnings), (
+        f"USE + GEM should be reachable via direct potential 312, got: {warnings}"
+    )
+
+
 def test_alias_gate_overrides_avoid():
     """If an alias sum collides with an avoided number, the alias wins."""
     # USE.id + 312 might equal one of the ^312 permutations.
