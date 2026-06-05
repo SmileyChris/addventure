@@ -115,7 +115,39 @@ KEY
     assert st.arrows[0].destination == "room"
 
 
-def test_fragment_signal_checks_rejected():
+def test_fragment_signal_checks_create_conditional_variants():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  Text.
+
+  ::: fragment
+  The letter is written in blue ink.
+
+  SIGNAL_A?
+    Branch A.
+  otherwise?
+    Default branch.
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    assert len(game.sealed_texts) == 2
+    branch, default = game.sealed_texts
+    assert branch.signal_names == ["SIGNAL_A"]
+    assert default.signal_names == []
+    assert "The letter is written in blue ink." in branch.content
+    assert "Branch A." in branch.content
+    assert "The letter is written in blue ink." in default.content
+    assert "Default branch." in default.content
+
+    md, _ = generate_markdown(game)
+    assert f"If you have" in md
+    assert f"turn to Fragment *{branch.ref}*" in md
+    assert f"turn to Fragment *{default.ref}*" in md
+
+
+def test_fragment_arrow_only_signal_branch_stays_in_parent_entry():
     global_src = "# Verbs\nUSE\n\n# Inventory\n"
     room_src = """# Dungeon
 KEY
@@ -124,11 +156,42 @@ KEY
 
   ::: fragment
   SIGNAL_A?
-    Branch.
+    - AFTER -> room
   :::
 """
-    with pytest.raises(ParseError, match="Signal checks are not allowed inside fragment"):
-        compile_game(global_src, [room_src])
+    game = compile_game(global_src, [room_src])
+    assert game.sealed_texts == []
+    md, _ = generate_markdown(game)
+    assert "If you have" in md
+    assert "AFTER" in md
+    assert "Fragment" not in md
+
+
+def test_fragment_common_content_with_arrow_only_branch_creates_variant():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  Text.
+
+  ::: fragment
+  The room is quiet.
+
+  SIGNAL_A?
+    - AFTER -> room
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    assert len(game.sealed_texts) == 1
+    st = game.sealed_texts[0]
+    assert st.signal_names == ["SIGNAL_A"]
+    assert st.content == "The room is quiet."
+    assert st.arrows[0].subject == "AFTER"
+
+    md, _ = generate_markdown(game)
+    assert f"turn to Fragment *{st.ref}*" in md
+    assert "The room is quiet." in md
+    assert "AFTER" in md
 
 
 def test_fragment_must_be_last_content_in_interaction():
@@ -286,6 +349,29 @@ KEY
     assert len(data["sealed_texts"]) == 1
     assert data["sealed_texts"][0]["content"] == "The hidden chamber."
     assert "ref" in data["sealed_texts"][0]
+
+
+def test_serialize_conditional_fragment_variant_data():
+    global_src = "# Verbs\nUSE\n\n# Inventory\n"
+    room_src = """# Dungeon
+KEY
++ USE:
+  Text.
+
+  ::: fragment
+  SIGNAL_A?
+    Branch.
+    - AFTER -> room
+  :::
+"""
+    game = compile_game(global_src, [room_src])
+    writer = GameWriter(game)
+    data = serialize_game_data(game, writer)
+    assert len(data["sealed_texts"]) == 1
+    sealed = data["sealed_texts"][0]
+    assert sealed["signal_names"] == ["SIGNAL_A"]
+    assert sealed["content"] == "Branch."
+    assert "AFTER" in sealed["instructions"]
 
 
 from addventure.jigsaw import compute_grid, interleave_pieces

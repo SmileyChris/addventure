@@ -168,13 +168,12 @@ inline-narrative   = text ;
 
 interaction-body(n) = interaction-body-item(n+1) ,
                       { blank-line | comment-line | interaction-body-item(n+1) } ,
-                      [ fragment-block ] ;
+                      [ signal-check-group | fragment-block ] ;
 
 interaction-body-item(m) = narrative-line(m)
                          | arrow-line(m)
                          | action-line(m)
-                         | alias-line(m)
-                         | signal-check-group ;
+                         | alias-line(m) ;
 
 alias-line(m)    = indent(m) , "+ " , NAME , newline ;
 
@@ -184,7 +183,10 @@ narrative-line(m) = indent(m) , text , newline ;
 
 (* Fragment blocks — long-form hidden content within an interaction.
    A fragment block must be the final content in its interaction body. *)
-fragment-block   = fragment-open , { fragment-line } , fragment-close ;
+fragment-block   = fragment-open ,
+                   { blank-line | comment-line | fragment-line } ,
+                   [ signal-check-group ] ,
+                   fragment-close ;
 fragment-open    = indent , "::: fragment" , newline ;
 fragment-close   = indent , ":::" , newline ;
 fragment-line    = narrative-line(any-deeper-indent)
@@ -294,13 +296,13 @@ freeform-interaction = indent0 , freeform-header , newline ,
 freeform-header      = STATED-NAME , "+" , target-group , { "+" , target-group } , ":" ;
 
 freeform-body(n)     = freeform-body-line(n+1) ,
-                       { blank-line | comment-line | freeform-body-line(n+1) } ;
+                       { blank-line | comment-line | freeform-body-line(n+1) } ,
+                       [ signal-check-group ] ;
 
 freeform-body-line(m) = narrative-line(m)
                       | arrow-line(m)
                       | action-line(m)
-                      | alias-line(m)
-                      | signal-check-group ;
+                      | alias-line(m) ;
 
 
 (* ══════════════════════════════════════════════════════════ *)
@@ -365,6 +367,8 @@ signal_check_group  = signal_check , { signal_check } , [ otherwise_check ] ;
    Signal check groups can appear in:
    - The description block (between frontmatter and `# Verbs`) — fires at chapter start
    - Interaction bodies (after narrative and arrows) — fires during play
+   - Fragment blocks (after common hidden narrative/arrows) — creates conditional
+     fragment variants
    First matching branch wins — the player reads the first check that matches.
    `otherwise?` may only appear after at least one named signal branch. *)
 
@@ -428,4 +432,10 @@ signal_check_group  = signal_check , { signal_check } , [ otherwise_check ] ;
        ledger entry. If an alias sum collides with an avoided number, the
        alias takes priority (it was explicitly authored).
    25. Signal check branches must contain narrative, arrows, or both.
-   26. Signal checks are not allowed inside fragment blocks. *)
+   26. Signal checks are terminal in interaction, freeform interaction, and
+       fragment blocks; no later body content may follow them in that block.
+   27. Signal checks may not be nested inside signal check branch bodies.
+   28. Signal checks inside fragments create conditional fragment variants.
+       Common fragment prose/arrows are duplicated into each branch variant
+       whose composed prose is non-empty. Branches with arrows but no composed
+       prose generate conditional instructions instead of fragment text. *)

@@ -262,6 +262,9 @@ def _cmd_build_all(game_dir: Path, parsed) -> None:
             for sc in ix.signal_checks:
                 for sn in sc.signal_names:
                     all_checked.setdefault(sn, label)
+            for sc in ix.sealed_signal_checks:
+                for sn in sc.signal_names:
+                    all_checked.setdefault(sn, label)
         for name in game_data.signal_emissions:
             all_emitted[name] = label
 

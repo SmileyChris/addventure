@@ -17,6 +17,24 @@ EDGE_STYLES = {"torn-edge", "burned-edge"}
 PREPROCESS_STYLES = {"sepia", "greyscale", "grayscale"}
 
 
+def _sealed_text_data(game: GameData, writer: GameWriter) -> list[dict]:
+    sealed_texts = []
+    for st in sorted(game.sealed_texts, key=lambda s: s.ref):
+        instructions = ""
+        if st.arrows:
+            insts = writer._signal_check_instructions(st.arrows, room=st.room)
+            if insts:
+                instructions = "\n".join(insts)
+        sealed_texts.append({
+            "ref": st.ref,
+            "content": st.content,
+            "entry_number": st.entry_number,
+            "instructions": instructions,
+            "signal_names": st.signal_names,
+        })
+    return sealed_texts
+
+
 def _image_style_and_edge(metadata: dict) -> tuple[str, str]:
     """Return non-edge image style and edge treatment.
 
@@ -184,20 +202,6 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False,
         room["discovery_slots"] = max_disc
         room["is_start"] = room["name"] == start_room
 
-    sealed_texts = []
-    for st in sorted(game.sealed_texts, key=lambda s: s.ref):
-        instructions = ""
-        if st.arrows:
-            insts = writer._signal_check_instructions(st.arrows, room=st.room)
-            if insts:
-                instructions = "\n".join(insts)
-        sealed_texts.append({
-            "ref": st.ref,
-            "content": st.content,
-            "entry_number": st.entry_number,
-            "instructions": instructions,
-        })
-
     # Signal checks (index-level) for verb sheet
     index_signal_checks = []
     for sc in game.signal_checks:
@@ -219,6 +223,8 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False,
     for ix in game.interactions:
         for sc in ix.signal_checks:
             check_names.update(sc.signal_names)
+        for sc in ix.sealed_signal_checks:
+            check_names.update(sc.signal_names)
     signal_slots = max(len(check_names), len(game.signal_emissions))
     signal_has_incoming = bool(check_names - game.signal_emissions)
 
@@ -238,7 +244,7 @@ def serialize_game_data(game: GameData, writer: GameWriter, blind: bool = False,
         "signal_has_incoming": signal_has_incoming,
         "potentials": potentials,
         "ledger": ledger,
-        "sealed_texts": sealed_texts,
+        "sealed_texts": _sealed_text_data(game, writer),
     }
 
 
@@ -491,10 +497,7 @@ def generate_pdf(
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".json", delete=False
             ) as sf:
-                data["sealed_texts"] = [
-                    {"ref": st.ref, "content": st.content, "entry_number": st.entry_number}
-                    for st in sorted(game.sealed_texts, key=lambda s: s.ref)
-                ]
+                data["sealed_texts"] = _sealed_text_data(game, writer)
                 json.dump(data, sf)
                 sealed_json_path = sf.name
             try:

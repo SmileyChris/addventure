@@ -500,6 +500,19 @@ def test_empty_signal_branch_errors():
         compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
 
 
+def test_nested_signal_check_errors():
+    import pytest
+    from addventure.parser import ParseError
+    global_src = (
+        "SIGNAL_A?\n"
+        "  SIGNAL_B?\n"
+        "    Nested.\n\n"
+        "# Verbs\nLOOK\n\n# Inventory\n"
+    )
+    with pytest.raises(ParseError, match="Nested signal checks are not allowed"):
+        compile_game(global_src, ["# Room\n\nTHING\n+ LOOK: A thing.\n"])
+
+
 def test_duplicate_otherwise_errors():
     import pytest
     from addventure.parser import ParseError

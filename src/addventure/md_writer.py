@@ -237,6 +237,8 @@ def _shared_actions_inventory_section(writer: 'GameWriter', games: list[GameData
         for ix in g.interactions:
             for sc in ix.signal_checks:
                 all_check_names.update(sc.signal_names)
+            for sc in ix.sealed_signal_checks:
+                all_check_names.update(sc.signal_names)
         all_emissions.update(g.signal_emissions)
     signal_count = max(len(all_check_names), len(all_emissions))
     if signal_count > 0:
@@ -283,6 +285,8 @@ def _signal_slots(game: GameData) -> list[str]:
         check_names.update(sc.signal_names)
     for ix in game.interactions:
         for sc in ix.signal_checks:
+            check_names.update(sc.signal_names)
+        for sc in ix.sealed_signal_checks:
             check_names.update(sc.signal_names)
     signal_count = max(len(check_names), len(game.signal_emissions))
     if signal_count > 0:

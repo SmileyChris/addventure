@@ -283,8 +283,6 @@ def _parse_content_block(lines, i, game, room_name, fence_close=None):
 
         # Signal checks
         if _is_signal_check_header(sstripped):
-            if fence_close:
-                raise ParseError(i + 1, "Signal checks are not allowed inside fragment blocks")
             i, block_signal_checks = _parse_signal_check_group(lines, i, game=game, room_name=room_name)
             continue
 
@@ -363,6 +361,8 @@ def _parse_signal_check_group(lines, i, game=None, room_name=""):
                 block_indent = ind
             if ind < block_indent:
                 break
+            if _is_signal_check_header(line_stripped):
+                raise ParseError(i + 1, f"Nested signal checks are not allowed: {line_stripped}")
             if line_stripped.startswith("- ") and _is_arrow(line_stripped[2:]):
                 arrow = _parse_arrow(_strip_trailing_comment(line_stripped[2:]), i + 1)
                 if arrow.subject == "room" and room_name:
@@ -644,7 +644,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
     arrows = []
     sealed_content = None
     sealed_arrows = []
-    sealed_signal_checks_content = []
+    sealed_signal_checks = []
     blank_line_seen = False
     signal_checks = []
     alias_verbs = []
@@ -687,7 +687,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
             if bstripped != "::: fragment":
                 raise ParseError(i + 1, "Expected '::: fragment' to open a fragment block")
             i += 1
-            i, sealed_content, sealed_arrows, sealed_signal_checks_content = _parse_content_block(
+            i, sealed_content, sealed_arrows, sealed_signal_checks = _parse_content_block(
                 lines, i, game, room_name, fence_close=":::",
             )
             fragment_seen = True
@@ -722,6 +722,7 @@ def _parse_inline_interaction(lines, i, game, room_name, context_entity, parent_
         source_line=source_line, room=room_name,
         sealed_content=sealed_content,
         sealed_arrows=sealed_arrows,
+        sealed_signal_checks=sealed_signal_checks,
         signal_checks=signal_checks,
         alias_verbs=alias_verbs,
     )

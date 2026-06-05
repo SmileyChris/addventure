@@ -688,10 +688,22 @@ def compile_game(global_source: str, room_sources: list[str],
         for arrow in action.arrows:
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
+    for sc in game.signal_checks:
+        for arrow in sc.arrows:
+            if arrow.signal_name:
+                game.signal_emissions.add(arrow.signal_name)
     for ix in game.interactions:
+        for sc in ix.signal_checks:
+            for arrow in sc.arrows:
+                if arrow.signal_name:
+                    game.signal_emissions.add(arrow.signal_name)
         for arrow in ix.sealed_arrows:
             if arrow.signal_name:
                 game.signal_emissions.add(arrow.signal_name)
+        for sc in ix.sealed_signal_checks:
+            for arrow in sc.arrows:
+                if arrow.signal_name:
+                    game.signal_emissions.add(arrow.signal_name)
 
     # Mark objects discovered via signal check arrows (-> room)
     start_room = game.metadata.get("start", "")
@@ -726,6 +738,8 @@ def compile_game(global_source: str, room_sources: list[str],
         all_signal_names.update(sc.signal_names)
     for ix in game.interactions:
         for sc in ix.signal_checks:
+            all_signal_names.update(sc.signal_names)
+        for sc in ix.sealed_signal_checks:
             all_signal_names.update(sc.signal_names)
     entity_names = (
         set(game.verbs.keys())
@@ -823,24 +837,41 @@ def compile_game(global_source: str, room_sources: list[str],
     for cue in game.cues:
         cue.entry_number = cue_primary_entry.get(cue.id, 0)
 
-    # Create SealedText objects from interactions with sealed_content
+    def _join_fragment_text(*parts: str) -> str:
+        return "\n\n".join(part for part in parts if part)
+
+    # Create SealedText objects from interactions with fragment content.
+    # Fragment signal checks create conditional variants; common fragment prose
+    # and arrows are duplicated into each variant that has resulting text.
     sealed_interactions = [
-        (ix, ri) for ix in game.interactions if ix.sealed_content
+        (ix, ri) for ix in game.interactions
+        if ix.sealed_content or ix.sealed_signal_checks
         for ri in game.resolved
         if ri.verb == ix.verb and ri.room == ix.room
         and ri.source_line == ix.source_line
     ]
     if sealed_interactions:
-        refs = _generate_sealed_refs(len(sealed_interactions))
-        for (ix, ri), ref in zip(sealed_interactions, refs):
+        pending = []
+        for ix, ri in sealed_interactions:
+            if ix.sealed_signal_checks:
+                for sc in ix.sealed_signal_checks:
+                    content = _join_fragment_text(ix.sealed_content or "", sc.narrative)
+                    if content:
+                        pending.append((ix, ri, content, ix.sealed_arrows + sc.arrows, sc.signal_names))
+            elif ix.sealed_content:
+                pending.append((ix, ri, ix.sealed_content, ix.sealed_arrows, None))
+
+        refs = _generate_sealed_refs(len(pending))
+        for (ix, ri, content, arrows, signal_names), ref in zip(pending, refs):
             game.sealed_texts.append(SealedText(
                 ref=ref,
-                content=ix.sealed_content,
+                content=content,
                 images=[],
                 source_line=ix.source_line,
                 room=ix.room,
                 entry_number=ri.entry_number,
-                arrows=ix.sealed_arrows,
+                arrows=arrows,
+                signal_names=signal_names,
             ))
 
     return game

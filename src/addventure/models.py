@@ -46,6 +46,7 @@ class Interaction:
     room: str = ""
     sealed_content: str | None = None
     sealed_arrows: list[Arrow] = field(default_factory=list)
+    sealed_signal_checks: list['SignalCheck'] = field(default_factory=list)
     signal_checks: list['SignalCheck'] = field(default_factory=list)
     alias_verbs: list[str] = field(default_factory=list)
 
@@ -111,6 +112,7 @@ class SealedText:
     entry_number: int = 0  # The ledger entry that triggers this
     arrows: list[Arrow] = field(default_factory=list)
     signal_checks: list['SignalCheck'] = field(default_factory=list)
+    signal_names: list[str] | None = None  # None = unconditional, [] = otherwise
 
 @dataclass
 class SignalCheck:

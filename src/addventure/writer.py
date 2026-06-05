@@ -234,16 +234,7 @@ class GameWriter:
                     f"Cross out *{cue.id}* from your Cue Checks."
                 )
 
-        # Sealed text: append instruction to open/assemble sealed content
-        sealed = next(
-            (st for st in self.game.sealed_texts if st.entry_number == ri.entry_number),
-            None
-        )
-        if sealed:
-            if self.jigsaw:
-                instructions.append(f"Assemble Fragment *{sealed.ref}*.")
-            else:
-                instructions.append(f"Turn to Fragment *{sealed.ref}*.")
+        instructions.extend(self._fragment_instructions(ri))
 
         # Blind mode: append room reveal instructions for LOOK + @room
         if self.blind:
@@ -384,6 +375,62 @@ class GameWriter:
             source_line=0, room=room, parent_label="",
         )
         return self._generate_instructions(ri)
+
+    def _fragment_action(self, ref: str, *, sentence_start: bool = False) -> str:
+        if self.jigsaw:
+            verb = "Assemble" if sentence_start else "assemble"
+            return f"{verb} Fragment *{ref}*"
+        verb = "Turn" if sentence_start else "turn"
+        return f"{verb} to Fragment *{ref}*"
+
+    def _format_signal_condition(self, signal_names: list[str], otherwise_names: set[str]) -> str:
+        from .compiler import signal_id as _signal_id
+
+        if signal_names:
+            sids = " and ".join(f"*{_signal_id(name)}*" for name in signal_names)
+            return f"If you have {sids}"
+        if otherwise_names:
+            sids = " or ".join(f"*{_signal_id(name)}*" for name in sorted(otherwise_names))
+            return f"If you do not have {sids}"
+        return "Otherwise"
+
+    def _fragment_instructions(self, ri: ResolvedInteraction) -> list[str]:
+        sealed = [
+            st for st in self.game.sealed_texts
+            if st.entry_number == ri.entry_number and st.source_line == ri.source_line
+        ]
+        ix = next(
+            (
+                candidate for candidate in self.game.interactions
+                if candidate.source_line == ri.source_line and candidate.room == ri.room
+            ),
+            None,
+        )
+        if ix is None or not ix.sealed_signal_checks:
+            if sealed:
+                return [self._fragment_action(sealed[0].ref, sentence_start=True) + "."]
+            return []
+
+        unconditional = [st for st in sealed if st.signal_names is None]
+        conditional = [st for st in sealed if st.signal_names is not None]
+        if unconditional and not conditional:
+            return [self._fragment_action(unconditional[0].ref, sentence_start=True) + "."]
+
+        by_signal = {tuple(st.signal_names or []): st for st in conditional}
+        named_signals = {
+            name for sc in ix.sealed_signal_checks for name in sc.signal_names
+        }
+        instructions = []
+        for sc in ix.sealed_signal_checks:
+            condition = self._format_signal_condition(sc.signal_names, named_signals)
+            st = by_signal.get(tuple(sc.signal_names))
+            if st is not None:
+                instructions.append(f"{condition}, {self._fragment_action(st.ref)}.")
+            else:
+                branch_arrows = ix.sealed_arrows + sc.arrows
+                for inst in self._signal_check_instructions(branch_arrows, room=ix.room):
+                    instructions.append(f"{condition}: {inst}")
+        return instructions
 
 
 # ── Build Summary ──────────────────────────────────────────────────────────

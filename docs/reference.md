@@ -194,7 +194,7 @@ Room-level interactions not tied to a specific room object. Goes at the bottom o
 ```
 
 Content inside `::: fragment` is Typst markup. See [Fragment modes](#fragment-modes).
-Fragments must be the final content in their interaction. They may include arrows for effects that happen after the fragment is read, but they may not contain signal checks.
+Fragments must be the final content in their interaction. They may include arrows for effects that happen after the fragment is read. They may also end with signal checks; each branch creates a conditional fragment variant when its common-plus-branch prose is non-empty. Arrow-only branches generate conditional instructions instead of fragment text.
 
 ## Script reference
 

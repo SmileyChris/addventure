@@ -193,7 +193,7 @@ Actions can also be discovered mid-game (nested under an interaction) or removed
 
 ### Fragments
 
-A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. Fragment content uses the same [narrative formatting](#narrative-formatting) as regular prose. A fragment must be the final content in its interaction; put visible narration before the fragment. See [Fragments](advanced.md#fragments) in Addvanced Mechanics.
+A `::: fragment` block embeds long-form hidden content — finale text, reveals — kept separate from the main flow until directed. Fragment content uses the same [narrative formatting](#narrative-formatting) as regular prose. A fragment must be the final content in its interaction; put visible narration before the fragment. Fragments can end with signal checks for conditional hidden variants. See [Fragments](advanced.md#fragments) in Addvanced Mechanics.
 
 ### PDF output
 

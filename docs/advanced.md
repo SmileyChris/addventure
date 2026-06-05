@@ -235,7 +235,9 @@ VAULT_DOOR
 
 When this entry fires, the ledger instruction tells the player which fragment to turn to (e.g. "Turn to Fragment Alpha"). Fragments are printed in a separate section at the back of the ledger, or as a separate document — see [Fragment modes](reference.md#fragment-modes).
 
-Fragment content uses the same narrative formatting as regular prose — see [Narrative formatting](writing-rooms.md#narrative-formatting) for the full syntax. A fragment must be the final content in its interaction. It may include arrows for effects that happen after the fragment is read, but it may not contain signal checks.
+Fragment content uses the same narrative formatting as regular prose — see [Narrative formatting](writing-rooms.md#narrative-formatting) for the full syntax. A fragment must be the final content in its interaction. It may include arrows for effects that happen after the fragment is read.
+
+Fragments can end with signal checks. Each branch creates a conditional fragment variant when its common-plus-branch prose is non-empty; arrow-only branches generate conditional instructions instead of fragment text. Use this for endings or hidden notes that should vary by earlier choices.
 
 ### Cue checks (cross-room effects)
 
