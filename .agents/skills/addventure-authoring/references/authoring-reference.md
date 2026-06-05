@@ -27,7 +27,7 @@ COMPASS
   + LOOK: A brass compass, needle spinning wildly.
 ```
 
-Known frontmatter keys: `title`, `author`, `start`, `ledger_prefix`, `image`, `image_height`, `name_style`. Unknown keys are accepted but warn.
+Known frontmatter keys: `title`, `author`, `start`, `ledger_prefix`, `image`, `image_height`, `name_style`. Unknown keys are accepted but warn. An opening `---` frontmatter fence must be closed.
 
 Room files:
 
@@ -174,6 +174,7 @@ Room state example:
       + USE:
         You climb down.
         - player -> "Basement"
+```
 
 Revert a room to its base state with `room__`:
 
@@ -270,7 +271,7 @@ Signals are deterministic branch flags. Emitting a signal prints a consonant cod
 - EVERYONE_OUT_ESCAPE -> signal
 ```
 
-Signal checks can appear in the index description or interaction bodies:
+Signal checks can appear in the index description, interaction bodies, or as the final content in fragment blocks:
 
 ```markdown
 EVERYONE_OUT_ESCAPE?
@@ -282,7 +283,7 @@ otherwise?
   The road is quiet.
 ```
 
-All matching signal branches fire. `otherwise?` fires only when none match. Signals are useful across chapters because the same signal name produces the same code in each chapter.
+Signal branches are first-match in source order. `otherwise?` fires only when no named branch matches and must follow at least one named branch. Branches must contain narrative, arrows, or both, and signal checks cannot nest. Signals are useful across chapters because the same signal name produces the same code in each chapter.
 
 ## Fragments
 
@@ -308,7 +309,9 @@ addventure build game --fragment separate
 addventure build game --fragment jigsaw
 ```
 
-Fragment content is rendered as Typst markup and can contain arrows/signals that fire from the fragment.
+Fragment blocks must be the final content in their interaction. Fragment content is rendered as Typst markup and can contain arrows/signals that fire from the fragment.
+
+Fragments can end with signal checks. Each signal branch creates a conditional fragment variant when the common fragment prose plus branch prose is non-empty. Common fragment prose and arrows are duplicated into those variants. Branches with arrows but no composed prose generate conditional instructions instead of fragment text.
 
 ## Chapters
 
@@ -347,3 +350,14 @@ Paper-play checks:
 - Critical items are not trashed before their last required use.
 - State names describe the changed affordance, not just chronology.
 - Wildcards do not mask a puzzle response that should be explicit.
+
+Narrative/playability checks:
+
+- Room flow is understandable: players can tell where they are, why movement happens, and what changed after a transition.
+- Puzzle affordances are introduced before they are required; important objects have LOOK text or contextual mention before becoming solutions.
+- Cause and effect line up: every arrow instruction follows naturally from the preceding narrative beat.
+- State continuity holds: transformed rooms/objects/verbs still match what the player has seen and crossed out.
+- Irreversible changes, consumed items, one-way moves, and endings are intentional and telegraphed.
+- Fragment reveals land at the right moment and do not contradict the ledger entry that opened them.
+- Signal branches and chapter transitions preserve continuity across prior choices instead of feeling like arbitrary flags.
+- Endings reflect the player's path and do not depend on unavailable, unintroduced, or already-consumed state.

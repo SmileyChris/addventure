@@ -33,6 +33,10 @@ Addventure games are paper-first interactive fiction. Players combine printed nu
    - Unreachable interactions usually mean a missing reveal, wrong room/state, unavailable verb, or consumed item.
    - Collision failures mean the random ID allocator could not find non-overlapping sums; simplify or split dense interactions if retries fail.
    - Unknown targets/rooms usually mean a name mismatch, missing declaration, or quoted room typo.
+6. Review narrative and playability, not just syntax:
+   - Check that room transitions, object reveals, state changes, and fragments make sense in the story moment when they fire.
+   - Ensure the player has enough narrative affordance to try important verbs/targets before puzzle solutions are required.
+   - Make irreversible moves, endings, consumed items, and chapter transitions intentional and legible.
 
 ## Authoring Defaults
 
@@ -44,7 +48,9 @@ Addventure games are paper-first interactive fiction. Players combine printed nu
 - Only observation interactions without arrows inherit into states. Any interaction that changes the game must be redefined on the state.
 - Inventory pickup auto-registers the inventory object from `- OBJECT -> player`; do not also list it in `# Inventory` unless it never exists as a room object or you need explicit starting/crafted inventory.
 - When a room object is picked up, its non-acquisition interactions are duplicated for the inventory version unless explicitly overridden or suppressed with an empty interaction.
-- Use cues (`? -> "Room"`) for delayed cross-room effects; use signals (`NAME -> signal`, then `NAME?`) for branching narrative or cross-chapter consequences.
+- Use cues (`? -> "Room"`) for delayed cross-room effects; use signals (`NAME -> signal`, then `NAME?`) for first-match branching narrative or cross-chapter consequences.
+- Put `::: fragment` blocks last in their interaction. Fragments may end with signal checks to create conditional sealed variants.
+- A game should read as a coherent playable path, not just a valid state graph: every mechanical update should have a clear narrative cause and player-facing effect.
 
 ## References
 

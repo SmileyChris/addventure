@@ -51,14 +51,15 @@ Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 
 1. `parse_global` — extract metadata (frontmatter), verbs and inventory objects
 2. `parse_room_file` — extract rooms, room objects, interactions (indentation-sensitive)
-3. `auto_register_items` — auto-create inventory objects from `-> player` arrows (ID = TAKE + room object ID)
+3. `auto_register_inventory` — auto-create inventory objects from `-> player` arrows (ID = TAKE + room object ID)
 4. `_try_allocate` — randomly assign IDs (verbs: 11–99, entities: 100–999, excluding multiples of 5/10)
 5. `register_verb_states` — create temporary verb states (e.g., `USE__RESTRAINED`)
 6. `apply_inheritance` — auto-generate child interactions for entity states
 7. `resolve_interactions` — expand verb+entity combinations into sums (Cartesian product for multi-target)
 8. `duplicate_item_interactions` — create parallel sums for inventory object IDs
 9. `resolve_cues` — resolve cross-room cue interactions
-10. Validate — check for authored and potential ID collisions
+10. Signal and fragment processing — collect signal emissions/checks and create sealed fragment variants
+11. Validate — check for authored and potential ID collisions
 
 `compile_game()` orchestrates this with up to 200 retries if ID collisions occur.
 
@@ -76,7 +77,7 @@ Transforms `.md` script sources into a validated `GameData` model. Pipeline:
 Game scripts use markdown-based syntax:
 
 - `# Section` — headers for sections (`# Verbs`, `# Inventory`, `## Interactions`) and room names (`# Control Room`)
-- `---` fences — YAML frontmatter for metadata (title, author, etc.) at top of `index.md`
+- `---` fences — YAML frontmatter for metadata (title, author, etc.) at top of `index.md`; an opening fence must be closed
 - `+ line` — additions: interactions and behaviors on an entity
 - `- line` — state changes: arrows (movement, destruction, transformation)
 - `> line` — actions: direct ledger lookups (no addition), e.g. `> GO_NORTH`
@@ -86,6 +87,10 @@ Game scripts use markdown-based syntax:
 - `VERB + TARGET:` — multi-entity interactions
 - Arrow destinations: `player`, `trash`, `"RoomName"`, `room` (current room), `ENTITY__STATE`, `room__STATE`
 - `? -> "RoomName"` — cue (deferred cross-room effect, resolved when player enters target room)
+- `NAME -> signal` — signal emission; player records the derived signal code
+- `NAME?` / `otherwise?` — signal checks in index descriptions, interaction bodies, and terminal fragment blocks; branches are first-match and may not nest
+- `::: fragment` blocks — hidden sealed text inside interactions; fragments must be final content and may end with signal checks that generate conditional fragment variants
+- `NUMBER:` — direct potential lookup for code/password puzzles, with `- NUMBER` and `- ^DIGITS` avoid entries
 - `*` wildcard — matches all entities in room
 - Indentation (2-space) defines hierarchy within `+`/`-` blocks
 
